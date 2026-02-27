@@ -1,9 +1,7 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { NextRequest } from "next/server";
 import { GET } from "./route";
 import { supabase } from "@/lib/supabase";
-import { vi } from "vitest";
+import { vi, type Mock } from "vitest";
 
 vi.mock("@/lib/supabase", () => ({
   supabase: {
@@ -17,7 +15,12 @@ describe("GET /api/posts/[id]", () => {
   });
 
   it("fetches single post and recent posts successfully", async () => {
-    const mockPost = { id: 1, title: "Test", author: "user1" };
+    const mockPost = {
+      id: 1,
+      title: "Test",
+      author: "user1",
+      url: "https://example.com",
+    };
     const mockRecent = [{ id: 2, title: "Recent" }];
 
     const mockSingle1 = vi
@@ -27,9 +30,8 @@ describe("GET /api/posts/[id]", () => {
       .fn()
       .mockResolvedValue({ data: mockRecent, error: null });
 
-    (supabase.from as any).mockImplementation((table: string) => {
-      // Very loose mock to avoid deep chaining issues
-      const mockChain: any = {
+    (supabase.from as Mock).mockImplementation(() => {
+      const mockChain: Record<string, Mock> = {
         select: vi.fn(() => mockChain),
         eq: vi.fn(() => mockChain),
         neq: vi.fn(() => mockChain),
@@ -42,19 +44,49 @@ describe("GET /api/posts/[id]", () => {
     });
 
     const req = new NextRequest("http://localhost:3000/api/posts/1");
-    const res = await GET(req, { params: { id: "1" } });
+    const res = await GET(req, { params: Promise.resolve({ id: "1" }) });
     const json = await res.json();
 
     expect(res.status).toBe(200);
-    // Since our mock always returns mockPost from single() and mockRecent from limit(),
-    // we can trace the results. We expect the route logic to return an object with { article, recentPosts }
-    expect(json.article.id).toBe(1);
-    expect(json.recentPosts[0].id).toBe(2);
+    // Response is now flattened: article fields at top level + recent_posts
+    expect(json.id).toBe(1);
+    expect(json.title).toBe("Test");
+    expect(json.recent_posts[0].id).toBe(2);
+  });
+
+  it("defaults recent_posts to empty array when recentPosts is null", async () => {
+    const mockPost = { id: 1, title: "Test", author: "user1" };
+
+    const mockSingle = vi
+      .fn()
+      .mockResolvedValue({ data: mockPost, error: null });
+    const mockLimit = vi.fn().mockResolvedValue({ data: null, error: null });
+
+    (supabase.from as Mock).mockImplementation(() => {
+      const mockChain: Record<string, Mock> = {
+        select: vi.fn(() => mockChain),
+        eq: vi.fn(() => mockChain),
+        neq: vi.fn(() => mockChain),
+        order: vi.fn(() => mockChain),
+        single: mockSingle,
+        limit: mockLimit,
+      };
+      return mockChain;
+    });
+
+    const req = new NextRequest("http://localhost:3000/api/posts/1");
+    const res = await GET(req, { params: Promise.resolve({ id: "1" }) });
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.recent_posts).toEqual([]);
   });
 
   it("handles invalid ID", async () => {
     const req = new NextRequest("http://localhost:3000/api/posts/not-found");
-    const res = await GET(req, { params: { id: "not-found" } });
+    const res = await GET(req, {
+      params: Promise.resolve({ id: "not-found" }),
+    });
     const json = await res.json();
 
     expect(res.status).toBe(400);
@@ -62,22 +94,22 @@ describe("GET /api/posts/[id]", () => {
   });
 
   it("handles post not found", async () => {
-    const mockChain: any = {
+    const mockChain: Record<string, Mock> = {
       select: vi.fn(() => mockChain),
       eq: vi.fn(() => mockChain),
       single: vi.fn().mockResolvedValue({ data: null, error: null }),
     };
-    (supabase.from as any).mockReturnValue(mockChain);
+    (supabase.from as Mock).mockReturnValue(mockChain);
 
     const req = new NextRequest("http://localhost:3000/api/posts/999");
-    const res = await GET(req, { params: { id: "999" } });
-    const json = await res.json();
+    const res = await GET(req, { params: Promise.resolve({ id: "999" }) });
+    await res.json();
 
     expect(res.status).toBe(404);
   });
 
-  it("handles server errors", async () => {
-    const mockChain: any = {
+  it("handles server errors when fetching recent posts", async () => {
+    const mockChain: Record<string, Mock> = {
       select: vi.fn(() => mockChain),
       eq: vi.fn(() => mockChain),
       neq: vi.fn(() => mockChain),
@@ -89,10 +121,10 @@ describe("GET /api/posts/[id]", () => {
         .fn()
         .mockResolvedValue({ data: null, error: new Error("Internal Error") }),
     };
-    (supabase.from as any).mockReturnValue(mockChain);
+    (supabase.from as Mock).mockReturnValue(mockChain);
 
     const req = new NextRequest("http://localhost:3000/api/posts/999");
-    const res = await GET(req, { params: { id: "999" } });
+    const res = await GET(req, { params: Promise.resolve({ id: "999" }) });
     const json = await res.json();
 
     expect(res.status).toBe(500);

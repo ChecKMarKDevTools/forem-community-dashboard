@@ -49,7 +49,7 @@ const mockPostDetails = {
   ],
 };
 
-global.fetch = vi.fn() as Mock;
+globalThis.fetch = vi.fn() as Mock;
 
 describe("Dashboard Component", () => {
   beforeEach(() => {
@@ -57,13 +57,15 @@ describe("Dashboard Component", () => {
   });
 
   it("renders loading state initially", () => {
-    global.fetch = vi.fn().mockImplementation(() => new Promise(() => {}));
+    globalThis.fetch = vi.fn().mockImplementation(() => new Promise(() => {}));
     const { container } = render(<Dashboard />);
     expect(container.querySelector(".animate-spin")).toBeInTheDocument();
   });
 
   it("fetches and renders a list of posts", async () => {
-    global.fetch = vi.fn().mockResolvedValue({ json: async () => mockPosts });
+    globalThis.fetch = vi
+      .fn()
+      .mockResolvedValue({ json: async () => mockPosts });
     render(<Dashboard />);
 
     await waitFor(() => {
@@ -76,7 +78,7 @@ describe("Dashboard Component", () => {
   });
 
   it("handles post selection and fetching details", async () => {
-    global.fetch = vi.fn().mockImplementation((url) => {
+    globalThis.fetch = vi.fn().mockImplementation((url) => {
       if (url === "/api/posts")
         return Promise.resolve({ json: async () => mockPosts });
       if (url === "/api/posts/post-1")
@@ -104,7 +106,7 @@ describe("Dashboard Component", () => {
   });
 
   it("handles empty post list", async () => {
-    global.fetch = vi.fn().mockResolvedValue({ json: async () => [] });
+    globalThis.fetch = vi.fn().mockResolvedValue({ json: async () => [] });
 
     render(<Dashboard />);
 
@@ -119,7 +121,7 @@ describe("Dashboard Component", () => {
     const consoleErrorSpy = vi
       .spyOn(console, "error")
       .mockImplementation(() => {});
-    global.fetch = vi.fn().mockRejectedValue(new Error("Failed to fetch"));
+    globalThis.fetch = vi.fn().mockRejectedValue(new Error("Failed to fetch"));
 
     render(<Dashboard />);
 

@@ -75,7 +75,7 @@ describe("Scoring Logic", () => {
   });
 
   it("adds behavior score for high post frequency", () => {
-    const publishedAt = new Date().getTime();
+    const publishedAt = Date.now();
     const recent = [
       {
         id: 2,

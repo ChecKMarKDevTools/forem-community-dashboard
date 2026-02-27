@@ -1,0 +1,37 @@
+# Version control
+.git/
+
+# Include .gitignore entries automatically
+.gitignore
+
+# Dependencies – installed during build
+node_modules/
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+
+# Build outputs that are rebuilt during the Cloud Build step
+.next/
+out/
+build/
+dist/
+coverage/
+
+# Development / editor config
+.vscode/
+.idea/
+*.local
+
+# CI/CD tooling
+.github/
+lefthook.yml
+
+# Test artefacts
+vitest.config.mts
+vitest.setup.ts
+
+# Docs
+*.md
+LICENSE

@@ -1,0 +1,14 @@
+# Auto-generated lockfiles and build artefacts
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+
+# Build outputs
+.next/
+out/
+build/
+dist/
+coverage/
+
+# Generated type declarations
+next-env.d.ts

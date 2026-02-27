@@ -1,0 +1,9 @@
+# Hadolint Configuration
+# We prefer using this file over inline overrides in scripts or workflows.
+
+# DL3008 warns against installing apt-get packages without pinning their exact version.
+# We are currently ignoring this globally as pinning system-level packages can often
+# lead to brittle builds in our environment when upstream repositories change,
+# but it could be beneficial to re-evaluate for critical dependencies in the future.
+ignored:
+  - DL3008

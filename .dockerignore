@@ -1,0 +1,36 @@
+# Version control
+.git/
+.gitignore
+
+# Dependencies – installed inside image
+node_modules/
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+
+# Build outputs that will be rebuilt inside image
+.next/
+out/
+build/
+dist/
+coverage/
+
+# Development / editor config
+.vscode/
+.idea/
+*.local
+
+# CI/CD and deployment scripts (not needed at runtime)
+.github/
+deploy.sh
+lefthook.yml
+
+# Test artefacts
+vitest.config.mts
+vitest.setup.ts
+
+# Docs
+*.md
+LICENSE

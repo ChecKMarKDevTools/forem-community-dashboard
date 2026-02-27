@@ -35,3 +35,8 @@ CREATE TABLE commenters (
 CREATE INDEX idx_articles_author ON articles(author);
 CREATE INDEX idx_commenters_article_id ON commenters(article_id);
 CREATE INDEX idx_commenters_username ON commenters(username);
+
+-- Enable Row Level Security (RLS)
+ALTER TABLE articles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE commenters ENABLE ROW LEVEL SECURITY;

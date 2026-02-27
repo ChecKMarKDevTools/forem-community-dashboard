@@ -1,9 +1,7 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
- 
 import { NextRequest } from "next/server";
 import { GET } from "./route";
 import { supabase } from "@/lib/supabase";
-import { vi } from "vitest";
+import { vi, type Mock } from "vitest";
 
 vi.mock("@/lib/supabase", () => ({
   supabase: {
@@ -24,7 +22,7 @@ describe("GET /api/posts", () => {
       .fn()
       .mockResolvedValue({ data: mockData, error: null });
 
-    (supabase.from as any).mockReturnValue({
+    (supabase.from as Mock).mockReturnValue({
       select: mockSelect,
       order: mockOrder,
       limit: mockLimit,
@@ -46,7 +44,7 @@ describe("GET /api/posts", () => {
       .fn()
       .mockResolvedValue({ data: null, error: new Error("DB Error") });
 
-    (supabase.from as any).mockReturnValue({
+    (supabase.from as Mock).mockReturnValue({
       select: mockSelect,
       order: mockOrder,
       limit: mockLimit,

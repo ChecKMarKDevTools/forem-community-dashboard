@@ -1,8 +1,8 @@
 name: 15-Minute Sync
 
 on:
-  schedule:
-    - cron: "*/15 * * * *"
+  # schedule:
+  #   - cron: "*/15 * * * *"
   workflow_dispatch:
 
 jobs:

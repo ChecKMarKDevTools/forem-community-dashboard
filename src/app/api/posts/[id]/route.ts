@@ -3,45 +3,50 @@ import { supabase } from "@/lib/supabase";
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
-  try {
-    const id = parseInt(params.id);
-    if (isNaN(id)) {
-      return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
-    }
+  const { id: rawId } = await params;
+  const id = Number.parseInt(rawId);
 
-    // Fetch the article
-    const { data: article, error: articleError } = await supabase
-      .from("articles")
-      .select("*")
-      .eq("id", id)
-      .single();
+  if (Number.isNaN(id)) {
+    return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
+  }
 
-    if (articleError || !article) {
-      return NextResponse.json({ error: "Post not found" }, { status: 404 });
-    }
+  // Fetch the article
+  const { data: article, error: articleError } = await supabase
+    .from("articles")
+    .select("*")
+    .eq("id", id)
+    .single();
 
-    // Fetch recent posts by same author
-    const { data: recentPosts, error: recentError } = await supabase
-      .from("articles")
-      .select("id, title, published_at, score, attention_level")
-      .eq("author", article.author)
-      .neq("id", id)
-      .order("published_at", { ascending: false })
-      .limit(5);
+  if (articleError || !article) {
+    return NextResponse.json({ error: "Post not found" }, { status: 404 });
+  }
 
-    if (recentError) throw recentError;
+  // Fetch recent posts by same author
+  const { data: recentPosts, error: recentError } = await supabase
+    .from("articles")
+    .select("id, title, published_at, score, attention_level")
+    .eq("author", article.author)
+    .neq("id", id)
+    .order("published_at", { ascending: false })
+    .limit(5);
 
-    return NextResponse.json({
-      article,
-      recentPosts,
-    });
-  } catch (error: unknown) {
-    console.error(`Failed to fetch post ${params.id}`, error);
+  if (recentError) {
+    console.error(`Failed to fetch post ${rawId}`, recentError);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Unknown error" },
+      {
+        error:
+          recentError instanceof Error ? recentError.message : "Unknown error",
+      },
       { status: 500 },
     );
   }
+
+  // Flatten article fields with recent_posts so the Dashboard's PostDetails
+  // type (which expects top-level fields + recent_posts) is satisfied.
+  return NextResponse.json({
+    ...article,
+    recent_posts: recentPosts ?? [],
+  });
 }

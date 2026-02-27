@@ -3,7 +3,6 @@ set -e
 
 # Configuration
 SERVICE_NAME="forem-community-dashboard"
-PROJECT_ID="anchildress1-unstable"
 REGION="us-east1"
 PORT="3000"
 SEPARATOR="=================================================="
@@ -11,6 +10,12 @@ SEPARATOR="=================================================="
 # Check dependencies
 if ! command -v gcloud &> /dev/null; then
     echo "Error: gcloud CLI is not installed." >&2
+    exit 1
+fi
+
+PROJECT_ID=$(gcloud config get-value project)
+if [ -z "$PROJECT_ID" ]; then
+    echo "Error: No active gcloud project found. Please run 'gcloud config set project <your-project>'." >&2
     exit 1
 fi
 
@@ -49,7 +54,7 @@ require_env() {
 }
 
 require_env "NEXT_PUBLIC_SUPABASE_URL"
-require_env "SUPABASE_SERVICE_ROLE_KEY"
+require_env "SUPABASE_SECRET_KEY"
 require_env "CRON_SECRET"
 
 deploy_service() {
@@ -80,7 +85,7 @@ deploy_service() {
         "--project" "$PROJECT_ID"
         "--allow-unauthenticated"
         "--port" "$PORT"
-        "--set-env-vars" "NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL,SUPABASE_SERVICE_ROLE_KEY=$SUPABASE_SERVICE_ROLE_KEY,CRON_SECRET=$CRON_SECRET"
+        "--set-env-vars" "NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL,SUPABASE_SECRET_KEY=$SUPABASE_SECRET_KEY,CRON_SECRET=$CRON_SECRET"
     )
 
     gcloud run "${DEPLOY_ARGS[@]}"
