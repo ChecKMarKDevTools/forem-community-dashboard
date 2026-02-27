@@ -1,4 +1,6 @@
-# AI Rules for forem-community-dashboard
+# This file is a pointer to ensure context is pulled into the IDE.
+# The canonical rules and memory for this project are located in AGENTS.md.
+# Please refer to AGENTS.md for all project-wide Agent instructions.
 
-- **Inline Overrides**: All inline overrides MUST require a comment explaining why the override exists.
-- **Preference**: Prefer proper configuration files (e.g., `.hadolint.yaml`, `.stylelintrc`) to inline overrides when feasible.
+# Include AGENTS.md instructions:
+# @AGENTS.md
