@@ -1,0 +1,22 @@
+pre-commit:
+  parallel: true
+  commands:
+    stylelint:
+      glob: "*.{css,scss}"
+      run: pnpm stylelint {staged_files}
+    eslint:
+      glob: "*.{js,ts,jsx,tsx}"
+      run: pnpm eslint {staged_files}
+    prettier:
+      glob: "*.{js,ts,jsx,tsx,css,md,json}"
+      run: pnpm prettier --check {staged_files}
+    trufflehog:
+      run: docker run --rm -v "$PWD:/pwd" trufflesecurity/trufflehog:latest git file:///pwd --fail
+
+pre-push:
+  parallel: true
+  commands:
+    tests:
+      run: pnpm test
+    build:
+      run: pnpm run build

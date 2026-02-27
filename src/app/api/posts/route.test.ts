@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
- 
+
 import { NextRequest } from "next/server";
 import { GET } from "./route";
 import { supabase } from "@/lib/supabase";

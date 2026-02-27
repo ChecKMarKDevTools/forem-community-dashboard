@@ -13,8 +13,9 @@ install:  ## Install development dependencies
 test:  ## Run unit and integration tests with coverage
 	pnpm run test:coverage
 
-lint:  ## Run linting checks (ESLint)
+lint:  ## Run linting checks (ESLint & StyleLint)
 	pnpm run lint
+	pnpm run stylelint
 
 format:  ## Format code with Prettier
 	pnpm run format
@@ -27,7 +28,7 @@ secret-scan:  ## Run secret scanner using TruffleHog in Docker
 
 ai-checks:  ## Single command: format → lint → security → secret-scan → test
 	@set -e; \
-	echo "🔍 format → lint → security → secret-scan → test"; \
+	echo "🔍 format → lint (eslint + stylelint) → security → secret-scan → test"; \
 	$(MAKE) format && echo "  ✓ format" || (echo "  ✗ format"; exit 1); \
 	$(MAKE) lint && echo "  ✓ lint" || (echo "  ✗ lint"; exit 1); \
 	$(MAKE) security && echo "  ✓ security" || (echo "  ✗ security"; exit 1); \
