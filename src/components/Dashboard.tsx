@@ -75,48 +75,48 @@ export function Dashboard() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-brand-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-600"></div>
+      <div className="bg-brand-50 flex min-h-screen items-center justify-center">
+        <div className="border-brand-600 h-12 w-12 animate-spin rounded-full border-b-2"></div>
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-brand-50">
+    <div className="bg-brand-50 flex h-screen overflow-hidden">
       {/* Left panel: Post List */}
       <div
         className={cn(
-          "flex flex-col w-full border-r border-brand-200 bg-white transition-all duration-300",
-          selectedPostId ? "md:w-1/2 lg:w-4/12 hidden md:flex" : "w-full",
+          "border-brand-200 flex w-full flex-col border-r bg-white transition-all duration-300",
+          selectedPostId ? "hidden md:flex md:w-1/2 lg:w-4/12" : "w-full",
         )}
       >
-        <div className="p-6 border-b border-brand-100 bg-white">
-          <h1 className="text-2xl font-bold text-brand-900 tracking-tight">
+        <div className="border-brand-100 border-b bg-white p-6">
+          <h1 className="text-brand-900 text-2xl font-bold tracking-tight">
             Community Queue
           </h1>
-          <p className="text-sm text-brand-500 mt-1">
+          <p className="text-brand-500 mt-1 text-sm">
             Posts requiring moderation attention.
           </p>
         </div>
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <div className="flex-1 space-y-4 overflow-y-auto p-4">
           {posts.map((post) => (
             <Card
               key={post.id}
               className={cn(
-                "cursor-pointer transition-all duration-200 hover:shadow-md border-brand-100 hover:border-brand-300",
+                "border-brand-100 hover:border-brand-300 cursor-pointer transition-all duration-200 hover:shadow-md",
                 selectedPostId === post.id
-                  ? "ring-2 ring-brand-500 bg-brand-50"
+                  ? "ring-brand-500 bg-brand-50 ring-2"
                   : "bg-white",
               )}
               onClick={() => setSelectedPostId(post.id)}
             >
               <CardContent className="p-4">
                 <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-brand-900 truncate">
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-brand-900 truncate font-semibold">
                       {post.title}
                     </h3>
-                    <div className="flex items-center gap-2 mt-2 text-xs text-brand-500">
+                    <div className="text-brand-500 mt-2 flex items-center gap-2 text-xs">
                       <span className="flex items-center gap-1">
                         <User className="h-3 w-3" /> {post.author_name}
                       </span>
@@ -126,7 +126,7 @@ export function Dashboard() {
                       </span>
                     </div>
                   </div>
-                  <div className="flex flex-col items-end gap-2 shrink-0">
+                  <div className="flex shrink-0 flex-col items-end gap-2">
                     <Badge
                       variant={
                         post.attention_level === "high"
@@ -138,7 +138,7 @@ export function Dashboard() {
                     >
                       {post.attention_level.toUpperCase()}
                     </Badge>
-                    <span className="text-xs font-medium text-brand-600">
+                    <span className="text-brand-600 text-xs font-medium">
                       Score: {post.score}
                     </span>
                   </div>
@@ -147,8 +147,8 @@ export function Dashboard() {
             </Card>
           ))}
           {posts.length === 0 && (
-            <div className="text-center py-12 text-brand-400">
-              <AlertCircle className="mx-auto h-8 w-8 mb-3 opacity-50" />
+            <div className="text-brand-400 py-12 text-center">
+              <AlertCircle className="mx-auto mb-3 h-8 w-8 opacity-50" />
               <p>No posts found. Waiting for data sync.</p>
             </div>
           )}
@@ -159,52 +159,52 @@ export function Dashboard() {
       {(selectedPostId || (!selectedPostId && window.innerWidth >= 768)) && (
         <div
           className={cn(
-            "flex-1 p-6 md:p-8 bg-brand-50/50 overflow-y-auto relative",
-            !selectedPostId && "hidden md:flex items-center justify-center",
+            "bg-brand-50/50 relative flex-1 overflow-y-auto p-6 md:p-8",
+            !selectedPostId && "hidden items-center justify-center md:flex",
           )}
         >
           {!selectedPostId ? (
-            <div className="text-center text-brand-400 max-w-sm">
-              <div className="mx-auto w-16 h-16 rounded-full bg-brand-100 flex items-center justify-center mb-4">
-                <MessageSquare className="h-8 w-8 text-brand-300" />
+            <div className="text-brand-400 max-w-sm text-center">
+              <div className="bg-brand-100 mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">
+                <MessageSquare className="text-brand-300 h-8 w-8" />
               </div>
-              <p className="text-lg font-medium text-brand-700">
+              <p className="text-brand-700 text-lg font-medium">
                 Select a post to view details
               </p>
-              <p className="text-sm mt-2">
+              <p className="mt-2 text-sm">
                 The detailed moderation breakdown will appear here.
               </p>
             </div>
           ) : detailsLoading ? (
-            <div className="flex items-center justify-center h-full">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600"></div>
+            <div className="flex h-full items-center justify-center">
+              <div className="border-brand-600 h-8 w-8 animate-spin rounded-full border-b-2"></div>
             </div>
           ) : postDetails ? (
-            <div className="max-w-4xl mx-auto space-y-6 pb-20">
-              <div className="md:hidden mb-4">
+            <div className="mx-auto max-w-4xl space-y-6 pb-20">
+              <div className="mb-4 md:hidden">
                 <button
                   onClick={() => setSelectedPostId(null)}
-                  className="text-sm text-brand-600 hover:text-brand-800 flex items-center gap-1 font-medium"
+                  className="text-brand-600 hover:text-brand-800 flex items-center gap-1 text-sm font-medium"
                 >
                   <ChevronRight className="h-4 w-4 rotate-180" /> Back to queue
                 </button>
               </div>
 
-              <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-brand-100">
-                <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
+              <div className="border-brand-100 rounded-2xl border bg-white p-6 shadow-sm md:p-8">
+                <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
                   <div>
-                    <h2 className="text-2xl md:text-3xl font-bold text-brand-900 leading-tight">
+                    <h2 className="text-brand-900 text-2xl leading-tight font-bold md:text-3xl">
                       <a
                         href={postDetails.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="hover:underline hover:text-brand-600 transition-colors"
+                        className="hover:text-brand-600 transition-colors hover:underline"
                       >
                         {postDetails.title}
                       </a>
                     </h2>
-                    <div className="flex flex-wrap items-center gap-4 mt-4 text-sm text-brand-600">
-                      <span className="flex items-center gap-1.5 bg-brand-50 px-3 py-1.5 rounded-full font-medium">
+                    <div className="text-brand-600 mt-4 flex flex-wrap items-center gap-4 text-sm">
+                      <span className="bg-brand-50 flex items-center gap-1.5 rounded-full px-3 py-1.5 font-medium">
                         <User className="h-4 w-4" /> @
                         {postDetails.author_username}
                       </span>
@@ -222,38 +222,38 @@ export function Dashboard() {
                           ? "warning"
                           : "success"
                     }
-                    className="text-sm px-3 py-1"
+                    className="px-3 py-1 text-sm"
                   >
                     {postDetails.attention_level.toUpperCase()} PRIORITY
                   </Badge>
                 </div>
 
-                <div className="flex items-center gap-6 py-4 border-y border-brand-100 mb-8">
-                  <div className="flex items-center gap-2 text-brand-700">
-                    <Heart className="h-5 w-5 text-danger-500" />{" "}
+                <div className="border-brand-100 mb-8 flex items-center gap-6 border-y py-4">
+                  <div className="text-brand-700 flex items-center gap-2">
+                    <Heart className="text-danger-500 h-5 w-5" />{" "}
                     <span className="font-semibold">
                       {postDetails.public_reactions_count}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2 text-brand-700">
-                    <MessageSquare className="h-5 w-5 text-brand-500" />{" "}
+                  <div className="text-brand-700 flex items-center gap-2">
+                    <MessageSquare className="text-brand-500 h-5 w-5" />{" "}
                     <span className="font-semibold">
                       {postDetails.comments_count}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2 text-brand-700">
-                    <Eye className="h-5 w-5 text-brand-400" />{" "}
+                  <div className="text-brand-700 flex items-center gap-2">
+                    <Eye className="text-brand-400 h-5 w-5" />{" "}
                     <span className="font-semibold">
                       {postDetails.page_views_count}
                     </span>
                   </div>
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-6">
+                <div className="grid gap-6 md:grid-cols-2">
                   {/* Score Breakdown */}
                   <Card className="border-brand-100 bg-brand-50/30">
                     <CardHeader className="pb-3">
-                      <CardTitle className="text-lg text-brand-800">
+                      <CardTitle className="text-brand-800 text-lg">
                         Score Breakdown
                       </CardTitle>
                       <CardDescription>
@@ -264,13 +264,13 @@ export function Dashboard() {
                       {Object.entries(postDetails.score_breakdown || {}).map(
                         ([category, value]) => (
                           <div key={category} className="flex flex-col gap-1.5">
-                            <div className="flex justify-between text-sm font-medium text-brand-700">
+                            <div className="text-brand-700 flex justify-between text-sm font-medium">
                               <span className="capitalize">
                                 {category} Score
                               </span>
                               <span>{value as number} pts</span>
                             </div>
-                            <div className="h-2 w-full bg-brand-100 rounded-full overflow-hidden">
+                            <div className="bg-brand-100 h-2 w-full overflow-hidden rounded-full">
                               <div
                                 className={cn(
                                   "h-full rounded-full transition-all",
@@ -294,7 +294,7 @@ export function Dashboard() {
                   {/* Context & Flags */}
                   <Card className="border-brand-100">
                     <CardHeader className="pb-3">
-                      <CardTitle className="text-lg text-brand-800">
+                      <CardTitle className="text-brand-800 text-lg">
                         Investigation Context
                       </CardTitle>
                       <CardDescription>
@@ -309,16 +309,16 @@ export function Dashboard() {
                             (exp: string, i: number) => (
                               <li
                                 key={i}
-                                className="flex gap-3 text-sm text-brand-700 bg-brand-50 p-3 rounded-lg border border-brand-100"
+                                className="text-brand-700 bg-brand-50 border-brand-100 flex gap-3 rounded-lg border p-3 text-sm"
                               >
-                                <AlertCircle className="h-4 w-4 shrink-0 text-brand-500 mt-0.5" />
+                                <AlertCircle className="text-brand-500 mt-0.5 h-4 w-4 shrink-0" />
                                 <span className="leading-snug">{exp}</span>
                               </li>
                             ),
                           )}
                         </ul>
                       ) : (
-                        <p className="text-sm text-brand-500 italic">
+                        <p className="text-brand-500 text-sm italic">
                           No specific flags raised. Routine interaction patterns
                           detected.
                         </p>
@@ -332,10 +332,10 @@ export function Dashboard() {
               {postDetails.recent_posts &&
                 postDetails.recent_posts.length > 0 && (
                   <div className="mt-8">
-                    <h3 className="text-xl font-bold text-brand-900 mb-4 px-1">
+                    <h3 className="text-brand-900 mb-4 px-1 text-xl font-bold">
                       Recent Posts by Author
                     </h3>
-                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                       {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                       {postDetails.recent_posts.map((rp: any) => (
                         <Card
@@ -343,7 +343,7 @@ export function Dashboard() {
                           className="border-brand-100 hover:border-brand-300 transition-colors"
                         >
                           <CardHeader className="p-4 pb-2">
-                            <CardTitle className="text-base line-clamp-2 text-brand-800">
+                            <CardTitle className="text-brand-800 line-clamp-2 text-base">
                               <a
                                 href={rp.url}
                                 target="_blank"
@@ -355,8 +355,8 @@ export function Dashboard() {
                             </CardTitle>
                           </CardHeader>
                           <CardContent className="p-4 pt-0">
-                            <div className="flex justify-between items-center mt-2">
-                              <span className="text-xs text-brand-500">
+                            <div className="mt-2 flex items-center justify-between">
+                              <span className="text-brand-500 text-xs">
                                 {new Date(rp.created_at).toLocaleDateString()}
                               </span>
                               <Badge
@@ -367,7 +367,7 @@ export function Dashboard() {
                                       ? "warning"
                                       : "outline"
                                 }
-                                className="text-[10px] px-2 py-0"
+                                className="px-2 py-0 text-[10px]"
                               >
                                 SCORE: {Math.round(rp.score)}
                               </Badge>
