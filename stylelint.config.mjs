@@ -12,6 +12,7 @@ const config = {
           "responsive",
           "screen",
           "layer",
+          "theme",
         ],
       },
     ],

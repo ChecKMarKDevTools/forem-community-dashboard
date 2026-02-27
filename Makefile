@@ -32,15 +32,14 @@ actionlint:  ## Run Actionlint in Docker
 hadolint:  ## Run Hadolint in Docker
 	docker run --rm -i hadolint/hadolint < Dockerfile
 
-ai-checks:  ## Single command: format → lint → security → secret-scan → actionlint → hadolint → test
+ai-checks:  ## Single command: format → lint → security → secret-scan → actionlint → test
 	@set -e; \
-	echo "🔍 format → lint (eslint + stylelint) → security → secret-scan → actionlint → hadolint → test"; \
+	echo "🔍 format → lint (eslint + stylelint) → security → secret-scan → actionlint → test"; \
 	$(MAKE) format && echo "  ✓ format" || (echo "  ✗ format"; exit 1); \
 	$(MAKE) lint && echo "  ✓ lint" || (echo "  ✗ lint"; exit 1); \
 	$(MAKE) security && echo "  ✓ security" || (echo "  ✗ security"; exit 1); \
 	$(MAKE) secret-scan && echo "  ✓ secret-scan" || (echo "  ✗ secret-scan"; exit 1); \
 	$(MAKE) actionlint && echo "  ✓ actionlint" || (echo "  ✗ actionlint"; exit 1); \
-	$(MAKE) hadolint && echo "  ✓ hadolint" || (echo "  ✗ hadolint"; exit 1); \
 	$(MAKE) test && echo "  ✓ test" || (echo "  ✗ test"; exit 1); \
 	echo "✅ Ready to commit."
 

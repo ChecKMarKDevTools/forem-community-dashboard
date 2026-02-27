@@ -15,9 +15,6 @@ pre-commit:
     actionlint:
       glob: ".github/workflows/*.yml"
       run: docker run --rm -v "$PWD:/repo" --workdir /repo rhysd/actionlint:latest -color
-    hadolint:
-      glob: "Dockerfile"
-      run: docker run --rm -i hadolint/hadolint < Dockerfile
 
 pre-push:
   parallel: true

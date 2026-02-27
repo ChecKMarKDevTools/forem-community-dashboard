@@ -12,15 +12,12 @@
   --color-brand-800: #364079;
   --color-brand-900: #2f3861;
   --color-brand-950: #1a1e38;
-
   --color-danger-50: #fef2f2;
   --color-danger-500: #ef4444;
   --color-danger-900: #7f1d1d;
-
   --color-warning-50: #fffbeb;
   --color-warning-500: #f59e0b;
   --color-warning-900: #78350f;
-
   --color-success-50: #f0fdf4;
   --color-success-500: #22c55e;
   --color-success-900: #14532d;
@@ -30,7 +27,7 @@
   :root {
     --background: #f8fafc;
     --foreground: #0f172a;
-    --card: #ffffff;
+    --card: #fff;
     --card-foreground: #0f172a;
     --border: #e2e8f0;
   }
