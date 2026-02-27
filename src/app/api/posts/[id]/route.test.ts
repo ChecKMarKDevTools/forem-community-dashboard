@@ -40,19 +40,19 @@ describe("GET /api/posts/[id]", () => {
     });
 
     const req = new NextRequest("http://localhost:3000/api/posts/1");
-    const res = await GET(req, { params: { id: "1" } });
+    const res = await GET(req, { params: Promise.resolve({ id: "1" }) });
     const json = await res.json();
 
     expect(res.status).toBe(200);
-    // Since our mock always returns mockPost from single() and mockRecent from limit(),
-    // we can trace the results. We expect the route logic to return an object with { article, recentPosts }
     expect(json.article.id).toBe(1);
     expect(json.recentPosts[0].id).toBe(2);
   });
 
   it("handles invalid ID", async () => {
     const req = new NextRequest("http://localhost:3000/api/posts/not-found");
-    const res = await GET(req, { params: { id: "not-found" } });
+    const res = await GET(req, {
+      params: Promise.resolve({ id: "not-found" }),
+    });
     const json = await res.json();
 
     expect(res.status).toBe(400);
@@ -68,7 +68,7 @@ describe("GET /api/posts/[id]", () => {
     (supabase.from as Mock).mockReturnValue(mockChain);
 
     const req = new NextRequest("http://localhost:3000/api/posts/999");
-    const res = await GET(req, { params: { id: "999" } });
+    const res = await GET(req, { params: Promise.resolve({ id: "999" }) });
     await res.json();
 
     expect(res.status).toBe(404);
@@ -90,7 +90,7 @@ describe("GET /api/posts/[id]", () => {
     (supabase.from as Mock).mockReturnValue(mockChain);
 
     const req = new NextRequest("http://localhost:3000/api/posts/999");
-    const res = await GET(req, { params: { id: "999" } });
+    const res = await GET(req, { params: Promise.resolve({ id: "999" }) });
     const json = await res.json();
 
     expect(res.status).toBe(500);
