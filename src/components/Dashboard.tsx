@@ -181,16 +181,16 @@ function DetailPanel({
                   <div key={category} className="flex flex-col gap-1.5">
                     <div className="text-brand-700 flex justify-between text-sm font-medium">
                       <span className="capitalize">{category} Score</span>
-                      <span>{value as number} pts</span>
+                      <span>{value} pts</span>
                     </div>
                     <div className="bg-brand-100 h-2 w-full overflow-hidden rounded-full">
                       <div
                         className={cn(
                           "h-full rounded-full transition-all",
-                          getScoreBarClass(value as number),
+                          getScoreBarClass(value),
                         )}
                         style={{
-                          width: `${Math.min(((value as number) / 50) * 100, 100)}%`,
+                          width: `${Math.min((value / 50) * 100, 100)}%`,
                         }}
                       />
                     </div>
