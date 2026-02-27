@@ -35,14 +35,20 @@ type Post = {
   page_views_count: number;
 };
 
+type PostDetails = Post & {
+  score_breakdown?: Record<string, number>;
+  recent_posts?: Post[];
+};
+
 export function Dashboard() {
   const [posts, setPosts] = React.useState<Post[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [selectedPostId, setSelectedPostId] = React.useState<string | null>(
     null,
   );
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [postDetails, setPostDetails] = React.useState<any>(null);
+  const [postDetails, setPostDetails] = React.useState<PostDetails | null>(
+    null,
+  );
   const [detailsLoading, setDetailsLoading] = React.useState(false);
 
   React.useEffect(() => {
@@ -336,8 +342,7 @@ export function Dashboard() {
                       Recent Posts by Author
                     </h3>
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                      {postDetails.recent_posts.map((rp: any) => (
+                      {postDetails.recent_posts.map((rp: Post) => (
                         <Card
                           key={rp.id}
                           className="border-brand-100 hover:border-brand-300 transition-colors"

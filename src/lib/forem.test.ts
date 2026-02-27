@@ -1,7 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { ForemClient } from "./forem";
-import { vi } from "vitest";
+import { vi, type Mock } from "vitest";
 
 describe("ForemClient", () => {
   beforeEach(() => {
@@ -14,7 +12,7 @@ describe("ForemClient", () => {
 
   it("fetches latest articles", async () => {
     const mockResponse = [{ id: 1, title: "Test" }];
-    (global.fetch as any).mockResolvedValueOnce({
+    (global.fetch as Mock).mockResolvedValueOnce({
       ok: true,
       json: async () => mockResponse,
     });
@@ -28,7 +26,7 @@ describe("ForemClient", () => {
   });
 
   it("handles API errors", async () => {
-    (global.fetch as any).mockResolvedValueOnce({
+    (global.fetch as Mock).mockResolvedValueOnce({
       ok: false,
       status: 404,
       statusText: "Not Found",
@@ -41,7 +39,7 @@ describe("ForemClient", () => {
 
   it("fetches user info by username", async () => {
     const mockResponse = { id: 1, username: "test" };
-    (global.fetch as any).mockResolvedValueOnce({
+    (global.fetch as Mock).mockResolvedValueOnce({
       ok: true,
       json: async () => mockResponse,
     });
@@ -51,7 +49,7 @@ describe("ForemClient", () => {
   });
 
   it("handles user not found (404)", async () => {
-    (global.fetch as any).mockResolvedValueOnce({
+    (global.fetch as Mock).mockResolvedValueOnce({
       ok: false,
       status: 404,
     });
@@ -62,7 +60,7 @@ describe("ForemClient", () => {
 
   it("fetches a single article", async () => {
     const mockResponse = { id: 1, title: "Single Test" };
-    (global.fetch as any).mockResolvedValueOnce({
+    (global.fetch as Mock).mockResolvedValueOnce({
       ok: true,
       json: async () => mockResponse,
     });
@@ -72,7 +70,7 @@ describe("ForemClient", () => {
   });
 
   it("handles article fetch errors", async () => {
-    (global.fetch as any).mockResolvedValueOnce({ ok: false });
+    (global.fetch as Mock).mockResolvedValueOnce({ ok: false });
     await expect(ForemClient.getArticle(1)).rejects.toThrow(
       "Failed to fetch article 1",
     );
@@ -80,7 +78,7 @@ describe("ForemClient", () => {
 
   it("fetches comments for an article", async () => {
     const mockResponse = [{ id_code: "abc" }];
-    (global.fetch as any).mockResolvedValueOnce({
+    (global.fetch as Mock).mockResolvedValueOnce({
       ok: true,
       json: async () => mockResponse,
     });
@@ -90,7 +88,7 @@ describe("ForemClient", () => {
   });
 
   it("handles comments fetch errors", async () => {
-    (global.fetch as any).mockResolvedValueOnce({ ok: false });
+    (global.fetch as Mock).mockResolvedValueOnce({ ok: false });
     await expect(ForemClient.getComments(1)).rejects.toThrow(
       "Failed to fetch comments for article 1",
     );

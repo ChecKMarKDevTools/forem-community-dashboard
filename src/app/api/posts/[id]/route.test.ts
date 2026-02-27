@@ -1,9 +1,7 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { NextRequest } from "next/server";
 import { GET } from "./route";
 import { supabase } from "@/lib/supabase";
-import { vi } from "vitest";
+import { vi, type Mock } from "vitest";
 
 vi.mock("@/lib/supabase", () => ({
   supabase: {
@@ -27,9 +25,9 @@ describe("GET /api/posts/[id]", () => {
       .fn()
       .mockResolvedValue({ data: mockRecent, error: null });
 
-    (supabase.from as any).mockImplementation((table: string) => {
+    (supabase.from as Mock).mockImplementation(() => {
       // Very loose mock to avoid deep chaining issues
-      const mockChain: any = {
+      const mockChain: Record<string, Mock> = {
         select: vi.fn(() => mockChain),
         eq: vi.fn(() => mockChain),
         neq: vi.fn(() => mockChain),
@@ -62,22 +60,22 @@ describe("GET /api/posts/[id]", () => {
   });
 
   it("handles post not found", async () => {
-    const mockChain: any = {
+    const mockChain: Record<string, Mock> = {
       select: vi.fn(() => mockChain),
       eq: vi.fn(() => mockChain),
       single: vi.fn().mockResolvedValue({ data: null, error: null }),
     };
-    (supabase.from as any).mockReturnValue(mockChain);
+    (supabase.from as Mock).mockReturnValue(mockChain);
 
     const req = new NextRequest("http://localhost:3000/api/posts/999");
     const res = await GET(req, { params: { id: "999" } });
-    const json = await res.json();
+    await res.json();
 
     expect(res.status).toBe(404);
   });
 
   it("handles server errors", async () => {
-    const mockChain: any = {
+    const mockChain: Record<string, Mock> = {
       select: vi.fn(() => mockChain),
       eq: vi.fn(() => mockChain),
       neq: vi.fn(() => mockChain),
@@ -89,7 +87,7 @@ describe("GET /api/posts/[id]", () => {
         .fn()
         .mockResolvedValue({ data: null, error: new Error("Internal Error") }),
     };
-    (supabase.from as any).mockReturnValue(mockChain);
+    (supabase.from as Mock).mockReturnValue(mockChain);
 
     const req = new NextRequest("http://localhost:3000/api/posts/999");
     const res = await GET(req, { params: { id: "999" } });
