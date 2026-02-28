@@ -2,303 +2,46 @@
 
 import * as React from "react";
 import {
-  Card,
-  CardContent,
   CardHeader,
   CardTitle,
   CardDescription,
+  CardContent,
 } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { Spinner } from "@/components/ui/Spinner";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { StatPill } from "@/components/ui/StatPill";
+import { SignalItem } from "@/components/ui/SignalItem";
+import { ScoreBar } from "@/components/ui/ScoreBar";
+import { PostMeta } from "@/components/ui/PostMeta";
+import { SectionCard } from "@/components/ui/SectionCard";
+import { QueueCard } from "@/components/ui/QueueCard";
 import {
   AlertCircle,
   ChevronRight,
-  Clock,
   ExternalLink,
-  HelpCircle,
-  User,
   MessageSquare,
   Heart,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-// Category strings stored in DB `articles.attention_level` by the scoring pipeline.
-type AttentionCategory =
-  | "NEEDS_RESPONSE"
-  | "POSSIBLY_LOW_QUALITY"
-  | "NEEDS_REVIEW"
-  | "BOOST_VISIBILITY"
-  | "NORMAL";
-
-// Matches the DB `articles` table schema returned by /api/posts and /api/posts/[id].
-type Post = {
-  id: number;
-  title: string;
-  canonical_url: string;
-  score: number;
-  attention_level: AttentionCategory;
-  explanations: string[];
-  published_at: string;
-  author: string;
-  reactions: number;
-  comments: number;
-};
-
-// Subset returned for recent posts by /api/posts/[id] (includes canonical_url for linking).
-type RecentPost = {
-  id: number;
-  title: string;
-  canonical_url: string;
-  dev_url: string;
-  published_at: string;
-  score: number;
-  attention_level: AttentionCategory;
-};
-type PostDetails = Post & {
-  dev_url: string;
-  recent_posts?: RecentPost[];
-};
-
-/** Attention-level metadata: badge variant and human-readable label.
- *  No traffic-light grading — each category has a distinct semantic color.
- *  neutral = gray (routine), info = soft blue (active), teal = interaction (waiting),
- *  attention = amber (escalating), critical = red (policy risk).
- */
-const ATTENTION_META: Record<
-  string,
-  {
-    variant: "neutral" | "info" | "teal" | "attention" | "critical" | "outline";
-    label: string;
-  }
-> = {
-  NORMAL: { variant: "neutral", label: "Routine Discussion" },
-  BOOST_VISIBILITY: { variant: "info", label: "Active Conversation" },
-  NEEDS_RESPONSE: { variant: "teal", label: "Community Waiting" },
-  NEEDS_REVIEW: { variant: "attention", label: "Escalating Discussion" },
-  POSSIBLY_LOW_QUALITY: { variant: "critical", label: "Potential Rule Issue" },
-};
-
-const DEFAULT_ATTENTION = {
-  variant: "neutral" as const,
-  label: "Routine Discussion",
-};
-
-function getAttentionVariant(
-  level: string,
-): "neutral" | "info" | "teal" | "attention" | "critical" {
-  const v = (ATTENTION_META[level] ?? DEFAULT_ATTENTION).variant;
-  // "outline" only applies in the recent-posts context; main badges fall back to neutral
-  return v === "outline" ? "neutral" : v;
-}
-
-function getCategoryLabel(level: string): string {
-  return (ATTENTION_META[level] ?? DEFAULT_ATTENTION).label;
-}
-
-function getRecentPostBadgeVariant(
-  level: string,
-): "neutral" | "info" | "teal" | "attention" | "critical" | "outline" {
-  const v = (ATTENTION_META[level] ?? DEFAULT_ATTENTION).variant;
-  // neutral (routine) maps to outline for recent-posts context
-  return v === "neutral" ? "outline" : v;
-}
-
-/** Overall qualitative level for the total score. */
-const QUALITATIVE_HIGH = 50;
-const QUALITATIVE_MODERATE = 20;
-
-function getQualitativeLevel(score: number): string {
-  if (score >= QUALITATIVE_HIGH) return "High";
-  if (score >= QUALITATIVE_MODERATE) return "Moderate";
-  return "Low";
-}
-
-/** Score-specific qualitative labels for breakdown bars. */
-function getScoreQualitativeLabel(category: string, value: number): string {
-  if (category === "heat") {
-    if (value >= 10) return "High";
-    if (value >= 5) return "Moderate";
-    return "Low";
-  }
-  if (category === "risk") {
-    if (value >= 4) return "High";
-    if (value >= 1) return "Moderate";
-    return "Low";
-  }
-  if (category === "support") {
-    if (value >= 4) return "High";
-    if (value >= 2) return "Moderate";
-    return "Low";
-  }
-  return getQualitativeLevel(value);
-}
-
-function getScoreBarClass(value: number): string {
-  if (value > 20) return "bg-danger-500";
-  if (value > 10) return "bg-warning-500";
-  return "bg-brand-500";
-}
-
-/** Extract word count from explanations array (e.g., "Word Count: 1000") */
-function extractWordCount(explanations?: string[]): number {
-  if (!explanations) return 0;
-  const match = explanations
-    .find((e) => e.startsWith("Word Count:"))
-    ?.match(/\d+/);
-  return match ? Number(match[0]) : 0;
-}
-
-/**
- * Parse the explanations array into a score_breakdown object.
- * The sync pipeline stores scores as strings like "Heat Score: 7.50",
- * "Risk Score: 2 (freq: 0, promo: 1, engage: -2)", "Support Score: 3".
- */
-function parseScoreBreakdown(explanations?: string[]): Record<string, number> {
-  if (!explanations) return {};
-  const breakdown: Record<string, number> = {};
-  for (const exp of explanations) {
-    if (exp.startsWith("Heat Score:")) {
-      breakdown.heat = Number.parseFloat(exp.split(":")[1]);
-    } else if (exp.startsWith("Risk Score:")) {
-      // "Risk Score: 2 (freq: ...)" — grab the leading number
-      const match = exp.match(/Risk Score:\s*([\d.]+)/);
-      if (match) breakdown.risk = Number.parseFloat(match[1]);
-    } else if (exp.startsWith("Support Score:")) {
-      breakdown.support = Number.parseFloat(exp.split(":")[1]);
-    }
-  }
-  return breakdown;
-}
-
-/** Plain-English explanation for each score type so moderators understand what they mean. */
-function getScoreNarrative(category: string, value: number): string {
-  if (category === "heat") {
-    if (value >= 10)
-      return "Very active discussion with rapid comments and mixed sentiment.";
-    if (value >= 5)
-      return "Elevated activity — comments are arriving faster than typical.";
-    return "Normal conversation pace with steady engagement.";
-  }
-  if (category === "risk") {
-    if (value >= 6)
-      return "Multiple risk signals detected: possible spam or self-promotion.";
-    if (value >= 4)
-      return "Some risk flags raised — short content or promotional language.";
-    if (value >= 1) return "Minor flags present but likely not concerning.";
-    return "No risk indicators found.";
-  }
-  if (category === "support") {
-    if (value >= 4)
-      return "Author appears to need community help — new user with little engagement.";
-    if (value >= 2)
-      return "Some signs the author could use encouragement or a response.";
-    return "Author seems established with normal engagement.";
-  }
-  return "";
-}
-
-/** Derive a contextual behavior description from explanation signals for list-view badges. */
-function getBehaviorDescription(post: Post): string {
-  const breakdown = parseScoreBreakdown(post.explanations);
-  const heat = breakdown.heat ?? 0;
-  const risk = breakdown.risk ?? 0;
-  const support = breakdown.support ?? 0;
-
-  if (heat >= 10) return "Rapidly Growing Discussion";
-  if (risk >= 4) return "Risk Signals Detected";
-  if (heat >= 5) return "Active Discussion";
-  if (support >= 3) return "New Author Awaiting Response";
-
-  // Check for attention delta spike
-  const deltaExp = post.explanations?.find((e) =>
-    e.startsWith("Attention Delta:"),
-  );
-  if (deltaExp) {
-    const deltaMatch = deltaExp.match(/Attention Delta:\s*([\d.]+)/);
-    if (deltaMatch && Number.parseFloat(deltaMatch[1]) >= 5) {
-      return "Sudden Attention Spike";
-    }
-  }
-
-  return getCategoryLabel(post.attention_level);
-}
-
-/** Derive a soft recommendation based on signals for the Suggested Action card. */
-function getSuggestedAction(explanations?: string[]): string {
-  const breakdown = parseScoreBreakdown(explanations);
-  const heat = breakdown.heat ?? 0;
-  const risk = breakdown.risk ?? 0;
-  const support = breakdown.support ?? 0;
-
-  if (risk >= 6)
-    return "Review for potential policy violations — multiple risk signals are present.";
-  if (risk >= 4)
-    return "Skim for promotional or low-quality content — some risk flags were raised.";
-  if (heat >= 10)
-    return "Monitor this conversation — it is growing rapidly and may need moderation soon.";
-  if (heat >= 5)
-    return "Conversation is active, check back later if it continues to escalate.";
-  if (support >= 3)
-    return "Author may benefit from a welcome message or community response.";
-  return "No action needed. Routine community activity.";
-}
-
-/** Hover-text descriptions for each signal in the Conversation Pattern Signals card. */
-const SIGNAL_TOOLTIPS: Record<string, string> = {
-  "Word Count":
-    "Total words across the conversation; long threads usually mean debate or explanation, not automatically a problem.",
-  "Unique Commenters":
-    "How many different people joined; higher numbers suggest community interest rather than one person arguing with themselves.",
-  Effort:
-    "Rough estimate of how much thinking and replying participants put in; long thoughtful replies raise it, short reactions barely move it.",
-  "Attention Delta":
-    "Measures how quickly people started paying attention compared to normal; spikes mean the topic suddenly caught eyes.",
-  "Heat Score":
-    "Emotional intensity of replies; disagreement and passion raise it, calm discussion lowers it.",
-  "Risk Score":
-    "Probability the thread breaks platform rules; zero means nothing looks unsafe, even if people disagree loudly.",
-  "Support Score":
-    "Signs of constructive interaction like helping, clarifying, or agreeing; higher means collaborative tone.",
-};
-
-/** Extract the signal name (text before the colon) from an explanation string. */
-function getSignalName(explanation: string): string {
-  const colonIndex = explanation.indexOf(":");
-  if (colonIndex === -1) return "";
-  return explanation.slice(0, colonIndex).trim();
-}
-
-/** Signals already shown in the Score Breakdown card — filter them from Activity Signals. */
-const SCORE_BREAKDOWN_SIGNALS = new Set([
-  "Heat Score",
-  "Risk Score",
-  "Support Score",
-]);
-
-/** Compute age in hours from published_at timestamp */
-function computeAgeHours(published_at: string): number {
-  const ageMs = Date.now() - new Date(published_at).getTime();
-  return Math.round(ageMs / (1000 * 60 * 60));
-}
-
-/** Priority order for attention levels in the queue list */
-const ATTENTION_PRIORITY: Record<string, number> = {
-  NEEDS_RESPONSE: 0,
-  BOOST_VISIBILITY: 1,
-  NEEDS_REVIEW: 2,
-  POSSIBLY_LOW_QUALITY: 3,
-  NORMAL: 4,
-};
-
-/** Sort posts by attention level priority, then by score descending within each group */
-function sortByAttentionPriority(posts: Post[]): Post[] {
-  return posts.toSorted((a, b) => {
-    const priorityDiff =
-      (ATTENTION_PRIORITY[a.attention_level] ?? 4) -
-      (ATTENTION_PRIORITY[b.attention_level] ?? 4);
-    if (priorityDiff !== 0) return priorityDiff;
-    return b.score - a.score;
-  });
-}
+import {
+  getAttentionVariant,
+  getCategoryLabel,
+  getRecentPostBadgeVariant,
+  getScoreQualitativeLabel,
+  getScoreBarClass,
+  extractWordCount,
+  parseScoreBreakdown,
+  getScoreNarrative,
+  getBehaviorDescription,
+  getSuggestedAction,
+  getSignalName,
+  computeAgeHours,
+  sortByAttentionPriority,
+  SIGNAL_TOOLTIPS,
+  SCORE_BREAKDOWN_SIGNALS,
+} from "@/lib/dashboard-helpers";
+import type { Post, PostDetails, RecentPost } from "@/types/dashboard";
 
 type DetailPanelProps = Readonly<{
   selectedPostId: number | null;
@@ -315,24 +58,19 @@ function DetailPanel({
 }: DetailPanelProps) {
   if (!selectedPostId) {
     return (
-      <div className="text-brand-400 max-w-sm text-center">
-        <div className="bg-brand-100 mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">
-          <MessageSquare className="text-brand-300 h-8 w-8" />
-        </div>
-        <p className="text-brand-700 text-lg font-medium">
-          Select a post to view details
-        </p>
-        <p className="mt-2 text-sm">
-          The conversation analysis will appear here.
-        </p>
-      </div>
+      <EmptyState
+        icon={MessageSquare}
+        title="Select a post to view details"
+        description="The conversation analysis will appear here."
+        variant="prominent"
+      />
     );
   }
 
   if (detailsLoading) {
     return (
       <div className="flex h-full items-center justify-center">
-        <div className="border-brand-600 h-8 w-8 animate-spin rounded-full border-b-2"></div>
+        <Spinner />
       </div>
     );
   }
@@ -365,15 +103,12 @@ function DetailPanel({
                 {postDetails.title}
               </a>
             </h2>
-            <div className="text-brand-600 mt-4 flex flex-wrap items-center gap-4 text-sm">
-              <span className="bg-brand-50 flex items-center gap-1.5 rounded-full px-3 py-1.5 font-medium">
-                <User className="h-4 w-4" /> @{postDetails.author}
-              </span>
-              <span className="flex items-center gap-1.5">
-                <Clock className="h-4 w-4" />{" "}
-                {new Date(postDetails.published_at).toLocaleString()}
-              </span>
-            </div>
+            <PostMeta
+              author={postDetails.author}
+              date={postDetails.published_at}
+              variant="full"
+              className="mt-4"
+            />
           </div>
           <Badge
             variant={getAttentionVariant(postDetails.attention_level)}
@@ -384,31 +119,23 @@ function DetailPanel({
         </div>
 
         <div className="border-brand-100 mb-8 flex items-center gap-6 border-y py-4">
-          <div className="text-brand-700 flex items-center gap-2">
-            <Heart className="text-danger-500 h-5 w-5" />{" "}
-            <span className="font-semibold">{postDetails.reactions}</span>
-          </div>
-          <div className="text-brand-700 flex items-center gap-2">
-            <MessageSquare className="text-brand-500 h-5 w-5" />{" "}
-            <span className="font-semibold">
-              {postDetails.comments} Comments
-            </span>
-          </div>
-          <div className="text-brand-700 flex items-center gap-2">
-            <span className="font-semibold">
-              ~{extractWordCount(postDetails.explanations)} Words
-            </span>
-          </div>
-          <div className="text-brand-700 flex items-center gap-2">
-            <span className="font-semibold">
-              {computeAgeHours(postDetails.published_at)} Hours Old
-            </span>
-          </div>
+          <StatPill icon={Heart} iconClassName="text-danger-500">
+            {postDetails.reactions}
+          </StatPill>
+          <StatPill icon={MessageSquare} iconClassName="text-brand-500">
+            {postDetails.comments} Comments
+          </StatPill>
+          <StatPill>
+            ~{extractWordCount(postDetails.explanations)} Words
+          </StatPill>
+          <StatPill>
+            {computeAgeHours(postDetails.published_at)} Hours Old
+          </StatPill>
         </div>
 
         <div className="grid gap-6 md:grid-cols-2">
           {/* Conversation Pattern Signals — LEFT/first */}
-          <Card className="border-brand-100">
+          <SectionCard>
             <CardHeader className="pb-3">
               <CardTitle className="text-brand-800 text-lg">
                 Conversation Pattern Signals
@@ -425,33 +152,14 @@ function DetailPanel({
                     .filter(
                       (exp) => !SCORE_BREAKDOWN_SIGNALS.has(getSignalName(exp)),
                     )
-                    .map((exp: string) => {
-                      const signalName = getSignalName(exp);
-                      const tooltip = SIGNAL_TOOLTIPS[signalName];
-                      return (
-                        <li
-                          key={exp}
-                          className="text-brand-700 bg-brand-50 border-brand-100 flex items-center gap-3 rounded-lg border p-3 text-sm"
-                        >
-                          {tooltip ? (
-                            <span className="group relative shrink-0 cursor-help">
-                              <HelpCircle className="text-brand-400 group-hover:text-brand-600 h-4 w-4" />
-                              <span
-                                role="tooltip"
-                                className="bg-brand-900 pointer-events-none absolute top-1/2 left-6 z-10 w-56 -translate-y-1/2 rounded-lg px-3 py-2 text-xs leading-relaxed text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100"
-                              >
-                                {tooltip}
-                              </span>
-                            </span>
-                          ) : (
-                            <span className="w-4 shrink-0" />
-                          )}
-                          <span className="min-w-0 flex-1 leading-snug">
-                            {exp}
-                          </span>
-                        </li>
-                      );
-                    })}
+                    .map((exp: string) => (
+                      <SignalItem
+                        key={exp}
+                        tooltip={SIGNAL_TOOLTIPS[getSignalName(exp)]}
+                      >
+                        {exp}
+                      </SignalItem>
+                    ))}
                 </ul>
               ) : (
                 <p className="text-brand-500 text-sm italic">
@@ -460,10 +168,10 @@ function DetailPanel({
                 </p>
               )}
             </CardContent>
-          </Card>
+          </SectionCard>
 
           {/* Why This Surfaced — RIGHT/second */}
-          <Card className="border-brand-100 bg-brand-50/30">
+          <SectionCard variant="muted">
             <CardHeader className="pb-3">
               <CardTitle className="text-brand-800 text-lg">
                 Why This Surfaced
@@ -476,33 +184,22 @@ function DetailPanel({
               {Object.entries(
                 parseScoreBreakdown(postDetails.explanations),
               ).map(([category, value]) => (
-                <div key={category} className="flex flex-col gap-1.5">
-                  <div className="text-brand-700 flex justify-between text-sm font-medium">
-                    <span className="capitalize">{category}</span>
-                    <span>{getScoreQualitativeLabel(category, value)}</span>
-                  </div>
-                  <div className="bg-brand-100 h-2 w-full overflow-hidden rounded-full">
-                    <div
-                      className={cn(
-                        "h-full rounded-full transition-all",
-                        getScoreBarClass(value),
-                      )}
-                      style={{
-                        width: `${Math.min((value / 50) * 100, 100)}%`,
-                      }}
-                    />
-                  </div>
-                  <p className="text-brand-500 text-xs leading-snug">
-                    {getScoreNarrative(category, value)}
-                  </p>
-                </div>
+                <ScoreBar
+                  key={category}
+                  label={category}
+                  sublabel={getScoreQualitativeLabel(category, value)}
+                  description={getScoreNarrative(category, value)}
+                  value={value}
+                  max={50}
+                  colorClass={getScoreBarClass(value)}
+                />
               ))}
             </CardContent>
-          </Card>
+          </SectionCard>
         </div>
 
         {/* Suggested Action — full-width card below the grid */}
-        <Card className="border-brand-100 bg-brand-50/30 mt-6">
+        <SectionCard variant="muted" className="mt-6">
           <CardHeader className="pb-3">
             <CardTitle className="text-brand-800 text-lg">
               Suggested Action
@@ -513,7 +210,7 @@ function DetailPanel({
               {getSuggestedAction(postDetails.explanations)}
             </p>
           </CardContent>
-        </Card>
+        </SectionCard>
       </div>
 
       {/* Author History */}
@@ -524,9 +221,9 @@ function DetailPanel({
           </h3>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {postDetails.recent_posts.map((rp: RecentPost) => (
-              <Card
+              <SectionCard
                 key={rp.id}
-                className="border-brand-100 hover:border-brand-300 transition-colors"
+                className="hover:border-brand-300 transition-colors"
               >
                 <CardHeader className="p-4 pb-2">
                   <CardTitle className="text-brand-800 line-clamp-2 text-base">
@@ -549,11 +246,11 @@ function DetailPanel({
                       variant={getRecentPostBadgeVariant(rp.attention_level)}
                       className="px-2 py-0 text-[10px]"
                     >
-                      {getQualitativeLevel(rp.score)}
+                      {getCategoryLabel(rp.attention_level)}
                     </Badge>
                   </div>
                 </CardContent>
-              </Card>
+              </SectionCard>
             ))}
           </div>
         </div>
@@ -607,7 +304,7 @@ export function Dashboard() {
   if (loading) {
     return (
       <div className="bg-brand-50 flex min-h-screen items-center justify-center">
-        <div className="border-brand-600 h-12 w-12 animate-spin rounded-full border-b-2"></div>
+        <Spinner size="lg" />
       </div>
     );
   }
@@ -645,47 +342,36 @@ export function Dashboard() {
         </div>
         <div className="flex-1 space-y-4 overflow-y-auto p-4">
           {posts.map((post) => (
-            <Card
+            <QueueCard
               key={post.id}
-              className={cn(
-                "border-brand-100 hover:border-brand-300 cursor-pointer transition-all duration-200 hover:shadow-md",
-                selectedPostId === post.id
-                  ? "ring-brand-500 bg-brand-50 ring-2"
-                  : "bg-white",
-              )}
+              selected={selectedPostId === post.id}
               onClick={() => setSelectedPostId(post.id)}
             >
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="min-w-0 flex-1">
-                    <h3 className="text-brand-900 truncate font-semibold">
-                      {post.title}
-                    </h3>
-                    <div className="text-brand-500 mt-2 flex items-center gap-2 text-xs">
-                      <span className="flex items-center gap-1">
-                        <User className="h-3 w-3" /> @{post.author}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Clock className="h-3 w-3" />{" "}
-                        {new Date(post.published_at).toLocaleDateString()}
-                      </span>
-                    </div>
-                  </div>
-                  <Badge
-                    variant={getAttentionVariant(post.attention_level)}
-                    className="shrink-0"
-                  >
-                    {getBehaviorDescription(post)}
-                  </Badge>
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-brand-900 truncate font-semibold">
+                    {post.title}
+                  </h3>
+                  <PostMeta
+                    author={post.author}
+                    date={post.published_at}
+                    className="mt-2"
+                  />
                 </div>
-              </CardContent>
-            </Card>
+                <Badge
+                  variant={getAttentionVariant(post.attention_level)}
+                  className="shrink-0"
+                >
+                  {getBehaviorDescription(post)}
+                </Badge>
+              </div>
+            </QueueCard>
           ))}
           {posts.length === 0 && (
-            <div className="text-brand-400 py-12 text-center">
-              <AlertCircle className="mx-auto mb-3 h-8 w-8 opacity-50" />
-              <p>No posts found. Waiting for data sync.</p>
-            </div>
+            <EmptyState
+              icon={AlertCircle}
+              title="No posts found. Waiting for data sync."
+            />
           )}
         </div>
       </div>

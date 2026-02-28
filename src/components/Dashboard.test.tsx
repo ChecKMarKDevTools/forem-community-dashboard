@@ -703,12 +703,14 @@ describe("Dashboard Component", () => {
       expect(screen.getByText("Previous post")).toBeInTheDocument();
     });
 
-    // Recent post with score 10 should show "Low" (< 20)
-    // Check the recent posts section specifically
+    // Recent post badge now shows attention category label instead of qualitative score
     const recentSection = screen.getByText("Recent Posts by Author");
     expect(recentSection).toBeInTheDocument();
 
-    // Should NOT show "SCORE: 10" — numeric scores are gone
-    expect(screen.queryByText("SCORE: 10")).not.toBeInTheDocument();
+    // NORMAL attention_level maps to "Routine Discussion" label
+    // The badge in the recent posts section uses getCategoryLabel(rp.attention_level)
+    const recentCard = screen.getByText("Previous post").closest(".border")!;
+    const badge = recentCard.querySelector(".text-\\[10px\\]");
+    expect(badge?.textContent).toBe("Routine Discussion");
   });
 });
