@@ -12,6 +12,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "lhci:desktop": "lhci autorun --collect.settings.preset=desktop",
+    "lhci:mobile": "lhci autorun",
     "format": "prettier --write .",
     "stylelint": "stylelint \"**/*.{css,scss}\"",
     "prepare": "lefthook install"
@@ -30,6 +32,7 @@
     "@checkmarkdevtools/commitlint-plugin-rai": "^0.1.6",
     "@commitlint/cli": "^20.4.2",
     "@commitlint/config-conventional": "^20.4.2",
+    "@lhci/cli": "^0.15.1",
     "@tailwindcss/postcss": "^4",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
@@ -54,5 +57,10 @@
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.0.18"
+  },
+  "pnpm": {
+    "overrides": {
+      "tmp": "^0.2.4"
+    }
   }
 }

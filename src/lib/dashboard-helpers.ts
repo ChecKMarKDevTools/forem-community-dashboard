@@ -12,16 +12,16 @@ export const ATTENTION_META: Record<
     label: string;
   }
 > = {
-  NORMAL: { variant: "neutral", label: "Routine Discussion" },
-  BOOST_VISIBILITY: { variant: "info", label: "Active Conversation" },
-  NEEDS_RESPONSE: { variant: "teal", label: "Community Waiting" },
-  NEEDS_REVIEW: { variant: "attention", label: "High Activity" },
-  POSSIBLY_LOW_QUALITY: { variant: "critical", label: "Potential Rule Issue" },
+  NORMAL: { variant: "neutral", label: "Steady Signal" },
+  BOOST_VISIBILITY: { variant: "info", label: "Trending Signal" },
+  NEEDS_RESPONSE: { variant: "teal", label: "Awaiting Collaboration" },
+  NEEDS_REVIEW: { variant: "attention", label: "Elevated Signal" },
+  POSSIBLY_LOW_QUALITY: { variant: "critical", label: "Anomalous Signal" },
 };
 
 const DEFAULT_ATTENTION = {
   variant: "neutral" as const,
-  label: "Routine Discussion",
+  label: "Steady Signal",
 };
 
 export function getAttentionVariant(
@@ -49,9 +49,9 @@ const QUALITATIVE_HIGH = 50;
 const QUALITATIVE_MODERATE = 20;
 
 export function getQualitativeLevel(score: number): string {
-  if (score >= QUALITATIVE_HIGH) return "High";
-  if (score >= QUALITATIVE_MODERATE) return "Moderate";
-  return "Low";
+  if (score >= QUALITATIVE_HIGH) return "Elevated";
+  if (score >= QUALITATIVE_MODERATE) return "Notable";
+  return "Nominal";
 }
 
 /** Score-specific qualitative labels for breakdown bars. */
@@ -60,19 +60,19 @@ export function getScoreQualitativeLabel(
   value: number,
 ): string {
   if (category === "heat") {
-    if (value >= 10) return "High";
-    if (value >= 5) return "Moderate";
-    return "Low";
+    if (value >= 10) return "Elevated";
+    if (value >= 5) return "Notable";
+    return "Nominal";
   }
   if (category === "risk") {
-    if (value >= 4) return "High";
-    if (value >= 1) return "Moderate";
-    return "Low";
+    if (value >= 4) return "Elevated";
+    if (value >= 1) return "Notable";
+    return "Nominal";
   }
   if (category === "support") {
-    if (value >= 4) return "High";
-    if (value >= 2) return "Moderate";
-    return "Low";
+    if (value >= 4) return "Elevated";
+    if (value >= 2) return "Notable";
+    return "Nominal";
   }
   return getQualitativeLevel(value);
 }
@@ -143,7 +143,7 @@ function getSupportNarrative(value: number): string {
 /** Human-readable display names for score categories. */
 const CATEGORY_DISPLAY_NAMES: Record<string, string> = {
   heat: "Activity Level",
-  risk: "Policy Risk",
+  risk: "Signal Divergence",
   support: "Constructiveness",
 };
 
@@ -162,27 +162,6 @@ export function getScoreNarrative(category: string, value: number): string {
 
 /** Derive a contextual behavior description from explanation signals for list-view badges. */
 export function getBehaviorDescription(post: Post): string {
-  const breakdown = parseScoreBreakdown(post.explanations);
-  const heat = breakdown.heat ?? 0;
-  const risk = breakdown.risk ?? 0;
-  const support = breakdown.support ?? 0;
-
-  if (heat >= 10) return "Rapidly Growing Discussion";
-  if (risk >= 4) return "Risk Signals Detected";
-  if (heat >= 5) return "Active Discussion";
-  if (support >= 3) return "New Author Awaiting Response";
-
-  // Check for attention delta spike
-  const deltaExp = post.explanations?.find((e) =>
-    e.startsWith("Attention Delta:"),
-  );
-  if (deltaExp) {
-    const deltaMatch = /Attention Delta:\s*([\d.]+)/.exec(deltaExp);
-    if (deltaMatch && Number.parseFloat(deltaMatch[1]) >= 5) {
-      return "Sudden Attention Spike";
-    }
-  }
-
   return getCategoryLabel(post.attention_level);
 }
 

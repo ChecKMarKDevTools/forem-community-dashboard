@@ -35,7 +35,6 @@ import {
   extractWordCount,
   parseScoreBreakdown,
   getScoreNarrative,
-  getBehaviorDescription,
   getWhatsHappening,
   getSignalName,
   formatSignalDisplay,
@@ -381,7 +380,7 @@ export function Dashboard() {
                   variant={getAttentionVariant(post.attention_level)}
                   className="shrink-0"
                 >
-                  {getBehaviorDescription(post)}
+                  {getCategoryLabel(post.attention_level)}
                 </Badge>
               </div>
             </QueueCard>

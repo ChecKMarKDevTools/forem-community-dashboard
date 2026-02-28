@@ -12,7 +12,6 @@ import {
   getScoreNarrative,
   getCategoryDisplayName,
   formatSignalDisplay,
-  getBehaviorDescription,
   getWhatsHappening,
   getSignalName,
   computeAgeHours,
@@ -40,18 +39,16 @@ describe("getAttentionVariant", () => {
 
 describe("getCategoryLabel", () => {
   it("returns correct label for each known attention level", () => {
-    expect(getCategoryLabel("NORMAL")).toBe("Routine Discussion");
-    expect(getCategoryLabel("BOOST_VISIBILITY")).toBe("Active Conversation");
-    expect(getCategoryLabel("NEEDS_RESPONSE")).toBe("Community Waiting");
-    expect(getCategoryLabel("NEEDS_REVIEW")).toBe("High Activity");
-    expect(getCategoryLabel("POSSIBLY_LOW_QUALITY")).toBe(
-      "Potential Rule Issue",
-    );
+    expect(getCategoryLabel("NORMAL")).toBe("Steady Signal");
+    expect(getCategoryLabel("BOOST_VISIBILITY")).toBe("Trending Signal");
+    expect(getCategoryLabel("NEEDS_RESPONSE")).toBe("Awaiting Collaboration");
+    expect(getCategoryLabel("NEEDS_REVIEW")).toBe("Elevated Signal");
+    expect(getCategoryLabel("POSSIBLY_LOW_QUALITY")).toBe("Anomalous Signal");
   });
 
   it("returns default label for unknown levels", () => {
-    expect(getCategoryLabel("UNKNOWN")).toBe("Routine Discussion");
-    expect(getCategoryLabel("")).toBe("Routine Discussion");
+    expect(getCategoryLabel("UNKNOWN")).toBe("Steady Signal");
+    expect(getCategoryLabel("")).toBe("Steady Signal");
   });
 });
 
@@ -73,76 +70,76 @@ describe("getRecentPostBadgeVariant", () => {
 });
 
 describe("getQualitativeLevel", () => {
-  it("returns High for scores >= 50", () => {
-    expect(getQualitativeLevel(50)).toBe("High");
-    expect(getQualitativeLevel(100)).toBe("High");
+  it("returns Elevated for scores >= 50", () => {
+    expect(getQualitativeLevel(50)).toBe("Elevated");
+    expect(getQualitativeLevel(100)).toBe("Elevated");
   });
 
-  it("returns Moderate for scores >= 20 and < 50", () => {
-    expect(getQualitativeLevel(20)).toBe("Moderate");
-    expect(getQualitativeLevel(49)).toBe("Moderate");
+  it("returns Notable for scores >= 20 and < 50", () => {
+    expect(getQualitativeLevel(20)).toBe("Notable");
+    expect(getQualitativeLevel(49)).toBe("Notable");
   });
 
-  it("returns Low for scores < 20", () => {
-    expect(getQualitativeLevel(0)).toBe("Low");
-    expect(getQualitativeLevel(19)).toBe("Low");
+  it("returns Nominal for scores < 20", () => {
+    expect(getQualitativeLevel(0)).toBe("Nominal");
+    expect(getQualitativeLevel(19)).toBe("Nominal");
   });
 });
 
 describe("getScoreQualitativeLabel", () => {
   describe("heat category", () => {
-    it("returns High for heat >= 10", () => {
-      expect(getScoreQualitativeLabel("heat", 10)).toBe("High");
-      expect(getScoreQualitativeLabel("heat", 15)).toBe("High");
+    it("returns Elevated for heat >= 10", () => {
+      expect(getScoreQualitativeLabel("heat", 10)).toBe("Elevated");
+      expect(getScoreQualitativeLabel("heat", 15)).toBe("Elevated");
     });
 
-    it("returns Moderate for heat >= 5 and < 10", () => {
-      expect(getScoreQualitativeLabel("heat", 5)).toBe("Moderate");
-      expect(getScoreQualitativeLabel("heat", 9)).toBe("Moderate");
+    it("returns Notable for heat >= 5 and < 10", () => {
+      expect(getScoreQualitativeLabel("heat", 5)).toBe("Notable");
+      expect(getScoreQualitativeLabel("heat", 9)).toBe("Notable");
     });
 
-    it("returns Low for heat < 5", () => {
-      expect(getScoreQualitativeLabel("heat", 0)).toBe("Low");
-      expect(getScoreQualitativeLabel("heat", 4)).toBe("Low");
+    it("returns Nominal for heat < 5", () => {
+      expect(getScoreQualitativeLabel("heat", 0)).toBe("Nominal");
+      expect(getScoreQualitativeLabel("heat", 4)).toBe("Nominal");
     });
   });
 
   describe("risk category", () => {
-    it("returns High for risk >= 4", () => {
-      expect(getScoreQualitativeLabel("risk", 4)).toBe("High");
-      expect(getScoreQualitativeLabel("risk", 8)).toBe("High");
+    it("returns Elevated for risk >= 4", () => {
+      expect(getScoreQualitativeLabel("risk", 4)).toBe("Elevated");
+      expect(getScoreQualitativeLabel("risk", 8)).toBe("Elevated");
     });
 
-    it("returns Moderate for risk >= 1 and < 4", () => {
-      expect(getScoreQualitativeLabel("risk", 1)).toBe("Moderate");
-      expect(getScoreQualitativeLabel("risk", 3)).toBe("Moderate");
+    it("returns Notable for risk >= 1 and < 4", () => {
+      expect(getScoreQualitativeLabel("risk", 1)).toBe("Notable");
+      expect(getScoreQualitativeLabel("risk", 3)).toBe("Notable");
     });
 
-    it("returns Low for risk < 1", () => {
-      expect(getScoreQualitativeLabel("risk", 0)).toBe("Low");
+    it("returns Nominal for risk < 1", () => {
+      expect(getScoreQualitativeLabel("risk", 0)).toBe("Nominal");
     });
   });
 
   describe("support category", () => {
-    it("returns High for support >= 4", () => {
-      expect(getScoreQualitativeLabel("support", 4)).toBe("High");
+    it("returns Elevated for support >= 4", () => {
+      expect(getScoreQualitativeLabel("support", 4)).toBe("Elevated");
     });
 
-    it("returns Moderate for support >= 2 and < 4", () => {
-      expect(getScoreQualitativeLabel("support", 2)).toBe("Moderate");
-      expect(getScoreQualitativeLabel("support", 3)).toBe("Moderate");
+    it("returns Notable for support >= 2 and < 4", () => {
+      expect(getScoreQualitativeLabel("support", 2)).toBe("Notable");
+      expect(getScoreQualitativeLabel("support", 3)).toBe("Notable");
     });
 
-    it("returns Low for support < 2", () => {
-      expect(getScoreQualitativeLabel("support", 0)).toBe("Low");
-      expect(getScoreQualitativeLabel("support", 1)).toBe("Low");
+    it("returns Nominal for support < 2", () => {
+      expect(getScoreQualitativeLabel("support", 0)).toBe("Nominal");
+      expect(getScoreQualitativeLabel("support", 1)).toBe("Nominal");
     });
   });
 
   it("falls back to getQualitativeLevel for unknown categories", () => {
-    expect(getScoreQualitativeLabel("unknown", 50)).toBe("High");
-    expect(getScoreQualitativeLabel("unknown", 20)).toBe("Moderate");
-    expect(getScoreQualitativeLabel("unknown", 5)).toBe("Low");
+    expect(getScoreQualitativeLabel("unknown", 50)).toBe("Elevated");
+    expect(getScoreQualitativeLabel("unknown", 20)).toBe("Notable");
+    expect(getScoreQualitativeLabel("unknown", 5)).toBe("Nominal");
   });
 });
 
@@ -295,91 +292,12 @@ describe("getScoreNarrative", () => {
 describe("getCategoryDisplayName", () => {
   it("returns display names for known categories", () => {
     expect(getCategoryDisplayName("heat")).toBe("Activity Level");
-    expect(getCategoryDisplayName("risk")).toBe("Policy Risk");
+    expect(getCategoryDisplayName("risk")).toBe("Signal Divergence");
     expect(getCategoryDisplayName("support")).toBe("Constructiveness");
   });
 
   it("returns the raw key for unknown categories", () => {
     expect(getCategoryDisplayName("other")).toBe("other");
-  });
-});
-
-describe("getBehaviorDescription", () => {
-  const basePost: Post = {
-    id: 1,
-    title: "Test",
-    canonical_url: "https://dev.to/test",
-    score: 0,
-    attention_level: "NORMAL",
-    explanations: [],
-    published_at: "2023-10-27T10:00:00Z",
-    author: "user",
-    reactions: 0,
-    comments: 0,
-  };
-
-  it("returns Rapidly Growing Discussion for heat >= 10", () => {
-    expect(
-      getBehaviorDescription({
-        ...basePost,
-        explanations: ["Heat Score: 12.00"],
-      }),
-    ).toBe("Rapidly Growing Discussion");
-  });
-
-  it("returns Risk Signals Detected for risk >= 4", () => {
-    expect(
-      getBehaviorDescription({
-        ...basePost,
-        explanations: ["Risk Score: 5 (freq: 2, promo: 1, engage: 0)"],
-      }),
-    ).toBe("Risk Signals Detected");
-  });
-
-  it("returns Active Discussion for heat >= 5 (but < 10)", () => {
-    expect(
-      getBehaviorDescription({
-        ...basePost,
-        explanations: ["Heat Score: 7.00"],
-      }),
-    ).toBe("Active Discussion");
-  });
-
-  it("returns New Author Awaiting Response for support >= 3", () => {
-    expect(
-      getBehaviorDescription({
-        ...basePost,
-        explanations: ["Support Score: 3"],
-      }),
-    ).toBe("New Author Awaiting Response");
-  });
-
-  it("returns Sudden Attention Spike for attention delta >= 5", () => {
-    expect(
-      getBehaviorDescription({
-        ...basePost,
-        explanations: ["Attention Delta: 5.20"],
-      }),
-    ).toBe("Sudden Attention Spike");
-  });
-
-  it("falls back to category label when no signals match", () => {
-    expect(getBehaviorDescription(basePost)).toBe("Routine Discussion");
-    expect(
-      getBehaviorDescription({
-        ...basePost,
-        attention_level: "NEEDS_REVIEW",
-      }),
-    ).toBe("High Activity");
-  });
-
-  it("does not trigger spike for attention delta < 5", () => {
-    expect(
-      getBehaviorDescription({
-        ...basePost,
-        explanations: ["Attention Delta: 4.99"],
-      }),
-    ).toBe("Routine Discussion");
   });
 });
 

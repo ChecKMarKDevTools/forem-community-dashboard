@@ -41,6 +41,8 @@ ai-checks:  ## Single command: format → lint → security → secret-scan → 
 	$(MAKE) secret-scan && echo "  ✓ secret-scan" || (echo "  ✗ secret-scan"; exit 1); \
 	$(MAKE) actionlint && echo "  ✓ actionlint" || (echo "  ✗ actionlint"; exit 1); \
 	$(MAKE) test && echo "  ✓ test" || (echo "  ✗ test"; exit 1); \
+	pnpm run lhci:desktop && echo "  ✓ lhci desktop" || (echo "  ✗ lhci desktop"; exit 1); \
+	pnpm run lhci:mobile && echo "  ✓ lhci mobile" || (echo "  ✗ lhci mobile"; exit 1); \
 	echo "✅ Ready to commit."
 
 clean:  ## Clean up generated files

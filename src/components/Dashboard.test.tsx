@@ -94,8 +94,8 @@ describe("Dashboard Component", () => {
     expect(screen.getByText("Needs review post")).toBeInTheDocument();
     expect(screen.getByText("Normal post")).toBeInTheDocument();
     // New analyst-briefing labels
-    expect(screen.getByText("Active Discussion")).toBeInTheDocument();
-    expect(screen.getByText("Routine Discussion")).toBeInTheDocument();
+    expect(screen.getByText("Elevated Signal")).toBeInTheDocument();
+    expect(screen.getByText("Steady Signal")).toBeInTheDocument();
   });
 
   it("handles post selection and fetching details", async () => {
@@ -124,8 +124,8 @@ describe("Dashboard Component", () => {
 
     // @testauthor now appears in both the list card and the detail panel
     expect(screen.getAllByText("@testauthor").length).toBeGreaterThanOrEqual(2);
-    // Heat 7.5 (Moderate) and Risk 2 (Moderate) both show qualitative labels
-    const moderateLabels = screen.getAllByText("Moderate");
+    // Heat 7.5 (Notable) and Risk 2 (Notable) both show qualitative labels
+    const moderateLabels = screen.getAllByText("Notable");
     expect(moderateLabels.length).toBeGreaterThanOrEqual(2);
   });
 
@@ -150,8 +150,8 @@ describe("Dashboard Component", () => {
     render(<Dashboard />);
 
     await waitFor(() => {
-      // Attention delta >= 5 triggers "Sudden Attention Spike" behavior description
-      expect(screen.getByText("Sudden Attention Spike")).toBeInTheDocument();
+      // BOOST_VISIBILITY triggers "Trending Signal" badge
+      expect(screen.getByText("Trending Signal")).toBeInTheDocument();
     });
   });
 
@@ -176,10 +176,8 @@ describe("Dashboard Component", () => {
     render(<Dashboard />);
 
     await waitFor(() => {
-      // support >= 3 triggers "New Author Awaiting Response"
-      expect(
-        screen.getByText("New Author Awaiting Response"),
-      ).toBeInTheDocument();
+      // NEEDS_RESPONSE triggers "Awaiting Collaboration"
+      expect(screen.getByText("Awaiting Collaboration")).toBeInTheDocument();
     });
   });
 
@@ -204,8 +202,8 @@ describe("Dashboard Component", () => {
     render(<Dashboard />);
 
     await waitFor(() => {
-      // risk >= 4 triggers "Risk Signals Detected"
-      expect(screen.getByText("Risk Signals Detected")).toBeInTheDocument();
+      // POSSIBLY_LOW_QUALITY triggers "Anomalous Signal"
+      expect(screen.getByText("Anomalous Signal")).toBeInTheDocument();
     });
   });
 
@@ -423,8 +421,8 @@ describe("Dashboard Component", () => {
 
     await waitFor(() => {
       // Qualitative labels instead of "X pts"
-      // Heat 12 >= 10 = High, Risk 5 >= 4 = High, Support 4 >= 4 = High
-      const highLabels = screen.getAllByText("High");
+      // Heat 12 >= 10 = Elevated, Risk 5 >= 4 = Elevated, Support 4 >= 4 = Elevated
+      const highLabels = screen.getAllByText("Elevated");
       expect(highLabels.length).toBe(3);
     });
 
@@ -510,7 +508,7 @@ describe("Dashboard Component", () => {
     );
 
     // Qualitative labels should appear in Discussion State
-    const lowLabels = screen.getAllByText("Low");
+    const lowLabels = screen.getAllByText("Nominal");
     expect(lowLabels.length).toBeGreaterThanOrEqual(2);
   });
 
@@ -705,7 +703,7 @@ describe("Dashboard Component", () => {
 
     // The title should come before the badge in DOM order (badge on right)
     const title = screen.getByText("Needs review post");
-    const badge = screen.getByText("Active Discussion");
+    const badge = screen.getByText("Elevated Signal");
 
     expect(
       title.compareDocumentPosition(badge) & Node.DOCUMENT_POSITION_FOLLOWING,
@@ -737,10 +735,8 @@ describe("Dashboard Component", () => {
     render(<Dashboard />);
 
     await waitFor(() => {
-      // heat >= 10 triggers "Rapidly Growing Discussion"
-      expect(
-        screen.getByText("Rapidly Growing Discussion"),
-      ).toBeInTheDocument();
+      // NEEDS_REVIEW triggers "Elevated Signal"
+      expect(screen.getAllByText("Elevated Signal").length).toBeGreaterThan(0);
     });
   });
 
@@ -774,7 +770,7 @@ describe("Dashboard Component", () => {
     // The badge in the recent posts section uses getCategoryLabel(rp.attention_level)
     const recentCard = screen.getByText("Previous post").closest(".border")!;
     const badge = recentCard.querySelector(String.raw`.text-\[10px\]`);
-    expect(badge?.textContent).toBe("Routine Discussion");
+    expect(badge?.textContent).toBe("Steady Signal");
   });
 
   // ── Close button & Escape key ───────────────────────────────────────────
