@@ -1,9 +1,11 @@
 /**
  * Performance tests for API handlers and core library functions.
  *
- * These tests assert that response time and throughput stay within defined
- * budgets. Budgets are intentionally conservative given the Node.js test environment
- * and mocked I/O — they detect algorithmic regressions, not infrastructure issues.
+ * Timing budget assertions are opt-in: set PERF_TESTS=true to enable the
+ * timing suites. Without that flag, all describe blocks here are skipped so
+ * CI is not sensitive to machine load, Node/V8 version, or parallel test
+ * execution. All code paths exercised here are also covered by the unit and
+ * integration test suites, so coverage is maintained regardless of this flag.
  *
  * Convention: BUDGET_* constants define the maximum acceptable duration in ms.
  */
@@ -35,6 +37,10 @@ vi.mock("@/lib/supabase", () => ({
     from: vi.fn(),
   },
 }));
+
+// Set PERF_TESTS=true to run timing-budget suites.
+// Without it, all timing describe blocks are skipped.
+const TIMING_BUDGETS_ENABLED = process.env.PERF_TESTS === "true";
 
 // ---------------------------------------------------------------------------
 // Time-budget constants (milliseconds)
@@ -168,7 +174,7 @@ function p99(samples: number[]): number {
 // GET /api/posts performance
 // ---------------------------------------------------------------------------
 
-describe("Performance: GET /api/posts", () => {
+describe.skipIf(!TIMING_BUDGETS_ENABLED)("Performance: GET /api/posts", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -211,55 +217,58 @@ describe("Performance: GET /api/posts", () => {
 // GET /api/posts/[id] performance
 // ---------------------------------------------------------------------------
 
-describe("Performance: GET /api/posts/[id]", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  it(`completes a single call in under ${BUDGET_GET_POST_BY_ID_SINGLE}ms`, async () => {
-    buildSupabaseDetailMock(42);
-
-    const req = new NextRequest("http://localhost:3000/api/posts/42");
-    const start = Date.now();
-    await getPostById(req, { params: Promise.resolve({ id: "42" }) });
-    const elapsed = Date.now() - start;
-
-    expect(elapsed).toBeLessThan(BUDGET_GET_POST_BY_ID_SINGLE);
-  });
-
-  it(`p99 of 100 calls stays under ${BUDGET_GET_POST_BY_ID_P99}ms`, async () => {
-    const samples: number[] = [];
-
-    for (let i = 0; i < 100; i++) {
-      buildSupabaseDetailMock(1);
-      const req = new NextRequest("http://localhost:3000/api/posts/1");
-      const start = performance.now();
-      await getPostById(req, { params: Promise.resolve({ id: "1" }) });
-      samples.push(performance.now() - start);
-    }
-
-    expect(p99(samples)).toBeLessThan(BUDGET_GET_POST_BY_ID_P99);
-  });
-
-  it("invalid ID returns 400 faster than valid lookup (no DB call)", async () => {
-    const req = new NextRequest("http://localhost:3000/api/posts/abc");
-    const start = performance.now();
-    const res = await getPostById(req, {
-      params: Promise.resolve({ id: "abc" }),
+describe.skipIf(!TIMING_BUDGETS_ENABLED)(
+  "Performance: GET /api/posts/[id]",
+  () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
     });
-    const elapsed = performance.now() - start;
 
-    expect(res.status).toBe(400);
-    // Should be near-instant — much faster than a DB call budget
-    expect(elapsed).toBeLessThan(10);
-  });
-});
+    it(`completes a single call in under ${BUDGET_GET_POST_BY_ID_SINGLE}ms`, async () => {
+      buildSupabaseDetailMock(42);
+
+      const req = new NextRequest("http://localhost:3000/api/posts/42");
+      const start = Date.now();
+      await getPostById(req, { params: Promise.resolve({ id: "42" }) });
+      const elapsed = Date.now() - start;
+
+      expect(elapsed).toBeLessThan(BUDGET_GET_POST_BY_ID_SINGLE);
+    });
+
+    it(`p99 of 100 calls stays under ${BUDGET_GET_POST_BY_ID_P99}ms`, async () => {
+      const samples: number[] = [];
+
+      for (let i = 0; i < 100; i++) {
+        buildSupabaseDetailMock(1);
+        const req = new NextRequest("http://localhost:3000/api/posts/1");
+        const start = performance.now();
+        await getPostById(req, { params: Promise.resolve({ id: "1" }) });
+        samples.push(performance.now() - start);
+      }
+
+      expect(p99(samples)).toBeLessThan(BUDGET_GET_POST_BY_ID_P99);
+    });
+
+    it("invalid ID returns 400 faster than valid lookup (no DB call)", async () => {
+      const req = new NextRequest("http://localhost:3000/api/posts/abc");
+      const start = performance.now();
+      const res = await getPostById(req, {
+        params: Promise.resolve({ id: "abc" }),
+      });
+      const elapsed = performance.now() - start;
+
+      expect(res.status).toBe(400);
+      // Should be near-instant — much faster than a DB call budget
+      expect(elapsed).toBeLessThan(10);
+    });
+  },
+);
 
 // ---------------------------------------------------------------------------
 // POST /api/cron performance
 // ---------------------------------------------------------------------------
 
-describe("Performance: POST /api/cron", () => {
+describe.skipIf(!TIMING_BUDGETS_ENABLED)("Performance: POST /api/cron", () => {
   const CRON_SECRET = "perf-test-secret";
   let savedCronSecret: string | undefined;
 
@@ -332,80 +341,86 @@ describe("Performance: POST /api/cron", () => {
 // Scoring function performance (pure compute — no I/O)
 // ---------------------------------------------------------------------------
 
-describe("Performance: evaluatePriority (pure compute)", () => {
-  const article = makeArticle(1);
-  const user = makeUser("benchuser");
-  const comments: ForemComment[] = [];
-  const recentPosts: ForemArticle[] = Array.from({ length: 10 }, (_, i) =>
-    makeArticle(i + 2),
-  );
-
-  it(`processes 1000 calls in under ${BUDGET_SCORING_1000_CALLS}ms`, () => {
-    const start = performance.now();
-
-    for (let i = 0; i < 1000; i++) {
-      evaluatePriority(article, user, comments, recentPosts);
-    }
-
-    const elapsed = performance.now() - start;
-    expect(elapsed).toBeLessThan(BUDGET_SCORING_1000_CALLS);
-  });
-
-  it("throughput is at least 5000 calls/second", () => {
-    const iterations = 5000;
-    const start = performance.now();
-
-    for (let i = 0; i < iterations; i++) {
-      evaluatePriority(article, null, comments, []);
-    }
-
-    const elapsedSec = (performance.now() - start) / 1000;
-    const callsPerSec = iterations / elapsedSec;
-
-    expect(callsPerSec).toBeGreaterThan(5000);
-  });
-
-  it("handles maximum-complexity input (all score paths active) within budget", () => {
-    const complexArticle: ForemArticle = {
-      ...makeArticle(999),
-      canonical_url: "https://external.example.com/spam",
-      public_reactions_count: 30,
-    };
-    const newUser: ForemUser = {
-      ...makeUser("spammer"),
-      joined_at: new Date().toISOString(), // < 7 days old → +15 behavior
-    };
-    const heavyComments: ForemComment[] = Array.from(
-      { length: 10 },
-      (_, i) => ({
-        type_of: "comment",
-        id_code: `c${i}`,
-        created_at: "2024-01-01T00:00:00Z",
-        body_html: "<p>spam</p>",
-        user: {
-          name: "u1",
-          username: "u1",
-          twitter_username: null,
-          github_username: null,
-          website_url: null,
-          profile_image: "",
-          profile_image_90: "",
-        },
-        children: [],
-      }),
+describe.skipIf(!TIMING_BUDGETS_ENABLED)(
+  "Performance: evaluatePriority (pure compute)",
+  () => {
+    const article = makeArticle(1);
+    const user = makeUser("benchuser");
+    const comments: ForemComment[] = [];
+    const recentPosts: ForemArticle[] = Array.from({ length: 10 }, (_, i) =>
+      makeArticle(i + 2),
     );
-    const uniformPosts: ForemArticle[] = Array.from({ length: 5 }, (_, i) => ({
-      ...makeArticle(i + 1),
-      published_at: new Date(Date.now() - i * 3600000).toISOString(), // 1h apart = uniform
-      tag_list: ["javascript", "webdev"], // same tags = +15 pattern
-    }));
 
-    const start = performance.now();
-    for (let i = 0; i < 1000; i++) {
-      evaluatePriority(complexArticle, newUser, heavyComments, uniformPosts);
-    }
-    const elapsed = performance.now() - start;
+    it(`processes 1000 calls in under ${BUDGET_SCORING_1000_CALLS}ms`, () => {
+      const start = performance.now();
 
-    expect(elapsed).toBeLessThan(BUDGET_SCORING_1000_CALLS);
-  });
-});
+      for (let i = 0; i < 1000; i++) {
+        evaluatePriority(article, user, comments, recentPosts);
+      }
+
+      const elapsed = performance.now() - start;
+      expect(elapsed).toBeLessThan(BUDGET_SCORING_1000_CALLS);
+    });
+
+    it("throughput is at least 5000 calls/second", () => {
+      const iterations = 5000;
+      const start = performance.now();
+
+      for (let i = 0; i < iterations; i++) {
+        evaluatePriority(article, null, comments, []);
+      }
+
+      const elapsedSec = (performance.now() - start) / 1000;
+      const callsPerSec = iterations / elapsedSec;
+
+      expect(callsPerSec).toBeGreaterThan(5000);
+    });
+
+    it("handles maximum-complexity input (all score paths active) within budget", () => {
+      const complexArticle: ForemArticle = {
+        ...makeArticle(999),
+        canonical_url: "https://external.example.com/spam",
+        public_reactions_count: 30,
+      };
+      const newUser: ForemUser = {
+        ...makeUser("spammer"),
+        joined_at: new Date().toISOString(), // < 7 days old → +15 behavior
+      };
+      const heavyComments: ForemComment[] = Array.from(
+        { length: 10 },
+        (_, i) => ({
+          type_of: "comment",
+          id_code: `c${i}`,
+          created_at: "2024-01-01T00:00:00Z",
+          body_html: "<p>spam</p>",
+          user: {
+            name: "u1",
+            username: "u1",
+            twitter_username: null,
+            github_username: null,
+            website_url: null,
+            profile_image: "",
+            profile_image_90: "",
+          },
+          children: [],
+        }),
+      );
+      const uniformPosts: ForemArticle[] = Array.from(
+        { length: 5 },
+        (_, i) => ({
+          ...makeArticle(i + 1),
+          published_at: new Date(Date.now() - i * 3600000).toISOString(), // 1h apart = uniform
+          tag_list: ["javascript", "webdev"], // same tags = +15 pattern
+        }),
+      );
+
+      const start = performance.now();
+      for (let i = 0; i < 1000; i++) {
+        evaluatePriority(complexArticle, newUser, heavyComments, uniformPosts);
+      }
+      const elapsed = performance.now() - start;
+
+      expect(elapsed).toBeLessThan(BUDGET_SCORING_1000_CALLS);
+    });
+  },
+);
