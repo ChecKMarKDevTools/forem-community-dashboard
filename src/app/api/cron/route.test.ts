@@ -69,12 +69,22 @@ describe("POST /api/cron", () => {
 
     it("returns 401 when CRON_SECRET env var is undefined", async () => {
       delete process.env.CRON_SECRET;
-      const res = await POST(makeRequest(`Bearer ${VALID_SECRET} `));
+      const res = await POST(makeRequest(`Bearer ${VALID_SECRET}`));
       expect(res.status).toBe(401);
     });
 
     it("passes authentication with correct Bearer token", async () => {
-      const res = await POST(makeRequest(`Bearer ${VALID_SECRET} `));
+      const res = await POST(makeRequest(`Bearer ${VALID_SECRET}`));
+      expect(res.status).toBe(200);
+    });
+
+    it("tolerates extra whitespace around the Bearer token", async () => {
+      const res = await POST(makeRequest(`Bearer   ${VALID_SECRET}  `));
+      expect(res.status).toBe(200);
+    });
+
+    it("handles case-insensitive Bearer prefix", async () => {
+      const res = await POST(makeRequest(`bearer ${VALID_SECRET}`));
       expect(res.status).toBe(200);
     });
   });
@@ -83,7 +93,7 @@ describe("POST /api/cron", () => {
 
   describe("delegation to syncArticles", () => {
     it("calls syncArticles (with no arguments)", async () => {
-      await POST(makeRequest(`Bearer ${VALID_SECRET} `));
+      await POST(makeRequest(`Bearer ${VALID_SECRET}`));
       expect(syncArticles).toHaveBeenCalledWith(5);
     });
 
@@ -94,7 +104,7 @@ describe("POST /api/cron", () => {
         errors: [],
       });
 
-      const res = await POST(makeRequest(`Bearer ${VALID_SECRET} `));
+      const res = await POST(makeRequest(`Bearer ${VALID_SECRET}`));
       const json = await res.json();
 
       expect(res.status).toBe(200);
@@ -108,7 +118,7 @@ describe("POST /api/cron", () => {
     it("returns 500 when syncArticles throws", async () => {
       (syncArticles as Mock).mockRejectedValue(new Error("Sync failed"));
 
-      const res = await POST(makeRequest(`Bearer ${VALID_SECRET} `));
+      const res = await POST(makeRequest(`Bearer ${VALID_SECRET}`));
       const json = await res.json();
 
       expect(res.status).toBe(500);
@@ -118,7 +128,7 @@ describe("POST /api/cron", () => {
     it("returns 500 with 'Unknown error' for non-Error throws", async () => {
       (syncArticles as Mock).mockRejectedValue("string error");
 
-      const res = await POST(makeRequest(`Bearer ${VALID_SECRET} `));
+      const res = await POST(makeRequest(`Bearer ${VALID_SECRET}`));
       const json = await res.json();
 
       expect(res.status).toBe(500);

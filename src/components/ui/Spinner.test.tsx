@@ -1,4 +1,4 @@
-import { render } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { Spinner } from "./Spinner";
 
 describe("Spinner", () => {
@@ -34,5 +34,17 @@ describe("Spinner", () => {
     const { container } = render(<Spinner size="lg" />);
     const spinner = container.firstChild as HTMLElement;
     expect(spinner.className).toContain("animate-spin");
+  });
+
+  // ── Accessibility ─────────────────────────────────────────────────────────
+
+  it("has role=status for screen readers", () => {
+    render(<Spinner />);
+    expect(screen.getByRole("status")).toBeInTheDocument();
+  });
+
+  it("has aria-label='Loading' for screen readers", () => {
+    render(<Spinner />);
+    expect(screen.getByLabelText("Loading")).toBeInTheDocument();
   });
 });

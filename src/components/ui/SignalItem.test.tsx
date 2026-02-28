@@ -64,4 +64,40 @@ describe("SignalItem", () => {
     const li = screen.getByText("Content").closest("li");
     expect(li).toHaveClass("extra-class");
   });
+
+  // ── Accessibility ─────────────────────────────────────────────────────────
+
+  it("renders tooltip trigger as a focusable button", () => {
+    render(
+      <ul>
+        <SignalItem tooltip="Accessible tip">Content</SignalItem>
+      </ul>,
+    );
+    const button = screen.getByRole("button");
+    expect(button).toBeInTheDocument();
+    expect(button.tagName).toBe("BUTTON");
+    expect(button).toHaveAttribute("type", "button");
+  });
+
+  it("connects tooltip trigger to tooltip via aria-describedby", () => {
+    render(
+      <ul>
+        <SignalItem tooltip="Linked tooltip">Content</SignalItem>
+      </ul>,
+    );
+    const button = screen.getByRole("button");
+    const tooltip = screen.getByRole("tooltip");
+    const describedBy = button.getAttribute("aria-describedby");
+    expect(describedBy).toBeTruthy();
+    expect(tooltip.id).toBe(describedBy);
+  });
+
+  it("does not render a button when no tooltip is provided", () => {
+    render(
+      <ul>
+        <SignalItem>No tooltip</SignalItem>
+      </ul>,
+    );
+    expect(screen.queryByRole("button")).not.toBeInTheDocument();
+  });
 });

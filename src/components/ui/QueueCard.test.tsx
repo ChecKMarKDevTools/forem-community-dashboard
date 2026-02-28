@@ -19,48 +19,48 @@ describe("QueueCard", () => {
         <p>Click me</p>
       </QueueCard>,
     );
-    fireEvent.click(screen.getByText("Click me").closest("div.border")!);
+    fireEvent.click(screen.getByRole("button"));
     expect(handleClick).toHaveBeenCalledTimes(1);
   });
 
   it("applies selected styles when selected is true", () => {
-    const { container } = render(
+    render(
       <QueueCard selected={true} onClick={() => {}}>
         <p>Selected</p>
       </QueueCard>,
     );
-    const card = container.firstChild as HTMLElement;
+    const card = screen.getByRole("button");
     expect(card.className).toContain("ring-2");
     expect(card.className).toContain("bg-brand-50");
   });
 
   it("applies unselected styles when selected is false", () => {
-    const { container } = render(
+    render(
       <QueueCard selected={false} onClick={() => {}}>
         <p>Not selected</p>
       </QueueCard>,
     );
-    const card = container.firstChild as HTMLElement;
+    const card = screen.getByRole("button");
     expect(card.className).toContain("bg-white");
     expect(card.className).not.toContain("ring-2");
   });
 
   it("applies custom className", () => {
-    const { container } = render(
+    render(
       <QueueCard selected={false} onClick={() => {}} className="extra">
         <p>Content</p>
       </QueueCard>,
     );
-    expect(container.firstChild).toHaveClass("extra");
+    expect(screen.getByRole("button")).toHaveClass("extra");
   });
 
   it("has cursor-pointer class for interaction hint", () => {
-    const { container } = render(
+    render(
       <QueueCard selected={false} onClick={() => {}}>
         <p>Pointer</p>
       </QueueCard>,
     );
-    expect(container.firstChild).toHaveClass("cursor-pointer");
+    expect(screen.getByRole("button")).toHaveClass("cursor-pointer");
   });
 
   it("wraps children in p-4 content area", () => {
@@ -72,5 +72,76 @@ describe("QueueCard", () => {
     const inner = screen.getByTestId("inner");
     const content = inner.closest(".p-4");
     expect(content).toBeInTheDocument();
+  });
+
+  // ── Accessibility ─────────────────────────────────────────────────────────
+
+  it("has role=button for assistive tech", () => {
+    render(
+      <QueueCard selected={false} onClick={() => {}}>
+        <p>A11y</p>
+      </QueueCard>,
+    );
+    expect(screen.getByRole("button")).toBeInTheDocument();
+  });
+
+  it("has tabIndex=0 for keyboard focusability", () => {
+    render(
+      <QueueCard selected={false} onClick={() => {}}>
+        <p>Focus</p>
+      </QueueCard>,
+    );
+    expect(screen.getByRole("button")).toHaveAttribute("tabindex", "0");
+  });
+
+  it("sets aria-pressed=true when selected", () => {
+    render(
+      <QueueCard selected={true} onClick={() => {}}>
+        <p>Selected</p>
+      </QueueCard>,
+    );
+    expect(screen.getByRole("button")).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("sets aria-pressed=false when not selected", () => {
+    render(
+      <QueueCard selected={false} onClick={() => {}}>
+        <p>Unselected</p>
+      </QueueCard>,
+    );
+    expect(screen.getByRole("button")).toHaveAttribute("aria-pressed", "false");
+  });
+
+  it("fires onClick on Enter key press", () => {
+    const handleClick = vi.fn();
+    render(
+      <QueueCard selected={false} onClick={handleClick}>
+        <p>Enter</p>
+      </QueueCard>,
+    );
+    fireEvent.keyDown(screen.getByRole("button"), { key: "Enter" });
+    expect(handleClick).toHaveBeenCalledTimes(1);
+  });
+
+  it("fires onClick on Space key press", () => {
+    const handleClick = vi.fn();
+    render(
+      <QueueCard selected={false} onClick={handleClick}>
+        <p>Space</p>
+      </QueueCard>,
+    );
+    fireEvent.keyDown(screen.getByRole("button"), { key: " " });
+    expect(handleClick).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not fire onClick on other key presses", () => {
+    const handleClick = vi.fn();
+    render(
+      <QueueCard selected={false} onClick={handleClick}>
+        <p>Tab</p>
+      </QueueCard>,
+    );
+    fireEvent.keyDown(screen.getByRole("button"), { key: "Tab" });
+    expect(handleClick).not.toHaveBeenCalled();
   });
 });
