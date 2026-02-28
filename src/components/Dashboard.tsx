@@ -34,7 +34,7 @@ import {
   parseScoreBreakdown,
   getScoreNarrative,
   getBehaviorDescription,
-  getSuggestedAction,
+  getWhatsHappening,
   getSignalName,
   computeAgeHours,
   sortByAttentionPriority,
@@ -198,16 +198,16 @@ function DetailPanel({
           </SectionCard>
         </div>
 
-        {/* Suggested Action — full-width card below the grid */}
+        {/* What's Happening — full-width card below the grid */}
         <SectionCard variant="muted" className="mt-6">
           <CardHeader className="pb-3">
             <CardTitle className="text-brand-800 text-lg">
-              Suggested Action
+              What&apos;s Happening
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-brand-700 text-sm leading-relaxed">
-              {getSuggestedAction(postDetails.explanations)}
+              {getWhatsHappening(postDetails.explanations)}
             </p>
           </CardContent>
         </SectionCard>

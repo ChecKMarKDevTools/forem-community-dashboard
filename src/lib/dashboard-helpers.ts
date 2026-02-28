@@ -175,24 +175,20 @@ export function getBehaviorDescription(post: Post): string {
   return getCategoryLabel(post.attention_level);
 }
 
-/** Derive a soft recommendation based on signals for the Suggested Action card. */
-export function getSuggestedAction(explanations?: string[]): string {
+/** Observational summary of what's happening in the conversation. */
+export function getWhatsHappening(explanations?: string[]): string {
   const breakdown = parseScoreBreakdown(explanations);
   const heat = breakdown.heat ?? 0;
   const risk = breakdown.risk ?? 0;
   const support = breakdown.support ?? 0;
 
-  if (risk >= 6)
-    return "Review for potential policy violations — multiple risk signals are present.";
-  if (risk >= 4)
-    return "Skim for promotional or low-quality content — some risk flags were raised.";
-  if (heat >= 10)
-    return "Monitor this conversation — it is growing rapidly and may need moderation soon.";
+  if (risk >= 6) return "Patterns match known problem behaviors.";
+  if (risk >= 4) return "Signals suggest the discussion may drift off-topic.";
+  if (heat >= 10) return "Activity is accelerating and drawing attention.";
   if (heat >= 5)
-    return "Conversation is active, check back later if it continues to escalate.";
-  if (support >= 3)
-    return "Author may benefit from a welcome message or community response.";
-  return "No action needed. Routine community activity.";
+    return "Participants are reacting to each other more than the topic.";
+  if (support >= 3) return "People are waiting for guidance or clarification.";
+  return "Tone is becoming sharper between participants.";
 }
 
 /** Hover-text descriptions for each signal in the Conversation Pattern Signals card. */

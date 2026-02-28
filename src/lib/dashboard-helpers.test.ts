@@ -11,7 +11,7 @@ import {
   parseScoreBreakdown,
   getScoreNarrative,
   getBehaviorDescription,
-  getSuggestedAction,
+  getWhatsHappening,
   getSignalName,
   computeAgeHours,
   sortByAttentionPriority,
@@ -356,54 +356,50 @@ describe("getBehaviorDescription", () => {
   });
 });
 
-describe("getSuggestedAction", () => {
-  it("returns highest-risk suggestion for risk >= 6", () => {
+describe("getWhatsHappening", () => {
+  it("returns problem-behavior observation for risk >= 6", () => {
     expect(
-      getSuggestedAction(["Risk Score: 7 (freq: 3, promo: 2, engage: 0)"]),
-    ).toBe(
-      "Review for potential policy violations — multiple risk signals are present.",
-    );
+      getWhatsHappening(["Risk Score: 7 (freq: 3, promo: 2, engage: 0)"]),
+    ).toBe("Patterns match known problem behaviors.");
   });
 
-  it("returns moderate-risk suggestion for risk >= 4", () => {
+  it("returns drift observation for risk >= 4", () => {
     expect(
-      getSuggestedAction(["Risk Score: 5 (freq: 2, promo: 1, engage: 0)"]),
-    ).toBe(
-      "Skim for promotional or low-quality content — some risk flags were raised.",
+      getWhatsHappening(["Risk Score: 5 (freq: 2, promo: 1, engage: 0)"]),
+    ).toBe("Signals suggest the discussion may drift off-topic.");
+  });
+
+  it("returns accelerating observation for heat >= 10", () => {
+    expect(getWhatsHappening(["Heat Score: 12.00"])).toBe(
+      "Activity is accelerating and drawing attention.",
     );
   });
 
-  it("returns high-heat suggestion for heat >= 10", () => {
-    expect(getSuggestedAction(["Heat Score: 12.00"])).toBe(
-      "Monitor this conversation — it is growing rapidly and may need moderation soon.",
+  it("returns reactive observation for heat >= 5", () => {
+    expect(getWhatsHappening(["Heat Score: 7.00"])).toBe(
+      "Participants are reacting to each other more than the topic.",
     );
   });
 
-  it("returns moderate-heat suggestion for heat >= 5", () => {
-    expect(getSuggestedAction(["Heat Score: 7.00"])).toBe(
-      "Conversation is active, check back later if it continues to escalate.",
+  it("returns waiting observation for support >= 3", () => {
+    expect(getWhatsHappening(["Support Score: 4"])).toBe(
+      "People are waiting for guidance or clarification.",
     );
   });
 
-  it("returns support suggestion for support >= 3", () => {
-    expect(getSuggestedAction(["Support Score: 4"])).toBe(
-      "Author may benefit from a welcome message or community response.",
-    );
-  });
-
-  it("returns routine action when no signals are elevated", () => {
+  it("returns default observation when no signals are elevated", () => {
     expect(
-      getSuggestedAction([
+      getWhatsHappening([
         "Heat Score: 2.00",
         "Risk Score: 0",
         "Support Score: 1",
       ]),
-    ).toBe("No action needed. Routine community activity.");
+    ).toBe("Tone is becoming sharper between participants.");
   });
 
-  it("returns routine action for undefined explanations", () => {
-    expect(getSuggestedAction(undefined)).toBe(
-      "No action needed. Routine community activity.",
+  it("returns default observation for undefined explanations", () => {
+    expect(getWhatsHappening(undefined)).toBe(
+      "Tone is becoming sharper between participants.",
     );
   });
 });

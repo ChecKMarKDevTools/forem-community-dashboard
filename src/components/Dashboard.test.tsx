@@ -513,7 +513,7 @@ describe("Dashboard Component", () => {
     consoleErrorSpy.mockRestore();
   });
 
-  it("shows Suggested Action card in detail panel", async () => {
+  it("shows What's Happening card in detail panel", async () => {
     const detailWithHighRisk = {
       ...mockPosts[0],
       explanations: [
@@ -545,18 +545,16 @@ describe("Dashboard Component", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText("Suggested Action")).toBeInTheDocument();
+      expect(screen.getByText("What's Happening")).toBeInTheDocument();
     });
 
-    // Risk 7 >= 6 triggers highest risk suggestion
+    // Risk 7 >= 6 triggers problem-behavior observation
     expect(
-      screen.getByText(
-        "Review for potential policy violations — multiple risk signals are present.",
-      ),
+      screen.getByText("Patterns match known problem behaviors."),
     ).toBeInTheDocument();
   });
 
-  it("shows routine suggested action when no signals are elevated", async () => {
+  it("shows default observation when no signals are elevated", async () => {
     const detailRoutine = {
       ...mockPosts[0],
       explanations: [
@@ -588,11 +586,11 @@ describe("Dashboard Component", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText("Suggested Action")).toBeInTheDocument();
+      expect(screen.getByText("What's Happening")).toBeInTheDocument();
     });
 
     expect(
-      screen.getByText("No action needed. Routine community activity."),
+      screen.getByText("Tone is becoming sharper between participants."),
     ).toBeInTheDocument();
   });
 
