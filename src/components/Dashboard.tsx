@@ -14,6 +14,7 @@ import {
   ChevronRight,
   Clock,
   ExternalLink,
+  HelpCircle,
   User,
   MessageSquare,
   Heart,
@@ -149,6 +150,31 @@ function getScoreNarrative(category: string, value: number): string {
     return "Author seems established with normal engagement.";
   }
   return "";
+}
+
+/** Hover-text descriptions for each signal in the Discussion Activity Signals card. */
+const SIGNAL_TOOLTIPS: Record<string, string> = {
+  "Word Count":
+    "Total words across the conversation; long threads usually mean debate or explanation, not automatically a problem.",
+  "Unique Commenters":
+    "How many different people joined; higher numbers suggest community interest rather than one person arguing with themselves.",
+  Effort:
+    "Rough estimate of how much thinking and replying participants put in; long thoughtful replies raise it, short reactions barely move it.",
+  "Attention Delta":
+    "Measures how quickly people started paying attention compared to normal; spikes mean the topic suddenly caught eyes.",
+  "Heat Score":
+    "Emotional intensity of replies; disagreement and passion raise it, calm discussion lowers it.",
+  "Risk Score":
+    "Probability the thread breaks platform rules; zero means nothing looks unsafe, even if people disagree loudly.",
+  "Support Score":
+    "Signs of constructive interaction like helping, clarifying, or agreeing; higher means collaborative tone.",
+};
+
+/** Extract the signal name (text before the colon) from an explanation string. */
+function getSignalName(explanation: string): string {
+  const colonIndex = explanation.indexOf(":");
+  if (colonIndex === -1) return "";
+  return explanation.slice(0, colonIndex).trim();
 }
 
 /** Compute age in hours from published_at timestamp */
@@ -322,27 +348,43 @@ function DetailPanel({
             </CardContent>
           </Card>
 
-          {/* Context & Flags */}
+          {/* Discussion Activity Signals */}
           <Card className="border-brand-100">
             <CardHeader className="pb-3">
               <CardTitle className="text-brand-800 text-lg">
-                Investigation Context
+                Discussion Activity Signals
               </CardTitle>
-              <CardDescription>Flags triggered by the system</CardDescription>
+              <CardDescription>
+                Metrics computed from the conversation
+              </CardDescription>
             </CardHeader>
             <CardContent>
               {postDetails.explanations &&
               postDetails.explanations.length > 0 ? (
                 <ul className="space-y-3">
-                  {postDetails.explanations.map((exp: string) => (
-                    <li
-                      key={exp}
-                      className="text-brand-700 bg-brand-50 border-brand-100 flex gap-3 rounded-lg border p-3 text-sm"
-                    >
-                      <AlertCircle className="text-brand-500 mt-0.5 h-4 w-4 shrink-0" />
-                      <span className="leading-snug">{exp}</span>
-                    </li>
-                  ))}
+                  {postDetails.explanations.map((exp: string) => {
+                    const signalName = getSignalName(exp);
+                    const tooltip = SIGNAL_TOOLTIPS[signalName];
+                    return (
+                      <li
+                        key={exp}
+                        className="text-brand-700 bg-brand-50 border-brand-100 flex items-start gap-3 rounded-lg border p-3 text-sm"
+                      >
+                        <AlertCircle className="text-brand-500 mt-0.5 h-4 w-4 shrink-0" />
+                        <span className="min-w-0 flex-1 leading-snug">
+                          {exp}
+                        </span>
+                        {tooltip && (
+                          <span
+                            title={tooltip}
+                            className="text-brand-400 hover:text-brand-600 shrink-0 cursor-help"
+                          >
+                            <HelpCircle className="mt-0.5 h-4 w-4" />
+                          </span>
+                        )}
+                      </li>
+                    );
+                  })}
                 </ul>
               ) : (
                 <p className="text-brand-500 text-sm italic">

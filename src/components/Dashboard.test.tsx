@@ -421,6 +421,69 @@ describe("Dashboard Component", () => {
     ).toBeInTheDocument();
   });
 
+  it("renders Discussion Activity Signals section with tooltip hover text on help icons", async () => {
+    const detailWithSignals = {
+      ...mockPosts[0],
+      explanations: [
+        "Word Count: 800",
+        "Unique Commenters: 5",
+        "Heat Score: 3.00",
+        "Risk Score: 0 (freq: 0, promo: 0, engage: -0)",
+        "Support Score: 1",
+      ],
+      dev_url: "https://dev.to/testauthor/post-1",
+      recent_posts: [],
+    };
+    globalThis.fetch = vi.fn().mockImplementation((url) => {
+      if (url === "/api/posts")
+        return Promise.resolve({ ok: true, json: async () => mockPosts });
+      if (url === "/api/posts/1")
+        return Promise.resolve({
+          ok: true,
+          json: async () => detailWithSignals,
+        });
+      return Promise.reject(new Error("Not found"));
+    });
+
+    render(<Dashboard />);
+    await waitFor(() => {
+      expect(screen.getByText("Needs review post")).toBeInTheDocument();
+    });
+
+    fireEvent.click(
+      screen.getByText("Needs review post").closest("div.border")!,
+    );
+
+    await waitFor(() => {
+      // Renamed section title
+      expect(
+        screen.getByText("Discussion Activity Signals"),
+      ).toBeInTheDocument();
+    });
+
+    // Each known signal should have a help icon with tooltip text
+    const helpIcons = document.querySelectorAll("[title]");
+    const tooltipTexts = Array.from(helpIcons).map((el) =>
+      el.getAttribute("title"),
+    );
+
+    expect(tooltipTexts).toContain(
+      "Total words across the conversation; long threads usually mean debate or explanation, not automatically a problem.",
+    );
+    expect(tooltipTexts).toContain(
+      "How many different people joined; higher numbers suggest community interest rather than one person arguing with themselves.",
+    );
+    expect(tooltipTexts).toContain(
+      "Emotional intensity of replies; disagreement and passion raise it, calm discussion lowers it.",
+    );
+    expect(tooltipTexts).toContain(
+      "Probability the thread breaks platform rules; zero means nothing looks unsafe, even if people disagree loudly.",
+    );
+    expect(tooltipTexts).toContain(
+      "Signs of constructive interaction like helping, clarifying, or agreeing; higher means collaborative tone.",
+    );
+  });
+
   it("handles api error for posts list", async () => {
     const consoleErrorSpy = vi
       .spyOn(console, "error")
