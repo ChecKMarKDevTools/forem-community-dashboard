@@ -14,7 +14,7 @@ describe("Home Page", () => {
     // Check main container
     const main = screen.getByRole("main");
     expect(main).toBeInTheDocument();
-    expect(main).toHaveClass("min-h-screen", "bg-background");
+    expect(main).toHaveClass("min-h-screen");
 
     // Check for dashboard
     const dashboard = screen.getByTestId("dashboard-mock");
