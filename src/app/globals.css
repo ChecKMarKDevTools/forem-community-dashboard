@@ -1,69 +1,165 @@
 @import "tailwindcss";
 
 @theme {
-  --color-brand-50: #f4f6fc;
-  --color-brand-100: #e7ecf8;
-  --color-brand-200: #d0daf0;
-  --color-brand-300: #acbce4;
-  --color-brand-400: #8198d4;
-  --color-brand-500: #5d75c3;
-  --color-brand-600: #495bb3;
-  --color-brand-700: #3e4b93;
-  --color-brand-800: #364079;
-  --color-brand-900: #2f3861;
-  --color-brand-950: #1a1e38;
+  /* ── Surface & Background ──────────────────────────────────── */
+  --color-surface-primary: var(--surface-primary);
+  --color-surface-secondary: var(--surface-secondary);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-border: var(--surface-border);
+  --color-paper-clue: var(--paper-clue);
 
-  /* Semantic badge palette — no traffic-light grading */
-  --color-neutral-200: #e5e7eb;
-  --color-neutral-300: #d1d5db;
-  --color-neutral-700: #374151;
-  --color-info-100: #dbeafe;
-  --color-info-200: #bfdbfe;
-  --color-info-700: #1d4ed8;
-  --color-teal-100: #ccfbf1;
-  --color-teal-200: #99f6e4;
-  --color-teal-700: #0f766e;
-  --color-attention-100: #fef3c7;
-  --color-attention-200: #fde68a;
-  --color-attention-700: #b45309;
-  --color-critical-100: #fee2e2;
-  --color-critical-200: #fecaca;
-  --color-critical-700: #b91c1c;
+  /* ── Text ──────────────────────────────────────────────────── */
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
 
-  /* Legacy tokens kept for non-badge UI elements (score bars, icons) */
-  --color-danger-50: #fef2f2;
-  --color-danger-500: #ef4444;
-  --color-danger-900: #7f1d1d;
-  --color-warning-50: #fffbeb;
-  --color-warning-500: #f59e0b;
-  --color-warning-900: #78350f;
-  --color-success-50: #f0fdf4;
-  --color-success-500: #22c55e;
-  --color-success-900: #14532d;
+  /* ── Accent ────────────────────────────────────────────────── */
+  --color-accent-primary: var(--accent-primary);
+  --color-accent-hover: var(--accent-hover);
+
+  /* ── State indicators ──────────────────────────────────────── */
+  --color-state-negative: var(--state-negative);
+  --color-state-warning: var(--state-warning);
+
+  /* ── Semantic badge palette (unchanged names for Badge.tsx) ── */
+  --color-neutral-200: var(--badge-neutral-bg);
+  --color-neutral-300: var(--badge-neutral-hover);
+  --color-neutral-700: var(--badge-neutral-text);
+  --color-info-100: var(--badge-info-bg);
+  --color-info-200: var(--badge-info-hover);
+  --color-info-700: var(--badge-info-text);
+  --color-teal-100: var(--badge-teal-bg);
+  --color-teal-200: var(--badge-teal-hover);
+  --color-teal-700: var(--badge-teal-text);
+  --color-attention-100: var(--badge-attention-bg);
+  --color-attention-200: var(--badge-attention-hover);
+  --color-attention-700: var(--badge-attention-text);
+  --color-critical-100: var(--badge-critical-bg);
+  --color-critical-200: var(--badge-critical-hover);
+  --color-critical-700: var(--badge-critical-text);
+
+  /* ── Fonts ─────────────────────────────────────────────────── */
+  --font-heading: var(--font-marcellus), georgia, serif;
+  --font-body: var(--font-source-serif), georgia, serif;
 }
 
+/* ── Light mode (default) ────────────────────────────────────── */
 @layer base {
   :root {
-    --background: #f8fafc;
-    --foreground: #0f172a;
-    --card: #fff;
-    --card-foreground: #0f172a;
-    --border: #e2e8f0;
+    /* Surfaces */
+    --surface-primary: #f8f6f3;
+    --surface-secondary: #f1ede8;
+    --surface-raised: #ece7e0;
+    --surface-border: #d6cfc5;
+    --paper-clue: #fffef9;
+
+    /* Text */
+    --text-primary: #1c1917;
+    --text-secondary: #44403c;
+    --text-muted: #78716c;
+
+    /* Accent */
+    --accent-primary: #7c5e3c;
+    --accent-hover: #5c4328;
+
+    /* State */
+    --state-negative: #dc2626;
+    --state-warning: #d97706;
+
+    /* Badge palette */
+    --badge-neutral-bg: #e7e5e4;
+    --badge-neutral-hover: #d6d3d1;
+    --badge-neutral-text: #44403c;
+    --badge-info-bg: #dbeafe;
+    --badge-info-hover: #bfdbfe;
+    --badge-info-text: #1d4ed8;
+    --badge-teal-bg: #ccfbf1;
+    --badge-teal-hover: #99f6e4;
+    --badge-teal-text: #0f766e;
+    --badge-attention-bg: #fef3c7;
+    --badge-attention-hover: #fde68a;
+    --badge-attention-text: #b45309;
+    --badge-critical-bg: #fee2e2;
+    --badge-critical-hover: #fecaca;
+    --badge-critical-text: #b91c1c;
+
+    /* Gradient */
+    --gradient-from: #f8f6f3;
+    --gradient-via: #f1ede8;
+    --gradient-to: #e8e2da;
+
+    /* Card (used by Card.tsx via bg-card / text-card-foreground) */
+    --background: #f8f6f3;
+    --foreground: #1c1917;
+    --card: #fffef9;
+    --card-foreground: #1c1917;
+    --border: #d6cfc5;
   }
 
+  /* ── Dark mode ───────────────────────────────────────────── */
   .dark {
-    --background: #020617;
-    --foreground: #f8fafc;
-    --card: #0f172a;
-    --card-foreground: #f8fafc;
-    --border: #1e293b;
+    /* Surfaces */
+    --surface-primary: #1c1917;
+    --surface-secondary: #292524;
+    --surface-raised: #3a3330;
+    --surface-border: #57534e;
+    --paper-clue: #292524;
+
+    /* Text */
+    --text-primary: #fafaf9;
+    --text-secondary: #d6d3d1;
+    --text-muted: #a8a29e;
+
+    /* Accent */
+    --accent-primary: #c4a882;
+    --accent-hover: #dbc4a4;
+
+    /* State */
+    --state-negative: #f87171;
+    --state-warning: #fbbf24;
+
+    /* Badge palette */
+    --badge-neutral-bg: #3a3330;
+    --badge-neutral-hover: #57534e;
+    --badge-neutral-text: #d6d3d1;
+    --badge-info-bg: #1e3a5f;
+    --badge-info-hover: #1e40af;
+    --badge-info-text: #93c5fd;
+    --badge-teal-bg: #134e4a;
+    --badge-teal-hover: #115e59;
+    --badge-teal-text: #5eead4;
+    --badge-attention-bg: #451a03;
+    --badge-attention-hover: #78350f;
+    --badge-attention-text: #fcd34d;
+    --badge-critical-bg: #450a0a;
+    --badge-critical-hover: #7f1d1d;
+    --badge-critical-text: #fca5a5;
+
+    /* Gradient */
+    --gradient-from: #1c1917;
+    --gradient-via: #292524;
+    --gradient-to: #1c1917;
+
+    /* Card */
+    --background: #1c1917;
+    --foreground: #fafaf9;
+    --card: #292524;
+    --card-foreground: #fafaf9;
+    --border: #57534e;
   }
 }
 
 @layer base {
   body {
-    background-color: var(--background);
+    background:
+      linear-gradient(
+        135deg,
+        var(--gradient-from) 0%,
+        var(--gradient-via) 50%,
+        var(--gradient-to) 100%
+      ),
+      var(--background);
     color: var(--foreground);
-    font-family: Arial, Helvetica, sans-serif;
+    font-family: var(--font-body), georgia, serif;
   }
 }
