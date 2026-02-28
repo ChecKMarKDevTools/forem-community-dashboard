@@ -45,6 +45,8 @@ export interface ForemArticle {
     profile_image: string;
     profile_image_90: string;
   };
+  body_html?: string;
+  body_markdown?: string;
 }
 
 export interface ForemUser {

@@ -21,6 +21,11 @@ vi.mock("@/lib/forem", () => ({
     getLatestArticles: vi.fn(),
     getUserByUsername: vi.fn(),
     getComments: vi.fn(),
+    getArticle: vi.fn().mockResolvedValue({
+      id: 1,
+      body_html: "Mock body html ".repeat(100),
+      reading_time_minutes: 2,
+    }),
   },
 }));
 

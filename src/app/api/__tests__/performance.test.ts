@@ -23,6 +23,7 @@ vi.mock("@/lib/forem", () => ({
     getLatestArticles: vi.fn(),
     getUserByUsername: vi.fn(),
     getComments: vi.fn(),
+    getArticle: vi.fn().mockResolvedValue({ id: 1, body_html: "mock" }),
   },
 }));
 
@@ -32,9 +33,8 @@ vi.mock("@/lib/supabase", () => ({
   },
 }));
 
-// Set PERF_TESTS=true to run timing-budget suites.
-// Without it, all timing describe blocks are skipped.
-const TIMING_BUDGETS_ENABLED = process.env.PERF_TESTS === "true";
+// Always run performance tests
+const TIMING_BUDGETS_ENABLED = true;
 
 // ---------------------------------------------------------------------------
 // Time-budget constants (milliseconds)

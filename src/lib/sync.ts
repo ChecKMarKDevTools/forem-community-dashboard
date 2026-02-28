@@ -347,13 +347,18 @@ async function deepScoreAndPersist(
   const {
     article,
     username,
-    word_count,
     age_hours,
     author_post_frequency,
     preliminary_score,
     detailedUser,
     postsByAuthor24h,
   } = input;
+
+  const fullArticle = await ForemClient.getArticle(article.id);
+  const word_count = countWords(
+    fullArticle.body_html || fullArticle.body_markdown || "",
+  );
+
   const comments = await ForemClient.getComments(article.id);
 
   const comment_count = article.comments_count;
