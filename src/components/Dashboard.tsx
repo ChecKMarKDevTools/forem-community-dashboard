@@ -58,34 +58,37 @@ type PostDetails = Post & {
   recent_posts?: RecentPost[];
 };
 
-/** Maps attention category to Badge variant for the main list and detail panel. */
+/** Attention-level metadata: badge variant and human-readable label. */
+const ATTENTION_META: Record<
+  string,
+  { variant: "destructive" | "warning" | "success" | "outline"; label: string }
+> = {
+  NEEDS_REVIEW: { variant: "destructive", label: "Needs Review" },
+  POSSIBLY_LOW_QUALITY: { variant: "destructive", label: "Low Quality" },
+  NEEDS_RESPONSE: { variant: "warning", label: "Needs Response" },
+  BOOST_VISIBILITY: { variant: "warning", label: "Boost" },
+  NORMAL: { variant: "success", label: "Normal" },
+};
+
+const DEFAULT_ATTENTION = { variant: "success" as const, label: "Normal" };
+
 function getAttentionVariant(
   level: string,
 ): "destructive" | "warning" | "success" {
-  if (level === "NEEDS_REVIEW" || level === "POSSIBLY_LOW_QUALITY")
-    return "destructive";
-  if (level === "NEEDS_RESPONSE" || level === "BOOST_VISIBILITY")
-    return "warning";
-  return "success";
+  const v = (ATTENTION_META[level] ?? DEFAULT_ATTENTION).variant;
+  // "outline" only applies in the recent-posts context; main badges use "success"
+  return v === "outline" ? "success" : v;
 }
 
-/** Human-readable labels for each scoring category. */
 function getCategoryLabel(level: string): string {
-  if (level === "NEEDS_REVIEW") return "Needs Review";
-  if (level === "POSSIBLY_LOW_QUALITY") return "Low Quality";
-  if (level === "NEEDS_RESPONSE") return "Needs Response";
-  if (level === "BOOST_VISIBILITY") return "Boost";
-  return "Normal";
+  return (ATTENTION_META[level] ?? DEFAULT_ATTENTION).label;
 }
 
 function getRecentPostBadgeVariant(
   level: string,
 ): "destructive" | "warning" | "outline" {
-  if (level === "NEEDS_REVIEW" || level === "POSSIBLY_LOW_QUALITY")
-    return "destructive";
-  if (level === "NEEDS_RESPONSE" || level === "BOOST_VISIBILITY")
-    return "warning";
-  return "outline";
+  const v = (ATTENTION_META[level] ?? DEFAULT_ATTENTION).variant;
+  return v === "success" ? "outline" : v;
 }
 
 function getScoreBarClass(value: number): string {
@@ -368,20 +371,24 @@ function DetailPanel({
                     return (
                       <li
                         key={exp}
-                        className="text-brand-700 bg-brand-50 border-brand-100 flex items-start gap-3 rounded-lg border p-3 text-sm"
+                        className="text-brand-700 bg-brand-50 border-brand-100 flex items-center gap-3 rounded-lg border p-3 text-sm"
                       >
-                        <AlertCircle className="text-brand-500 mt-0.5 h-4 w-4 shrink-0" />
+                        {tooltip ? (
+                          <span className="group relative shrink-0 cursor-help">
+                            <HelpCircle className="text-brand-400 group-hover:text-brand-600 h-4 w-4" />
+                            <span
+                              role="tooltip"
+                              className="bg-brand-900 pointer-events-none absolute top-1/2 left-6 z-10 w-56 -translate-y-1/2 rounded-lg px-3 py-2 text-xs leading-relaxed text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100"
+                            >
+                              {tooltip}
+                            </span>
+                          </span>
+                        ) : (
+                          <span className="w-4 shrink-0" />
+                        )}
                         <span className="min-w-0 flex-1 leading-snug">
                           {exp}
                         </span>
-                        {tooltip && (
-                          <span
-                            title={tooltip}
-                            className="text-brand-400 hover:text-brand-600 shrink-0 cursor-help"
-                          >
-                            <HelpCircle className="mt-0.5 h-4 w-4" />
-                          </span>
-                        )}
                       </li>
                     );
                   })}

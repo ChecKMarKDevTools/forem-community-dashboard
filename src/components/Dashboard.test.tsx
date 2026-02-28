@@ -461,11 +461,9 @@ describe("Dashboard Component", () => {
       ).toBeInTheDocument();
     });
 
-    // Each known signal should have a help icon with tooltip text
-    const helpIcons = document.querySelectorAll("[title]");
-    const tooltipTexts = Array.from(helpIcons).map((el) =>
-      el.getAttribute("title"),
-    );
+    // Each known signal should have a tooltip element with descriptive text
+    const tooltips = screen.getAllByRole("tooltip");
+    const tooltipTexts = tooltips.map((el) => el.textContent);
 
     expect(tooltipTexts).toContain(
       "Total words across the conversation; long threads usually mean debate or explanation, not automatically a problem.",
