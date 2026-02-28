@@ -28,11 +28,23 @@ function getAgeHours(published_at: string): number {
   return (Date.now() - new Date(published_at).getTime()) / (1000 * 60 * 60);
 }
 
+function stripHtmlTags(html: string): string {
+  // Iteratively remove complete tags until none remain.
+  // A single-pass regex can leave residual partial tags (e.g. "<scr" + "ipt>")
+  // because the regex matches greedily on each pass. Looping until stable
+  // guarantees no HTML element fragments survive. (CodeQL: incomplete-multi-character-sanitization)
+  let result = html;
+  let previous: string;
+  do {
+    previous = result;
+    result = result.replaceAll(/<[^>]*>/g, "");
+  } while (result !== previous);
+  return result;
+}
+
 function countWords(textHtml?: string): number {
   if (!textHtml) return 0;
-  // A rough estimate for parsed comments body
-  return textHtml
-    .replaceAll(/<[^>]*>?/g, "")
+  return stripHtmlTags(textHtml)
     .split(/\s+/)
     .filter((w) => w.length > 0).length;
 }
@@ -308,17 +320,32 @@ function computeDerivedMetrics(
   };
 }
 
+/** Bundled inputs for the deep-scoring function (S107: max 7 params) */
+interface DeepScoreInput {
+  readonly article: ForemArticle;
+  readonly username: string;
+  readonly word_count: number;
+  readonly age_hours: number;
+  readonly author_post_frequency: number;
+  readonly preliminary_score: number;
+  readonly detailedUser: ForemUser | null;
+  readonly postsByAuthor24h: Map<string, number>;
+}
+
 /** Deep-score a single article: fetch comments, compute metrics, classify, persist */
 async function deepScoreAndPersist(
-  article: ForemArticle,
-  username: string,
-  word_count: number,
-  age_hours: number,
-  author_post_frequency: number,
-  preliminary_score: number,
-  detailedUser: ForemUser | null,
-  postsByAuthor24h: Map<string, number>,
+  input: Readonly<DeepScoreInput>,
 ): Promise<void> {
+  const {
+    article,
+    username,
+    word_count,
+    age_hours,
+    author_post_frequency,
+    preliminary_score,
+    detailedUser,
+    postsByAuthor24h,
+  } = input;
   const comments = await ForemClient.getComments(article.id);
 
   const comment_count = article.comments_count;
@@ -414,60 +441,100 @@ async function deepScoreAndPersist(
   }
 }
 
+/** Fetch two pages of articles and filter to the 2–72 h sync window. */
+async function fetchAndFilterArticles(): Promise<{
+  allArticles: ForemArticle[];
+  validArticles: ForemArticle[];
+}> {
+  const page1 = await ForemClient.getLatestArticles(1, 100);
+  const page2 = await ForemClient.getLatestArticles(2, 100);
+  const allArticles = [...page1, ...page2];
+
+  const validArticles = allArticles.filter((a) => {
+    const ageHours = getAgeHours(a.published_at);
+    return ageHours >= 2 && ageHours <= 72;
+  });
+
+  return { allArticles, validArticles };
+}
+
+/** Count posts per author from the last 24 h. */
+function buildAuthorFrequencies(
+  allArticles: ForemArticle[],
+): Map<string, number> {
+  const postsByAuthor24h = new Map<string, number>();
+  for (const a of allArticles) {
+    if (getAgeHours(a.published_at) <= 24) {
+      postsByAuthor24h.set(
+        a.user.username,
+        (postsByAuthor24h.get(a.user.username) || 0) + 1,
+      );
+    }
+  }
+  return postsByAuthor24h;
+}
+
+/** Light-score and rank articles, returning the top-N shortlist. */
+function lightScoreAndRank(
+  validArticles: ForemArticle[],
+  postsByAuthor24h: Map<string, number>,
+  maxToProcess: number,
+) {
+  const scoredCandidates = validArticles.map((article) => {
+    const word_count = article.reading_time_minutes * 200;
+    const author_post_frequency =
+      postsByAuthor24h.get(article.user.username) || 1;
+    const age_hours = getAgeHours(article.published_at);
+    const preliminary_score =
+      article.public_reactions_count +
+      article.comments_count * 2 +
+      word_count / 100 -
+      age_hours -
+      author_post_frequency;
+
+    return {
+      article,
+      preliminary_score,
+      word_count,
+      age_hours,
+      author_post_frequency,
+    };
+  });
+
+  scoredCandidates.sort((a, b) => b.preliminary_score - a.preliminary_score);
+  return scoredCandidates.slice(0, maxToProcess);
+}
+
+/** Ensure author row exists in the users table (upsert once per sync run). */
+async function ensureAuthorUpserted(
+  username: string,
+  detailedUser: ForemUser,
+  upsertedAuthors: Set<string>,
+): Promise<void> {
+  if (upsertedAuthors.has(username)) return;
+  const { error: userError } = await supabase.from("users").upsert({
+    username: detailedUser.username,
+    joined_at: detailedUser.joined_at,
+    updated_at: new Date().toISOString(),
+  });
+  if (userError) throw new Error(userError.message);
+  upsertedAuthors.add(username);
+}
+
 export async function syncArticles(maxToProcess?: number): Promise<SyncResult> {
   const errors: string[] = [];
   const userCache = new Map<string, ForemUser | null>();
   const upsertedAuthors = new Set<string>();
 
   try {
-    // --- STEP 1: FETCH ARTICLES ---
-    const page1 = await ForemClient.getLatestArticles(1, 100);
-    const page2 = await ForemClient.getLatestArticles(2, 100);
-    const allArticles = [...page1, ...page2];
+    const { allArticles, validArticles } = await fetchAndFilterArticles();
+    const postsByAuthor24h = buildAuthorFrequencies(allArticles);
+    const shortlist = lightScoreAndRank(
+      validArticles,
+      postsByAuthor24h,
+      maxToProcess || 20,
+    );
 
-    // Discard < 2h or > 72h
-    const validArticles = allArticles.filter((a) => {
-      const ageHours = getAgeHours(a.published_at);
-      return ageHours >= 2 && ageHours <= 72;
-    });
-
-    // Recent post frequencies per author from full raw batch
-    const postsByAuthor24h = new Map<string, number>();
-    for (const a of allArticles) {
-      if (getAgeHours(a.published_at) <= 24) {
-        postsByAuthor24h.set(
-          a.user.username,
-          (postsByAuthor24h.get(a.user.username) || 0) + 1,
-        );
-      }
-    }
-
-    // --- STEP 2: LIGHT SCORING ---
-    const scoredCandidates = validArticles.map((article) => {
-      const word_count = article.reading_time_minutes * 200;
-      const author_post_frequency =
-        postsByAuthor24h.get(article.user.username) || 1;
-      const age_hours = getAgeHours(article.published_at);
-      const preliminary_score =
-        article.public_reactions_count +
-        article.comments_count * 2 +
-        word_count / 100 -
-        age_hours -
-        author_post_frequency;
-
-      return {
-        article,
-        preliminary_score,
-        word_count,
-        age_hours,
-        author_post_frequency,
-      };
-    });
-
-    scoredCandidates.sort((a, b) => b.preliminary_score - a.preliminary_score);
-    const shortlist = scoredCandidates.slice(0, maxToProcess || 20);
-
-    // --- STEP 3 & 4: DEEP FETCH & CLASSIFICATION ---
     let synced = 0;
     let failed = 0;
 
@@ -483,17 +550,11 @@ export async function syncArticles(maxToProcess?: number): Promise<SyncResult> {
         const username = article.user.username;
 
         const detailedUser = await resolveUser(username, userCache);
-        if (detailedUser && !upsertedAuthors.has(username)) {
-          const { error: userError } = await supabase.from("users").upsert({
-            username: detailedUser.username,
-            joined_at: detailedUser.joined_at,
-            updated_at: new Date().toISOString(),
-          });
-          if (userError) throw new Error(userError.message);
-          upsertedAuthors.add(username);
+        if (detailedUser) {
+          await ensureAuthorUpserted(username, detailedUser, upsertedAuthors);
         }
 
-        await deepScoreAndPersist(
+        await deepScoreAndPersist({
           article,
           username,
           word_count,
@@ -502,7 +563,7 @@ export async function syncArticles(maxToProcess?: number): Promise<SyncResult> {
           preliminary_score,
           detailedUser,
           postsByAuthor24h,
-        );
+        });
 
         synced++;
       } catch (err: unknown) {
