@@ -189,11 +189,11 @@ pnpm build            # type-check + Next.js production build
 
 | Guardrail             | Where                                | What it does                                                                                             |
 | --------------------- | ------------------------------------ | -------------------------------------------------------------------------------------------------------- |
-| Bearer auth           | `/api/cron`, `/api/admin/seed`       | Returns 401 if `Authorization: Bearer <CRON_SECRET>` header is absent or wrong                           |
+| Bearer auth           | `/api/cron`, `/api/admin/seed`       | Extracts and trims token from `Authorization: Bearer <CRON_SECRET>`; returns 401 if absent/wrong         |
 | Row-level security    | Supabase (`0001_rls_policies.sql`)   | Anon role: `articles` and `commenters` are SELECT-only; `users` has no anon policy (deny-all by default) |
 | Input validation      | `/api/posts/[id]`, `/api/admin/seed` | `Number()` + `Number.isInteger()` — floats (`"1.5"`) and alpha strings (`"1abc"`) return 400             |
 | Rate-limit resilience | `ForemClient`                        | Exponential-backoff retry on HTTP 429, honours `Retry-After` header                                      |
-| Server-only secrets   | `src/lib/supabase.ts`                | `SUPABASE_SECRET_KEY` only used server-side; never exposed in client bundles                             |
+| Server-only secrets   | `src/lib/supabase.ts`                | Validates both env vars are set at request time; `SUPABASE_SECRET_KEY` never exposed in client bundles   |
 
 ---
 
@@ -203,7 +203,7 @@ pnpm build            # type-check + Next.js production build
 | ------ | ----------------- | ------ | ------------------------------------------------------------------ |
 | `GET`  | `/api/posts`      | none   | Scored article list, ordered by score desc, limit 100              |
 | `GET`  | `/api/posts/:id`  | none   | Article detail + 5 most recent posts by same author                |
-| `POST` | `/api/cron`       | Bearer | Sync latest 100 articles from Forem (page 1)                       |
+| `POST` | `/api/cron`       | Bearer | Sync latest articles from Forem (200 articles, 2 pages)            |
 | `POST` | `/api/admin/seed` | Bearer | Back-fill articles; body `{ "days": N }` (integer 1–90, default 3) |
 
 ---
