@@ -13,7 +13,7 @@ function resolveAllowedOrigin(
   return null;
 }
 
-export function middleware(request: NextRequest): NextResponse {
+export function proxy(request: NextRequest): NextResponse {
   const allowedOrigins: readonly string[] = (process.env.ALLOWED_ORIGINS ?? "")
     .split(",")
     .map((o) => o.trim())

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { middleware } from "./middleware";
+import { proxy } from "./proxy";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -25,7 +25,7 @@ const DISALLOWED_ORIGIN = "https://evil.example.com";
 // Suite
 // ---------------------------------------------------------------------------
 
-describe("middleware (CORS)", () => {
+describe("proxy (CORS)", () => {
   let savedAllowedOrigins: string | undefined;
 
   beforeEach(() => {
@@ -46,7 +46,7 @@ describe("middleware (CORS)", () => {
   describe("OPTIONS preflight", () => {
     it("returns 204 with CORS headers for an allowed origin", () => {
       const req = makeRequest("OPTIONS", ALLOWED_ORIGIN_1);
-      const res = middleware(req);
+      const res = proxy(req);
 
       expect(res.status).toBe(204);
       expect(res.headers.get("Access-Control-Allow-Origin")).toBe(
@@ -63,7 +63,7 @@ describe("middleware (CORS)", () => {
 
     it("returns 204 without CORS headers for a disallowed origin", () => {
       const req = makeRequest("OPTIONS", DISALLOWED_ORIGIN);
-      const res = middleware(req);
+      const res = proxy(req);
 
       expect(res.status).toBe(204);
       expect(res.headers.get("Access-Control-Allow-Origin")).toBeNull();
@@ -72,7 +72,7 @@ describe("middleware (CORS)", () => {
 
     it("returns 204 without CORS headers when no Origin header is present", () => {
       const req = makeRequest("OPTIONS");
-      const res = middleware(req);
+      const res = proxy(req);
 
       expect(res.status).toBe(204);
       expect(res.headers.get("Access-Control-Allow-Origin")).toBeNull();
@@ -80,7 +80,7 @@ describe("middleware (CORS)", () => {
 
     it("allows a second configured origin", () => {
       const req = makeRequest("OPTIONS", ALLOWED_ORIGIN_2);
-      const res = middleware(req);
+      const res = proxy(req);
 
       expect(res.status).toBe(204);
       expect(res.headers.get("Access-Control-Allow-Origin")).toBe(
@@ -94,7 +94,7 @@ describe("middleware (CORS)", () => {
   describe("GET / POST requests", () => {
     it("passes request through with CORS headers for an allowed origin", () => {
       const req = makeRequest("GET", ALLOWED_ORIGIN_1);
-      const res = middleware(req);
+      const res = proxy(req);
 
       expect(res.headers.get("Access-Control-Allow-Origin")).toBe(
         ALLOWED_ORIGIN_1,
@@ -107,21 +107,21 @@ describe("middleware (CORS)", () => {
 
     it("passes request through without CORS headers for a disallowed origin", () => {
       const req = makeRequest("GET", DISALLOWED_ORIGIN);
-      const res = middleware(req);
+      const res = proxy(req);
 
       expect(res.headers.get("Access-Control-Allow-Origin")).toBeNull();
     });
 
     it("passes request through without CORS headers when no Origin is present", () => {
       const req = makeRequest("GET");
-      const res = middleware(req);
+      const res = proxy(req);
 
       expect(res.headers.get("Access-Control-Allow-Origin")).toBeNull();
     });
 
     it("reflects the correct specific origin (not wildcard)", () => {
       const req = makeRequest("POST", ALLOWED_ORIGIN_2);
-      const res = middleware(req);
+      const res = proxy(req);
 
       expect(res.headers.get("Access-Control-Allow-Origin")).toBe(
         ALLOWED_ORIGIN_2,
@@ -135,7 +135,7 @@ describe("middleware (CORS)", () => {
     it("trims whitespace from ALLOWED_ORIGINS entries", () => {
       process.env.ALLOWED_ORIGINS = `  ${ALLOWED_ORIGIN_1}  ,  ${ALLOWED_ORIGIN_2}  `;
       const req = makeRequest("GET", ALLOWED_ORIGIN_1);
-      const res = middleware(req);
+      const res = proxy(req);
 
       expect(res.headers.get("Access-Control-Allow-Origin")).toBe(
         ALLOWED_ORIGIN_1,
@@ -145,7 +145,7 @@ describe("middleware (CORS)", () => {
     it("ignores empty entries in ALLOWED_ORIGINS", () => {
       process.env.ALLOWED_ORIGINS = `${ALLOWED_ORIGIN_1},,${ALLOWED_ORIGIN_2}`;
       const req = makeRequest("GET", ALLOWED_ORIGIN_1);
-      const res = middleware(req);
+      const res = proxy(req);
 
       expect(res.headers.get("Access-Control-Allow-Origin")).toBe(
         ALLOWED_ORIGIN_1,
@@ -155,7 +155,7 @@ describe("middleware (CORS)", () => {
     it("returns no CORS headers when ALLOWED_ORIGINS is empty string", () => {
       process.env.ALLOWED_ORIGINS = "";
       const req = makeRequest("GET", ALLOWED_ORIGIN_1);
-      const res = middleware(req);
+      const res = proxy(req);
 
       expect(res.headers.get("Access-Control-Allow-Origin")).toBeNull();
     });
@@ -163,7 +163,7 @@ describe("middleware (CORS)", () => {
     it("returns no CORS headers when ALLOWED_ORIGINS is unset", () => {
       delete process.env.ALLOWED_ORIGINS;
       const req = makeRequest("GET", ALLOWED_ORIGIN_1);
-      const res = middleware(req);
+      const res = proxy(req);
 
       expect(res.headers.get("Access-Control-Allow-Origin")).toBeNull();
     });
@@ -173,14 +173,14 @@ describe("middleware (CORS)", () => {
         "GET",
         "https://evil-dev-signal.checkmarkdevtools.dev",
       );
-      const res = middleware(req);
+      const res = proxy(req);
 
       expect(res.headers.get("Access-Control-Allow-Origin")).toBeNull();
     });
 
     it("is case-sensitive for origin matching", () => {
       const req = makeRequest("GET", ALLOWED_ORIGIN_1.toUpperCase());
-      const res = middleware(req);
+      const res = proxy(req);
 
       expect(res.headers.get("Access-Control-Allow-Origin")).toBeNull();
     });
@@ -188,7 +188,7 @@ describe("middleware (CORS)", () => {
     it("returns NextResponse from OPTIONS even when no origins are configured", () => {
       process.env.ALLOWED_ORIGINS = "";
       const req = makeRequest("OPTIONS");
-      const res = middleware(req);
+      const res = proxy(req);
 
       expect(res).toBeInstanceOf(NextResponse);
       expect(res.status).toBe(204);
