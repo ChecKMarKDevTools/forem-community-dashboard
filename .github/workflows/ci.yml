@@ -76,7 +76,9 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
 
       - name: Lighthouse CI
-        run: pnpm dlx @lhci/cli@0.14.x autorun
+        run: |
+          pnpm run lhci:desktop
+          pnpm run lhci:mobile
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
           LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}

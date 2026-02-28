@@ -13,7 +13,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "lhci:desktop": "lhci autorun --collect.settings.preset=desktop",
-    "lhci:mobile": "lhci autorun",
+    "lhci:mobile": "LHCI_MOBILE=1 lhci autorun",
     "format": "prettier --write .",
     "stylelint": "stylelint \"**/*.{css,scss}\"",
     "prepare": "lefthook install"

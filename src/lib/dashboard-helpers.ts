@@ -3,7 +3,7 @@ import type { Post } from "@/types/dashboard";
 /** Attention-level metadata: badge variant and human-readable label.
  *  No traffic-light grading — each category has a distinct semantic color.
  *  neutral = slate (routine), info = steel-blue (active), teal = teal (waiting),
- *  attention = warm sand (high activity), critical = muted rose (policy risk).
+ *  attention = indigo/blue (high activity), critical = slate/gray (policy risk).
  */
 export const ATTENTION_META: Record<
   string,
