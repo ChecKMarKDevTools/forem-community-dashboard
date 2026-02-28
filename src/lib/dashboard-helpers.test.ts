@@ -177,6 +177,11 @@ describe("extractWordCount", () => {
   it("returns 0 for undefined/no explanations", () => {
     expect(extractWordCount(undefined)).toBe(0);
   });
+
+  it("returns 0 when word count line has no digits", () => {
+    expect(extractWordCount(["Word Count: "])).toBe(0);
+    expect(extractWordCount(["Word Count: abc"])).toBe(0);
+  });
 });
 
 describe("parseScoreBreakdown", () => {
@@ -206,6 +211,12 @@ describe("parseScoreBreakdown", () => {
     expect(
       parseScoreBreakdown(["Word Count: 500", "Attention Delta: 2.0"]),
     ).toEqual({});
+  });
+
+  it("skips risk when 'Risk Score:' line has no numeric value", () => {
+    const result = parseScoreBreakdown(["Risk Score: "]);
+    // Number.parseFloat(" ") → NaN — regex won't match, so risk is not added
+    expect(result).toEqual({});
   });
 });
 
@@ -454,6 +465,12 @@ describe("formatSignalDisplay", () => {
 
   it("returns input unchanged when no colon is present", () => {
     expect(formatSignalDisplay("no colon")).toBe("no colon");
+  });
+
+  it("preserves raw value when value is not numeric (NaN branch)", () => {
+    expect(formatSignalDisplay("Custom Signal: not_a_number")).toBe(
+      "Custom Signal: not_a_number",
+    );
   });
 });
 

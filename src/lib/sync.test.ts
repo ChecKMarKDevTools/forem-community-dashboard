@@ -851,6 +851,97 @@ describe("syncArticles scoring pipeline", () => {
 
   // ── Existing edge cases continue ───────────────────────────────────
 
+  it("sets is_first_post=false for fresh user with multiple posts in 24h", async () => {
+    // Two articles by the same fresh user within 24h → postsByAuthor24h > 1
+    // so is_first_post condition (===1) fails even though joined < 30 days ago.
+    const articles = [
+      makeArticle({
+        id: 500,
+        published_at: THREE_HOURS_AGO,
+        public_reactions_count: 0,
+        comments_count: 0,
+        reading_time_minutes: 1,
+        user: { username: "newuser", name: "New User" },
+      }),
+      makeArticle({
+        id: 501,
+        published_at: new Date(NOW - 4 * 60 * 60 * 1000).toISOString(),
+        public_reactions_count: 0,
+        comments_count: 0,
+        reading_time_minutes: 1,
+        user: { username: "newuser", name: "New User" },
+      }),
+    ];
+
+    setupBasicMocks(articles, [], freshUser);
+
+    const result = await syncArticles(2);
+
+    // Both sync, but is_first_post is false since author has 2 posts in 24h
+    // Support score is lower without the +2 bonus from is_first_post
+    expect(result.synced).toBe(2);
+    expect(result.failed).toBe(0);
+  });
+
+  it("counts failed articles when article upsert fails", async () => {
+    const article = makeArticle({ id: 510 });
+
+    vi.mocked(ForemClient.getLatestArticles).mockImplementation(
+      async (page) => {
+        if (page === 1) return [article] as never;
+        return [];
+      },
+    );
+    vi.mocked(ForemClient.getUserByUsername).mockResolvedValue(mockUser);
+    vi.mocked(ForemClient.getComments).mockResolvedValue([]);
+
+    let callCount = 0;
+    vi.mocked(supabase.from).mockImplementation(() => {
+      callCount++;
+      if (callCount === 1) {
+        // User upsert succeeds
+        return {
+          upsert: vi.fn().mockResolvedValue({ error: null }),
+          select: vi.fn().mockReturnThis(),
+        } as never;
+      }
+      // Article upsert fails
+      return {
+        upsert: vi.fn().mockResolvedValue({
+          error: { message: "Article upsert constraint violation" },
+        }),
+        select: vi.fn().mockReturnThis(),
+      } as never;
+    });
+
+    const result = await syncArticles(1);
+
+    expect(result.failed).toBe(1);
+    expect(result.errors[0]).toContain("Article upsert constraint violation");
+  });
+
+  it("records 'Unknown error' when per-article catch receives a non-Error value", async () => {
+    const article = makeArticle({ id: 520 });
+
+    vi.mocked(ForemClient.getLatestArticles).mockImplementation(
+      async (page) => {
+        if (page === 1) return [article] as never;
+        return [];
+      },
+    );
+    // Throw a non-Error value from getUserByUsername to trigger the non-Error branch
+    vi.mocked(ForemClient.getUserByUsername).mockRejectedValue(
+      "string rejection",
+    );
+    vi.mocked(ForemClient.getComments).mockResolvedValue([]);
+    resetSupabaseMock();
+
+    const result = await syncArticles(1);
+
+    expect(result.failed).toBe(1);
+    expect(result.errors[0]).toContain("Unknown error");
+  });
+
   it("caches resolved users to avoid duplicate upserts", async () => {
     // Two articles by the same author
     const articles = [

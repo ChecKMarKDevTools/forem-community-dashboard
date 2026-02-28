@@ -230,7 +230,7 @@ If you are contributing, here is where things live:
 
 | Area                                                    | Where to look                                                  |
 | ------------------------------------------------------- | -------------------------------------------------------------- |
-| Scoring & classification logic                          | `src/lib/scoring.ts`                                           |
+| Scoring & classification logic                          | `src/lib/sync.ts`                                              |
 | Sync pipeline (Forem → Supabase)                        | `src/lib/sync.ts`                                              |
 | Dashboard UI components                                 | `src/components/Dashboard.tsx` and `src/components/ui/`        |
 | Display helpers (labels, narratives, signal formatting) | `src/lib/dashboard-helpers.ts`                                 |
@@ -243,8 +243,17 @@ If you are contributing, here is where things live:
 
 ## License
 
-Licensed under the **[Polyform Shield License 1.0.0](https://polyformproject.org/licenses/shield/1.0.0/)**.
+This project is licensed under the **[Polyform Shield License 1.0.0](https://polyformproject.org/licenses/shield/1.0.0/)**.
 
-You are welcome to use, fork, and adapt this project for your own community work. The only restriction is commercial resale — you cannot package it up and sell it as a product or paid service without written permission. If you redistribute a fork or substantial portion of the code, include the `LICENSE` file and a note crediting the original project.
+Copyright (c) 2026 ChecKMarK DevTools & Ashley Childress
 
-Questions about commercial use? Reach out to Ashley Childress at [human@checkmarkdevtools.dev](mailto:human@checkmarkdevtools.dev). Full terms are in the [LICENSE](./LICENSE) file.
+**In brief:**
+
+- **You CAN** use, copy, fork, or adapt this for your own workflows, inside your company, for client projects, demos, education, or anything else—as long as you are not selling the code, charging for it, or making money from the project itself.
+- **You CANNOT** resell, offer as a paid service, or monetize this project or its derivatives without prior written approval from Ashley Childress.
+- Any public fork, copy, or substantial reuse must include the `LICENSE` file and a clear attribution statement in your documentation or README:
+  > "Based on original work by ChecKMarK DevTools & Ashley Childress – see [https://github.com/checkmarkdevtools/forem-community-dashboard](https://github.com/checkmarkdevtools/forem-community-dashboard)."
+
+For exceptions or monetization/commercialization questions, contact Ashley Childress at [human@checkmarkdevtools.dev](mailto:human@checkmarkdevtools.dev).
+
+See the full [LICENSE](./LICENSE) file for details.

@@ -305,6 +305,20 @@ describe("GET /api/posts/[id]", () => {
     expect(json.error).toBe("Client uninitialized");
   });
 
+  it("returns 500 with 'Unknown error' when catch receives a non-Error value", async () => {
+    const nonError: unknown = 42;
+    (supabase.from as Mock).mockImplementation(() => {
+      throw nonError;
+    });
+
+    const req = new NextRequest("http://localhost:3000/api/posts/1");
+    const res = await GET(req, makeParams("1"));
+    const json = await res.json();
+
+    expect(res.status).toBe(500);
+    expect(json.error).toBe("Unknown error");
+  });
+
   // ── Boundary / numeric edge cases ─────────────────────────────────────────
 
   it("handles large numeric ID (MAX_SAFE_INTEGER string)", async () => {

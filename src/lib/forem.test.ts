@@ -103,6 +103,59 @@ describe("ForemClient", () => {
 });
 
 // ---------------------------------------------------------------------------
+// Cache expiration
+// ---------------------------------------------------------------------------
+
+describe("ForemClient — cache expiration", () => {
+  beforeEach(() => {
+    globalThis.fetch = vi.fn();
+    foremQueue.reset();
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+    foremQueue.reset();
+    vi.useRealTimers();
+  });
+
+  it("returns cached user on second call within TTL", async () => {
+    const mockResponse = { id: 1, username: "cached_user" };
+    (globalThis.fetch as Mock).mockResolvedValue({
+      ok: true,
+      json: async () => mockResponse,
+    });
+
+    // First call — populates cache
+    await ForemClient.getUserByUsername("cached_user");
+    // Second call — should use cache, not fetch
+    await ForemClient.getUserByUsername("cached_user");
+
+    expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("refetches after cache TTL expires (5 minutes)", async () => {
+    vi.useFakeTimers();
+
+    const mockResponse = { id: 1, username: "expiring_user" };
+    (globalThis.fetch as Mock).mockResolvedValue({
+      ok: true,
+      json: async () => mockResponse,
+    });
+
+    // First call populates cache
+    await ForemClient.getUserByUsername("expiring_user");
+    expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+
+    // Advance past 5-minute TTL
+    vi.advanceTimersByTime(5 * 60 * 1000 + 1);
+
+    // Second call should re-fetch because cache expired
+    await ForemClient.getUserByUsername("expiring_user");
+    expect(globalThis.fetch).toHaveBeenCalledTimes(2);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // API key header injection
 // ---------------------------------------------------------------------------
 

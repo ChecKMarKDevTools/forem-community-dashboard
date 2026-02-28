@@ -492,6 +492,55 @@ describe("Dashboard Component", () => {
     expect(lowLabels.length).toBeGreaterThanOrEqual(2);
   });
 
+  it("handles fetch rejection for post details without crashing", async () => {
+    globalThis.fetch = vi.fn().mockImplementation((url) => {
+      if (url === "/api/posts")
+        return Promise.resolve({ ok: true, json: async () => mockPosts });
+      // Details fetch rejects (network error, CORS, etc.)
+      return Promise.reject(new Error("Network error"));
+    });
+
+    render(<Dashboard />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Needs review post")).toBeInTheDocument();
+    });
+
+    fireEvent.click(
+      screen.getByText("Needs review post").closest("div.border")!,
+    );
+
+    // Detail panel should not crash — just stays in a non-loaded state
+    // The loading spinner appears, then disappears once the catch fires
+    await waitFor(() => {
+      // No "Discussion State" should appear since the fetch failed
+      expect(screen.queryByText("Discussion State")).not.toBeInTheDocument();
+    });
+
+    // Posts list should still be accessible
+    expect(screen.getByText("Needs review post")).toBeInTheDocument();
+  });
+
+  it("does not render the API error for non-ok posts fetch", async () => {
+    const consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 500,
+    });
+
+    render(<Dashboard />);
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("No posts found. Waiting for data sync."),
+      ).toBeInTheDocument();
+    });
+
+    consoleErrorSpy.mockRestore();
+  });
+
   it("handles api error for posts list", async () => {
     const consoleErrorSpy = vi
       .spyOn(console, "error")

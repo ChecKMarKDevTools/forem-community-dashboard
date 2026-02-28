@@ -9,7 +9,7 @@ vi.mock("@/lib/supabase", () => ({
 }));
 
 // Builds the full Supabase query chain mock for this route:
-// supabase.from("articles").select(...).order(...).limit(...)
+// supabase.from("articles").select(...).gte(...).lte(...).order(...).limit(...)
 function buildChain(resolvedValue: { data: unknown; error: unknown }) {
   const mockSelect = vi.fn().mockReturnThis();
   const mockGte = vi.fn().mockReturnThis();
@@ -143,6 +143,19 @@ describe("GET /api/posts", () => {
 
     expect(res.status).toBe(500);
     expect(json.error).toBe("Client not initialized");
+  });
+
+  it("returns 500 with 'Unknown error' when catch receives a non-Error value", async () => {
+    const nonError: unknown = "string error";
+    (supabase.from as Mock).mockImplementation(() => {
+      throw nonError;
+    });
+
+    const res = await GET();
+    const json = await res.json();
+
+    expect(res.status).toBe(500);
+    expect(json.error).toBe("Unknown error");
   });
 
   // ── Edge cases ─────────────────────────────────────────────────────────────

@@ -144,7 +144,9 @@ export const foremQueue = new RequestQueue();
 
 /**
  * Wraps fetch with exponential-backoff retry on HTTP 429 (rate-limited).
- * Enforces the 3000ms delay on 429 as specified.
+ * Respects the Retry-After response header when present; otherwise uses
+ * RETRY_BASE_DELAY_MS * 2^attempt. Gives up after MAX_RETRIES retries and
+ * returns the final response so the caller can inspect the status.
  */
 async function fetchWithRetry(
   url: string,
@@ -165,10 +167,9 @@ async function fetchWithRetry(
         ? Number.parseInt(retryAfterHeader, 10)
         : Number.NaN;
 
-      let delayMs = RETRY_BASE_DELAY_MS * 2 ** attempt;
-      if (!Number.isNaN(retryAfterSec)) {
-        delayMs = retryAfterSec * 1000;
-      }
+      const delayMs = Number.isNaN(retryAfterSec)
+        ? RETRY_BASE_DELAY_MS * 2 ** attempt
+        : retryAfterSec * 1000;
 
       await new Promise<void>((resolve) => setTimeout(resolve, delayMs));
       return fetchWithRetry(url, init, attempt + 1);
@@ -184,6 +185,7 @@ export class ForemClient {
     perPage: number = 100,
   ): Promise<ForemArticle[]> {
     const url = `${BASE_URL}/articles?per_page=${perPage}&page=${page}`;
+    // next.revalidate is a Next.js fetch extension for CDN cache control
     const res = await fetchWithRetry(url, {
       next: { revalidate: 300 },
     } as RequestInit);
