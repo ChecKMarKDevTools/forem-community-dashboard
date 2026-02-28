@@ -316,15 +316,22 @@ function makeCronRequest(token?: string) {
 }
 
 describe("Integration: POST /api/cron", () => {
+  let savedCronSecret: string | undefined;
+
   beforeEach(() => {
     vi.clearAllMocks();
+    savedCronSecret = process.env.CRON_SECRET;
     process.env.CRON_SECRET = CRON_SECRET;
     // Default scoring mock — individual tests may override
     (evaluatePriority as Mock).mockReturnValue(DEFAULT_SCORE);
   });
 
   afterEach(() => {
-    delete process.env.CRON_SECRET;
+    if (savedCronSecret === undefined) {
+      delete process.env.CRON_SECRET;
+    } else {
+      process.env.CRON_SECRET = savedCronSecret;
+    }
   });
 
   it("syncs articles and returns success with count", async () => {

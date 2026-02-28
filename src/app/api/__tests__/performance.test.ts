@@ -261,14 +261,20 @@ describe("Performance: GET /api/posts/[id]", () => {
 
 describe("Performance: POST /api/cron", () => {
   const CRON_SECRET = "perf-test-secret";
+  let savedCronSecret: string | undefined;
 
   beforeEach(() => {
     vi.clearAllMocks();
+    savedCronSecret = process.env.CRON_SECRET;
     process.env.CRON_SECRET = CRON_SECRET;
   });
 
   afterEach(() => {
-    delete process.env.CRON_SECRET;
+    if (savedCronSecret === undefined) {
+      delete process.env.CRON_SECRET;
+    } else {
+      process.env.CRON_SECRET = savedCronSecret;
+    }
   });
 
   function makeCronRequest() {

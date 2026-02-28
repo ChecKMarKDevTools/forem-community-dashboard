@@ -51,8 +51,11 @@ function makeArticle(id: number, daysAgo: number, username = "author") {
 // ---------------------------------------------------------------------------
 
 describe("POST /api/admin/seed", () => {
+  let savedCronSecret: string | undefined;
+
   beforeEach(() => {
     vi.clearAllMocks();
+    savedCronSecret = process.env.CRON_SECRET;
     process.env.CRON_SECRET = VALID_SECRET;
     (syncArticles as Mock).mockResolvedValue({
       synced: 0,
@@ -62,7 +65,11 @@ describe("POST /api/admin/seed", () => {
   });
 
   afterEach(() => {
-    delete process.env.CRON_SECRET;
+    if (savedCronSecret === undefined) {
+      delete process.env.CRON_SECRET;
+    } else {
+      process.env.CRON_SECRET = savedCronSecret;
+    }
   });
 
   // ── Authentication ────────────────────────────────────────────────────────

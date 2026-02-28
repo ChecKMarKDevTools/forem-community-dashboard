@@ -44,8 +44,11 @@ const VALID_SECRET = "test-secret";
 // ---------------------------------------------------------------------------
 
 describe("POST /api/cron", () => {
+  let savedCronSecret: string | undefined;
+
   beforeEach(() => {
     vi.clearAllMocks();
+    savedCronSecret = process.env.CRON_SECRET;
     process.env.CRON_SECRET = VALID_SECRET;
     (syncArticles as Mock).mockResolvedValue({
       synced: 0,
@@ -55,7 +58,11 @@ describe("POST /api/cron", () => {
   });
 
   afterEach(() => {
-    delete process.env.CRON_SECRET;
+    if (savedCronSecret === undefined) {
+      delete process.env.CRON_SECRET;
+    } else {
+      process.env.CRON_SECRET = savedCronSecret;
+    }
   });
 
   // ── Authentication ────────────────────────────────────────────────────────
