@@ -14,6 +14,8 @@ type SpinnerProps = Readonly<{
 export function Spinner({ size = "md", className }: SpinnerProps) {
   return (
     <div
+      role="status"
+      aria-label="Loading"
       className={cn(
         "border-brand-600 animate-spin rounded-full border-b-2",
         SIZE_MAP[size],

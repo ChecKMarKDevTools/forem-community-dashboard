@@ -23,6 +23,15 @@ export function QueueCard({
         className,
       )}
       onClick={onClick}
+      role="button"
+      tabIndex={0}
+      aria-pressed={selected}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onClick();
+        }
+      }}
     >
       <CardContent className="p-4">{children}</CardContent>
     </Card>
