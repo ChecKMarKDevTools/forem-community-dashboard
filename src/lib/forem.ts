@@ -78,9 +78,9 @@ export interface ForemComment {
   children: ForemComment[];
 }
 
-/** Returns headers that include the API key when FOREM_API_KEY is configured. */
+/** Returns headers that include the API key when DEV_API_KEY is configured. */
 function buildHeaders(): Record<string, string> {
-  const apiKey = process.env.FOREM_API_KEY;
+  const apiKey = process.env.DEV_API_KEY;
   return apiKey ? { "api-key": apiKey } : {};
 }
 

@@ -164,21 +164,21 @@ describe("ForemClient — API key header", () => {
 
   beforeEach(() => {
     globalThis.fetch = vi.fn();
-    savedApiKey = process.env.FOREM_API_KEY;
+    savedApiKey = process.env.DEV_API_KEY;
   });
 
   afterEach(() => {
     vi.clearAllMocks();
     foremQueue.reset();
     if (savedApiKey === undefined) {
-      delete process.env.FOREM_API_KEY;
+      delete process.env.DEV_API_KEY;
     } else {
-      process.env.FOREM_API_KEY = savedApiKey;
+      process.env.DEV_API_KEY = savedApiKey;
     }
   });
 
-  it("sends api-key header when FOREM_API_KEY is set", async () => {
-    process.env.FOREM_API_KEY = "my-secret-key";
+  it("sends api-key header when DEV_API_KEY is set", async () => {
+    process.env.DEV_API_KEY = "my-secret-key";
     (globalThis.fetch as Mock).mockResolvedValueOnce({
       ok: true,
       json: async () => [],
@@ -195,8 +195,8 @@ describe("ForemClient — API key header", () => {
     );
   });
 
-  it("omits api-key header when FOREM_API_KEY is not set", async () => {
-    delete process.env.FOREM_API_KEY;
+  it("omits api-key header when DEV_API_KEY is not set", async () => {
+    delete process.env.DEV_API_KEY;
     (globalThis.fetch as Mock).mockResolvedValueOnce({
       ok: true,
       json: async () => [],
