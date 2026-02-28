@@ -1,6 +1,6 @@
 # Forem Community Observability Dashboard
 
-A moderation intelligence dashboard for [Forem](https://forem.com/) communities (dev.to and self-hosted instances). It ingests the latest posts via the public Forem API, scores each one against behavioral, audience, and pattern heuristics, and persists the results in Supabase so community managers can surface high-attention content at a glance.
+A moderation intelligence dashboard for [Forem](https://forem.com/) communities (dev.to and self-hosted instances). It ingests the latest posts via the public Forem API, classifies each one into actionable categories (Needs Review, Boost Visibility, Needs Response, Low Quality, Normal), and persists the results in Supabase so community managers can surface posts needing attention at a glance.
 
 **Production:** https://forem-signal.checkmarkdevtools.dev _(Cloud Run — deployed post-initial-release)_
 
@@ -33,32 +33,34 @@ graph TB
 
 ### Background Sync Flow
 
-Triggered by the GitHub Actions cron or `workflow_dispatch`. Each run fetches up to 100 articles, scores them, and upserts results.
+Triggered by the GitHub Actions cron or `workflow_dispatch`. Each run fetches up to 200 articles (2 pages), filters to the 2-72h window, light-scores and shortlists top candidates, deep-fetches comments, classifies into categories, and upserts results.
 
 ```mermaid
 sequenceDiagram
   participant GHA as GitHub Actions
   participant Cron as POST /api/cron
+  participant Sync as syncArticles
   participant FC as ForemClient
-  participant Score as evaluatePriority
   participant SB as Supabase
 
   GHA->>Cron: POST (Authorization: Bearer)
-  Cron->>FC: getLatestArticles(page=1, per_page=100)
-  FC-->>Cron: ForemArticle[]
+  Cron->>Sync: syncArticles(5)
+  Sync->>FC: getLatestArticles(page 1-2, 100 each)
+  FC-->>Sync: ForemArticle[] (up to 200)
+  Note over Sync: Filter 2-72h window, light-score, shortlist top N
 
-  loop For each article
-    Cron->>FC: getUserByUsername(author) [user cache]
-    FC-->>Cron: ForemUser | null
-    Cron->>FC: getComments(articleId)
-    FC-->>Cron: ForemComment[]
-    Cron->>Score: evaluatePriority(article, user, comments, recentPosts)
-    Score-->>Cron: ScoreBreakdown {total, behavior, audience, pattern, attention_level}
-    Cron->>SB: upsert users row (once per unique author per run)
-    Cron->>SB: upsert articles row (score, attention_level, explanations)
-    Cron->>SB: upsert commenters rows
+  loop For each shortlisted article
+    Sync->>FC: getUserByUsername(author) [cached]
+    FC-->>Sync: ForemUser | null
+    Sync->>FC: getComments(articleId)
+    FC-->>Sync: ForemComment[]
+    Note over Sync: Compute metrics → classify category
+    Sync->>SB: upsert users row (once per unique author)
+    Sync->>SB: upsert articles row (score, category, explanations)
+    Sync->>SB: upsert commenters rows
   end
 
+  Sync-->>Cron: {synced, failed, errors[]}
   Cron-->>GHA: {success, synced, failed, errors[]}
 ```
 
@@ -79,7 +81,7 @@ sequenceDiagram
   Posts->>SB: SELECT articles ORDER BY score DESC LIMIT 100
   SB-->>Posts: scored article rows
   Posts-->>D: article list
-  D-->>U: Ranked list with attention badges (low / medium / high)
+  D-->>U: Ranked list with category badges (NEEDS_REVIEW, BOOST, etc.)
 
   U->>D: Click a post
   D->>Detail: fetch(/api/posts/42)
@@ -94,20 +96,41 @@ sequenceDiagram
 
 ## Scoring Engine
 
-Each article is scored at sync time (not at read time) across three independent dimensions. The total is capped at 100 and persisted alongside the article.
+Each article is classified at sync time (not at read time) into one of four attention categories, or `NORMAL` if no thresholds are met. The pipeline first computes common metrics, then applies category-specific IF logic.
 
-| Dimension    | Signal                                                        | Points |
-| ------------ | ------------------------------------------------------------- | ------ |
-| **Behavior** | Account age < 7 days                                          | +15    |
-|              | Off-site canonical URL                                        | +10    |
-|              | > 2 posts within 24 h by same author                          | +9     |
-| **Audience** | ≤ 2 unique commenters with > 3 total comments                 | +15    |
-|              | Any comment engagement (baseline)                             | +5     |
-|              | > 20 reactions with zero comments                             | +15    |
-| **Pattern**  | Repeated tag combination across author's recent posts         | +15    |
-|              | Uniform publish intervals (< 5 min variance across ≥ 3 posts) | +18    |
+### Common Metrics
 
-**Attention level thresholds:** `low` < 40 · `medium` 40–69 · `high` ≥ 70
+| Metric               | Formula                                                                |
+| -------------------- | ---------------------------------------------------------------------- |
+| `word_count`         | `reading_time_minutes * 200` (estimated)                               |
+| `comments_per_hour`  | `comment_count / max(1, time_since_post / 60)`                         |
+| `avg_comment_length` | `avg(words(comment.body_html))`                                        |
+| `reply_ratio`        | `replies_with_parent / max(1, comment_count)`                          |
+| `author_post_freq`   | Posts by the same author in the last 24 h                              |
+| `engagement`         | `reactions + (comments * 2)`                                           |
+| `effort`             | `log2(word_count + 1) + unique_commenters + (avg_comment_length / 40)` |
+| `exposure`           | `max(1, reactions + comments)`                                         |
+| `attention_delta`    | `effort - log2(exposure + 1)`                                          |
+
+### Categories
+
+| Category                 | Key Conditions                                                                                                                  |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------- |
+| **NEEDS_RESPONSE**       | `time_since_post >= 30 min` AND `support_score >= 3` (first post, no reactions, no comments, help words)                        |
+| **POSSIBLY_LOW_QUALITY** | `risk_score >= 4` (high post freq, short body, no engagement, author promo keywords, repeated links, minus engagement credit)   |
+| **NEEDS_REVIEW**         | `comments >= 6` AND `heat_score >= 5` AND `reactions / comments < 1.2`                                                          |
+| **BOOST_VISIBILITY**     | `word_count >= 600` AND `unique_commenters >= 2` AND `avg_comment_length >= 18` AND `reactions <= 5` AND `attention_delta >= 3` |
+| **NORMAL**               | Default when no category thresholds are met; also forced for `devteam` org posts (weekly threads, challenges)                   |
+
+### Sub-Scores
+
+| Sub-Score       | Components                                                                                                                           |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `heat_score`    | `comments_per_hour + reply_ratio * 3 + alternating_pairs + sentiment_flips`                                                          |
+| `risk_score`    | `max(0, freq_penalty + (short body ? 2 : 0) + (no engagement ? 2 : 0) + author_promo_keywords + repeated_links - engagement_credit)` |
+| `freq_penalty`  | `max(0, author_post_freq - 2) * 2` (only penalizes > 2 posts/day)                                                                    |
+| `engage_credit` | `(reactions >= 10 ? 2 : 0) + (unique_commenters >= 5 ? 1 : 0)` (offsets risk for high-traction posts)                                |
+| `support_score` | `(first_post ? 2 : 0) + (no reactions ? 1 : 0) + (no comments ? 2 : 0) + help_keywords`                                              |
 
 ---
 
