@@ -2,7 +2,7 @@
  * Performance tests for API handlers and core library functions.
  *
  * These tests assert that response time and throughput stay within defined
- * budgets. Budgets are intentionally conservative given the jsdom environment
+ * budgets. Budgets are intentionally conservative given the Node.js test environment
  * and mocked I/O — they detect algorithmic regressions, not infrastructure issues.
  *
  * Convention: BUDGET_* constants define the maximum acceptable duration in ms.

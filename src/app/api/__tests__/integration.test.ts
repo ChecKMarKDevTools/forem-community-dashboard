@@ -3,8 +3,8 @@
  *
  * These tests exercise full request→response flows across all three routes,
  * verifying correct data shapes, HTTP semantics, and cross-route data
- * consistency. Supabase and ForemClient are mocked at module boundaries;
- * all other application code (routing, scoring, serialization) runs for real.
+ * consistency. Supabase, ForemClient, and scoring are mocked at module
+ * boundaries; routing and serialization logic run for real.
  */
 
 import { NextRequest } from "next/server";
