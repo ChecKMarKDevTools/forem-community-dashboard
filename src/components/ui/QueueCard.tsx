@@ -18,8 +18,10 @@ export function QueueCard({
   return (
     <Card
       className={cn(
-        "border-brand-100 hover:border-brand-300 cursor-pointer transition-all duration-200 hover:shadow-md",
-        selected ? "ring-brand-500 bg-brand-50 ring-2" : "bg-white",
+        "border-surface-border hover:border-surface-raised cursor-pointer transition-all duration-200 hover:shadow-md",
+        selected
+          ? "ring-accent-primary bg-surface-secondary ring-2"
+          : "bg-paper-clue",
         className,
       )}
       onClick={onClick}

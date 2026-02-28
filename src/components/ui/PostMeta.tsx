@@ -18,11 +18,11 @@ export function PostMeta({
     return (
       <div
         className={cn(
-          "text-brand-600 flex flex-wrap items-center gap-4 text-sm",
+          "text-accent-primary flex flex-wrap items-center gap-4 text-sm",
           className,
         )}
       >
-        <span className="bg-brand-50 flex items-center gap-1.5 rounded-full px-3 py-1.5 font-medium">
+        <span className="bg-surface-secondary flex items-center gap-1.5 rounded-full px-3 py-1.5 font-medium">
           <User className="h-4 w-4" /> @{author}
         </span>
         <span className="flex items-center gap-1.5">
@@ -35,7 +35,7 @@ export function PostMeta({
   return (
     <div
       className={cn(
-        "text-brand-500 flex items-center gap-2 text-xs",
+        "text-text-muted flex items-center gap-2 text-xs",
         className,
       )}
     >

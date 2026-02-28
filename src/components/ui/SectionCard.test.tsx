@@ -11,32 +11,32 @@ describe("SectionCard", () => {
     expect(screen.getByText("Card content")).toBeInTheDocument();
   });
 
-  it("applies border-brand-100 by default", () => {
+  it("applies border-surface-border by default", () => {
     const { container } = render(
       <SectionCard>
         <p>Content</p>
       </SectionCard>,
     );
-    expect(container.firstChild).toHaveClass("border-brand-100");
+    expect(container.firstChild).toHaveClass("border-surface-border");
   });
 
-  it("does not apply bg-brand-50/30 in default variant", () => {
+  it("does not apply bg-surface-primary/30 in default variant", () => {
     const { container } = render(
       <SectionCard>
         <p>Content</p>
       </SectionCard>,
     );
     const classList = (container.firstChild as HTMLElement).className;
-    expect(classList).not.toContain("bg-brand-50/30");
+    expect(classList).not.toContain("bg-surface-primary/30");
   });
 
-  it("applies bg-brand-50/30 in muted variant", () => {
+  it("applies bg-surface-primary/30 in muted variant", () => {
     const { container } = render(
       <SectionCard variant="muted">
         <p>Content</p>
       </SectionCard>,
     );
-    expect(container.firstChild).toHaveClass("bg-brand-50/30");
+    expect(container.firstChild).toHaveClass("bg-surface-primary/30");
   });
 
   it("applies custom className", () => {

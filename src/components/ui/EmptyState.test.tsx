@@ -32,7 +32,9 @@ describe("EmptyState", () => {
     expect(screen.getByText("Select a post")).toBeInTheDocument();
     expect(screen.getByText("Details will appear here.")).toBeInTheDocument();
     // Prominent variant has the circular icon wrapper
-    const iconWrapper = container.querySelector(".rounded-full.bg-brand-100");
+    const iconWrapper = container.querySelector(
+      ".rounded-full.bg-surface-secondary",
+    );
     expect(iconWrapper).toBeInTheDocument();
   });
 

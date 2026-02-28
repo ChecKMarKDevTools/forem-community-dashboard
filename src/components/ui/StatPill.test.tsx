@@ -32,11 +32,11 @@ describe("StatPill", () => {
 
   it("applies iconClassName to the icon", () => {
     const { container } = render(
-      <StatPill icon={MessageSquare} iconClassName="text-brand-500">
+      <StatPill icon={MessageSquare} iconClassName="text-accent-primary">
         5
       </StatPill>,
     );
     const svg = container.querySelector("svg");
-    expect(svg?.classList.toString()).toContain("text-brand-500");
+    expect(svg?.classList.toString()).toContain("text-accent-primary");
   });
 });

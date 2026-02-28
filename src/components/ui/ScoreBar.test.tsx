@@ -8,7 +8,7 @@ describe("ScoreBar", () => {
     description: "Very active discussion.",
     value: 15,
     max: 50,
-    colorClass: "bg-warning-500",
+    colorClass: "bg-state-warning",
   };
 
   it("renders label, sublabel, and description", () => {
@@ -46,9 +46,9 @@ describe("ScoreBar", () => {
 
   it("applies the colorClass to the fill bar", () => {
     const { container } = render(
-      <ScoreBar {...defaultProps} colorClass="bg-danger-500" />,
+      <ScoreBar {...defaultProps} colorClass="bg-state-negative" />,
     );
-    const bar = container.querySelector(".bg-danger-500");
+    const bar = container.querySelector(".bg-state-negative");
     expect(bar).toBeInTheDocument();
   });
 

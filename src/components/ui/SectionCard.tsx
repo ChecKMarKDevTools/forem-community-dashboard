@@ -16,8 +16,8 @@ export function SectionCard({
   return (
     <Card
       className={cn(
-        "border-brand-100",
-        variant === "muted" && "bg-brand-50/30",
+        "border-surface-border",
+        variant === "muted" && "bg-surface-primary/30",
         className,
       )}
     >

@@ -6,7 +6,7 @@ describe("Badge", () => {
     render(<Badge>Test Badge</Badge>);
     const badge = screen.getByText("Test Badge");
     expect(badge).toBeInTheDocument();
-    expect(badge).toHaveClass("bg-brand-500");
+    expect(badge).toHaveClass("bg-accent-primary");
   });
 
   it("renders neutral badge", () => {
@@ -48,7 +48,7 @@ describe("Badge", () => {
     render(<Badge variant="secondary">Sec</Badge>);
     const badge = screen.getByText("Sec");
     expect(badge).toBeInTheDocument();
-    expect(badge).toHaveClass("bg-brand-100");
+    expect(badge).toHaveClass("bg-surface-secondary");
   });
 
   it("renders outline badge", () => {

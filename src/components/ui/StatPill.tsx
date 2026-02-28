@@ -16,7 +16,9 @@ export function StatPill({
   className,
 }: StatPillProps) {
   return (
-    <div className={cn("text-brand-700 flex items-center gap-2", className)}>
+    <div
+      className={cn("text-text-secondary flex items-center gap-2", className)}
+    >
       {Icon && <Icon className={cn("h-5 w-5", iconClassName)} />}
       <span className="font-semibold">{children}</span>
     </div>
