@@ -18,8 +18,10 @@ PORT="3000"
 # ENVIRONMENT drives Cloud Run labels and Docker image tags.
 # Override via: ENVIRONMENT=staging ./deploy.sh
 ENVIRONMENT="${ENVIRONMENT:-production}"
-# The custom subdomain is always an allowed CORS origin.
-STATIC_CORS_ORIGIN="https://dev-signal.checkmarkdevtools.dev"
+# The canonical custom domain for this service.  Used as a static CORS origin
+# and for optional Cloud Run domain mapping.  Set CUSTOM_DOMAIN="" to skip.
+CUSTOM_DOMAIN="${CUSTOM_DOMAIN:-dev-signal.checkmarkdevtools.dev}"
+STATIC_CORS_ORIGIN="https://$CUSTOM_DOMAIN"
 # This project MUST be active before deploying.
 EXPECTED_PROJECT="checkmarkdevtools"
 SEPARATOR="=================================================="
@@ -211,16 +213,50 @@ if [[ -z "$EXISTING_URL" || "$DEPLOYED_URL" != "$EXISTING_URL" ]]; then
     --update-env-vars "^|^ALLOWED_ORIGINS=$ALLOWED_ORIGINS"
 fi
 
+# ── Custom domain mapping (optional) ─────────────────────────────────────────
+# Maps CUSTOM_DOMAIN to this Cloud Run service so the canonical URL resolves.
+# Requires the domain to be verified in Google Search Console first:
+#   https://search.google.com/search-console
+# Skip by setting CUSTOM_DOMAIN="" in .env or the environment.
+if [[ -n "${CUSTOM_DOMAIN:-}" ]]; then
+  echo ""
+  echo "--- Custom domain mapping: $CUSTOM_DOMAIN ---"
+  if gcloud run domain-mappings describe "$CUSTOM_DOMAIN" \
+    --region="$REGION" --project="$PROJECT_ID" --quiet &>/dev/null 2>&1; then
+    echo "Domain mapping already exists for $CUSTOM_DOMAIN"
+  else
+    if gcloud run domain-mappings create \
+      --service="$SERVICE_NAME" \
+      --domain="$CUSTOM_DOMAIN" \
+      --region="$REGION" \
+      --project="$PROJECT_ID" --quiet 2>/dev/null; then
+      echo "Domain mapping created.  Add these DNS records at your registrar:"
+      gcloud run domain-mappings describe "$CUSTOM_DOMAIN" \
+        --region="$REGION" --project="$PROJECT_ID" \
+        --format='table[box](spec.resourceRecords[].type,spec.resourceRecords[].name,spec.resourceRecords[].rrdata)' \
+        2>/dev/null || true
+    else
+      echo "Warning: domain mapping failed (domain may not be verified in Search Console)." >&2
+      echo "  Verify ownership at https://search.google.com/search-console" >&2
+      echo "  then re-run this script, or create the mapping manually in the GCP console." >&2
+    fi
+  fi
+fi
+
 # ── Summary ───────────────────────────────────────────────────────────────────
 echo ""
 echo "$SEPARATOR"
 echo "DEPLOYMENT COMPLETE"
 echo "$SEPARATOR"
 echo "Service URL:    $DEPLOYED_URL"
+echo "Custom domain:  ${CUSTOM_DOMAIN:-(none)}"
 echo "Environment:    $ENVIRONMENT"
 echo "CORS origins:   $ALLOWED_ORIGINS"
 echo ""
 echo "Next steps:"
 echo "  • Set APP_URL=$DEPLOYED_URL in GitHub repo variables for cron job"
-echo "  • Verify: curl -I $DEPLOYED_URL/api/posts"
+if [[ -n "${CUSTOM_DOMAIN:-}" ]]; then
+  echo "  • Verify DNS propagation: curl -I https://$CUSTOM_DOMAIN/api/posts"
+fi
+echo "  • Verify GCP URL: curl -I $DEPLOYED_URL/api/posts"
 echo "$SEPARATOR"
