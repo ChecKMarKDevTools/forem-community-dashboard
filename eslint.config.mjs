@@ -20,6 +20,16 @@ const eslintConfig = defineConfig([
       noInlineConfig: true,
       reportUnusedDisableDirectives: "error",
     },
+    rules: {
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+        },
+      ],
+    },
   },
   {
     files: ["**/*.test.ts", "**/*.test.tsx"],
