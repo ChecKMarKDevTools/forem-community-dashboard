@@ -4,7 +4,11 @@ import { syncArticles } from "@/lib/sync";
 
 const MAX_DAYS = 90;
 const DEFAULT_DAYS = 3;
-const PER_PAGE = 30;
+const PER_PAGE = 100;
+// Safety cap: Forem articles are ranked, not strictly date-ordered, so we
+// can't stop on the first old article. We stop when an entire page falls
+// outside the cutoff window (no matches), or when we hit MAX_PAGES.
+const MAX_PAGES = 100;
 
 export async function POST(request: Request): Promise<NextResponse> {
   const authHeader = request.headers.get("authorization");
@@ -41,28 +45,30 @@ export async function POST(request: Request): Promise<NextResponse> {
   try {
     const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
     const collected: ForemArticle[] = [];
-    let page = 1;
-    let done = false;
 
-    while (!done) {
+    for (let page = 1; page <= MAX_PAGES; page++) {
       const articles = await ForemClient.getLatestArticles(page, PER_PAGE);
       if (articles.length === 0) break;
 
-      for (const article of articles) {
-        if (new Date(article.published_at) < cutoff) {
-          done = true;
-          break;
-        }
-        collected.push(article);
-      }
+      const withinWindow = articles.filter(
+        (a) => new Date(a.published_at) >= cutoff,
+      );
+      collected.push(...withinWindow);
 
-      // Forem returned a partial page — no more pages exist
+      // Full page with zero matches — far enough back that we won't find more
+      if (withinWindow.length === 0) break;
+
+      // Partial page — no further pages exist
       if (articles.length < PER_PAGE) break;
-      page++;
     }
 
-    await syncArticles(collected);
-    return NextResponse.json({ success: true, count: collected.length, days });
+    const result = await syncArticles(collected);
+    return NextResponse.json({
+      success: true,
+      collected: collected.length,
+      ...result,
+      days,
+    });
   } catch (error: unknown) {
     console.error("Seed sync failed", error);
     return NextResponse.json(

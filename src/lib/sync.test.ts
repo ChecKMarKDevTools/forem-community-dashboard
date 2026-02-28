@@ -69,9 +69,10 @@ describe("syncArticles", () => {
   // ── Empty input ────────────────────────────────────────────────────────────
 
   it("does nothing when articles array is empty", async () => {
-    await syncArticles([]);
+    const result = await syncArticles([]);
     expect(ForemClient.getUserByUsername).not.toHaveBeenCalled();
     expect(supabase.from).not.toHaveBeenCalled();
+    expect(result).toEqual({ synced: 0, failed: 0, errors: [] });
   });
 
   // ── User upsert ────────────────────────────────────────────────────────────
@@ -281,28 +282,31 @@ describe("syncArticles", () => {
 
   // ── Error / exception flows ────────────────────────────────────────────────
 
-  it("propagates error when getUserByUsername throws", async () => {
+  it("captures getUserByUsername error in result and continues", async () => {
     (ForemClient.getUserByUsername as Mock).mockRejectedValue(
       new Error("User lookup failed"),
     );
 
-    await expect(syncArticles([makeArticle()])).rejects.toThrow(
-      "User lookup failed",
-    );
+    const result = await syncArticles([makeArticle()]);
+
+    expect(result.failed).toBe(1);
+    expect(result.synced).toBe(0);
+    expect(result.errors[0]).toContain("User lookup failed");
   });
 
-  it("propagates error when getComments throws", async () => {
+  it("captures getComments error in result and continues", async () => {
     (ForemClient.getUserByUsername as Mock).mockResolvedValue(null);
     (ForemClient.getComments as Mock).mockRejectedValue(
       new Error("Comment API error"),
     );
 
-    await expect(syncArticles([makeArticle()])).rejects.toThrow(
-      "Comment API error",
-    );
+    const result = await syncArticles([makeArticle()]);
+
+    expect(result.failed).toBe(1);
+    expect(result.errors[0]).toContain("Comment API error");
   });
 
-  it("propagates error when supabase article upsert throws", async () => {
+  it("captures supabase upsert error in result and continues", async () => {
     (ForemClient.getUserByUsername as Mock).mockResolvedValue(null);
     (ForemClient.getComments as Mock).mockResolvedValue([]);
     (evaluatePriority as Mock).mockReturnValue(makeScore());
@@ -311,25 +315,30 @@ describe("syncArticles", () => {
       upsert: vi.fn().mockRejectedValue(new Error("Supabase write failure")),
     });
 
-    await expect(syncArticles([makeArticle()])).rejects.toThrow(
-      "Supabase write failure",
-    );
+    const result = await syncArticles([makeArticle()]);
+
+    expect(result.failed).toBe(1);
+    expect(result.errors[0]).toContain("Supabase write failure");
   });
 
-  it("stops on first article error without processing subsequent articles", async () => {
+  it("continues processing subsequent articles after a per-article error", async () => {
     const articles = [makeArticle({ id: 30 }), makeArticle({ id: 31 })];
 
     (ForemClient.getUserByUsername as Mock).mockResolvedValue(null);
     (ForemClient.getComments as Mock)
-      .mockResolvedValueOnce([])
-      .mockRejectedValueOnce(new Error("Partial failure"));
+      .mockRejectedValueOnce(new Error("Partial failure"))
+      .mockResolvedValueOnce([]);
     (evaluatePriority as Mock).mockReturnValue(makeScore());
 
     const chain = makeUpsertChain();
     (supabase.from as Mock).mockReturnValue(chain);
 
-    await expect(syncArticles(articles)).rejects.toThrow("Partial failure");
-    // Only 1 article upsert should have happened (first article succeeded)
+    const result = await syncArticles(articles);
+
+    expect(result.synced).toBe(1);
+    expect(result.failed).toBe(1);
+    expect(result.errors[0]).toContain("Partial failure");
+    // Second article was still processed
     expect(ForemClient.getComments).toHaveBeenCalledTimes(2);
   });
 });

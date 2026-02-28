@@ -47,7 +47,11 @@ describe("POST /api/cron", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     process.env.CRON_SECRET = VALID_SECRET;
-    (syncArticles as Mock).mockResolvedValue(undefined);
+    (syncArticles as Mock).mockResolvedValue({
+      synced: 0,
+      failed: 0,
+      errors: [],
+    });
   });
 
   afterEach(() => {
@@ -107,25 +111,35 @@ describe("POST /api/cron", () => {
       expect(syncArticles).toHaveBeenCalledWith(articles);
     });
 
-    it("returns { success: true, count } matching article count", async () => {
+    it("returns { success, synced, failed, errors } from syncArticles result", async () => {
       const articles = [makeArticle(1), makeArticle(2), makeArticle(3)];
       (ForemClient.getLatestArticles as Mock).mockResolvedValue(articles);
+      (syncArticles as Mock).mockResolvedValue({
+        synced: 3,
+        failed: 0,
+        errors: [],
+      });
 
       const res = await POST(makeRequest(`Bearer ${VALID_SECRET}`));
       const json = await res.json();
 
       expect(res.status).toBe(200);
-      expect(json).toEqual({ success: true, count: 3 });
+      expect(json).toEqual({ success: true, synced: 3, failed: 0, errors: [] });
     });
 
-    it("returns count 0 when no articles are returned", async () => {
+    it("passes empty array to syncArticles when no articles returned", async () => {
       (ForemClient.getLatestArticles as Mock).mockResolvedValue([]);
+      (syncArticles as Mock).mockResolvedValue({
+        synced: 0,
+        failed: 0,
+        errors: [],
+      });
 
       const res = await POST(makeRequest(`Bearer ${VALID_SECRET}`));
       const json = await res.json();
 
       expect(res.status).toBe(200);
-      expect(json).toEqual({ success: true, count: 0 });
+      expect(json.synced).toBe(0);
       expect(syncArticles).toHaveBeenCalledWith([]);
     });
   });

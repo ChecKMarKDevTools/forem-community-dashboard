@@ -355,7 +355,7 @@ describe("Integration: POST /api/cron", () => {
 
     expect(res.status).toBe(200);
     expect(json.success).toBe(true);
-    expect(json.count).toBe(1);
+    expect(json.synced).toBe(1);
 
     // Verify Supabase was called for users and articles
     const fromCalls = (supabase.from as Mock).mock.calls.map((c) => c[0]);
@@ -470,7 +470,7 @@ describe("Integration: POST /api/cron", () => {
     const json = await res.json();
 
     expect(res.status).toBe(200);
-    expect(json.count).toBe(0);
+    expect(json.synced).toBe(0);
     expect(supabase.from).not.toHaveBeenCalled();
   });
 });

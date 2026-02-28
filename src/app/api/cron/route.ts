@@ -10,8 +10,8 @@ export async function POST(request: Request) {
     }
 
     const articles = await ForemClient.getLatestArticles(1, 100);
-    await syncArticles(articles);
-    return NextResponse.json({ success: true, count: articles.length });
+    const result = await syncArticles(articles);
+    return NextResponse.json({ success: true, ...result });
   } catch (error: unknown) {
     console.error("Cron sync failed", error);
     return NextResponse.json(

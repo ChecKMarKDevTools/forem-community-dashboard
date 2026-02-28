@@ -54,7 +54,11 @@ describe("POST /api/admin/seed", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     process.env.CRON_SECRET = VALID_SECRET;
-    (syncArticles as Mock).mockResolvedValue(undefined);
+    (syncArticles as Mock).mockResolvedValue({
+      synced: 0,
+      failed: 0,
+      errors: [],
+    });
   });
 
   afterEach(() => {
@@ -190,13 +194,14 @@ describe("POST /api/admin/seed", () => {
   // ── Pagination logic ──────────────────────────────────────────────────────
 
   describe("pagination", () => {
-    it("collects all articles within the day window from a single page", async () => {
-      // 3 articles within 3 days, 1 older — expects 3 collected
+    it("collects only articles within the date window, skipping older ones on same page", async () => {
+      // Mixed ordering on one page — simulates Forem's rank-based response
       const articles = [
         makeArticle(1, 1),
         makeArticle(2, 2),
         makeArticle(3, 3),
-        makeArticle(4, 4), // outside 3-day window
+        makeArticle(4, 10), // outside window — should be skipped, not stop pagination
+        makeArticle(5, 1), // back inside window — must still be collected
       ];
       (ForemClient.getLatestArticles as Mock).mockResolvedValue(articles);
 
@@ -206,21 +211,26 @@ describe("POST /api/admin/seed", () => {
       const json = await res.json();
 
       expect(res.status).toBe(200);
-      expect(json.count).toBe(3);
+      expect(json.collected).toBe(4);
       expect(syncArticles).toHaveBeenCalledWith(
         expect.arrayContaining([
           expect.objectContaining({ id: 1 }),
           expect.objectContaining({ id: 2 }),
           expect.objectContaining({ id: 3 }),
+          expect.objectContaining({ id: 5 }),
         ]),
       );
     });
 
-    it("stops pagination when a full page contains an article past the cutoff", async () => {
-      // Page 1: 30 articles within window (full page → fetch page 2)
-      const page1 = Array.from({ length: 30 }, (_, i) => makeArticle(i + 1, 1));
-      // Page 2: first article is past cutoff
-      const page2 = [makeArticle(31, 10)];
+    it("stops pagination when an entire page falls outside the window", async () => {
+      // Page 1: 100 articles all within window (full page → fetch page 2)
+      const page1 = Array.from({ length: 100 }, (_, i) =>
+        makeArticle(i + 1, 1),
+      );
+      // Page 2: all articles outside the window → stop
+      const page2 = Array.from({ length: 100 }, (_, i) =>
+        makeArticle(i + 101, 10),
+      );
 
       (ForemClient.getLatestArticles as Mock)
         .mockResolvedValueOnce(page1)
@@ -232,14 +242,37 @@ describe("POST /api/admin/seed", () => {
       const json = await res.json();
 
       expect(ForemClient.getLatestArticles).toHaveBeenCalledTimes(2);
-      expect(json.count).toBe(30);
+      expect(json.collected).toBe(100);
+    });
+
+    it("continues to next page when a partial page has mixed old/new articles", async () => {
+      // Page 1: full page, mix of old and new
+      const page1 = Array.from({ length: 100 }, (_, i) =>
+        makeArticle(i + 1, i % 2 === 0 ? 1 : 10),
+      );
+      // Page 2: empty → stops
+      const page2: never[] = [];
+
+      (ForemClient.getLatestArticles as Mock)
+        .mockResolvedValueOnce(page1)
+        .mockResolvedValueOnce(page2);
+
+      const res = await POST(
+        makeRequest(`Bearer ${VALID_SECRET}`, { days: 3 }),
+      );
+      const json = await res.json();
+
+      expect(ForemClient.getLatestArticles).toHaveBeenCalledTimes(2);
+      expect(json.collected).toBe(50); // half the articles were within window
     });
 
     it("stops pagination when a partial page is returned (last page)", async () => {
       // Page 1: full page, all within window
-      const page1 = Array.from({ length: 30 }, (_, i) => makeArticle(i + 1, 1));
-      // Page 2: partial page (< 30 items)
-      const page2 = [makeArticle(31, 1), makeArticle(32, 2)];
+      const page1 = Array.from({ length: 100 }, (_, i) =>
+        makeArticle(i + 1, 1),
+      );
+      // Page 2: partial page (< 100 items) — last page
+      const page2 = [makeArticle(101, 1), makeArticle(102, 2)];
 
       (ForemClient.getLatestArticles as Mock)
         .mockResolvedValueOnce(page1)
@@ -251,7 +284,7 @@ describe("POST /api/admin/seed", () => {
       const json = await res.json();
 
       expect(ForemClient.getLatestArticles).toHaveBeenCalledTimes(2);
-      expect(json.count).toBe(32);
+      expect(json.collected).toBe(102);
     });
 
     it("stops after page 1 when Forem returns empty first page", async () => {
@@ -263,12 +296,15 @@ describe("POST /api/admin/seed", () => {
       const json = await res.json();
 
       expect(res.status).toBe(200);
-      expect(json.count).toBe(0);
+      expect(json.collected).toBe(0);
       expect(ForemClient.getLatestArticles).toHaveBeenCalledTimes(1);
     });
 
-    it("collects 0 articles when all articles on first page are outside the window", async () => {
-      const articles = [makeArticle(1, 10), makeArticle(2, 15)];
+    it("collects 0 and stops when entire first page is outside the window", async () => {
+      // Full page of old articles — withinWindow.length === 0 triggers stop
+      const articles = Array.from({ length: 100 }, (_, i) =>
+        makeArticle(i + 1, 10),
+      );
       (ForemClient.getLatestArticles as Mock).mockResolvedValue(articles);
 
       const res = await POST(
@@ -276,18 +312,21 @@ describe("POST /api/admin/seed", () => {
       );
       const json = await res.json();
 
-      expect(json.count).toBe(0);
+      expect(json.collected).toBe(0);
+      expect(ForemClient.getLatestArticles).toHaveBeenCalledTimes(1);
       expect(syncArticles).toHaveBeenCalledWith([]);
     });
 
-    it("fetches pages with PER_PAGE=30", async () => {
+    it("fetches pages with PER_PAGE=100", async () => {
       (ForemClient.getLatestArticles as Mock).mockResolvedValue([]);
       await POST(makeRequest(`Bearer ${VALID_SECRET}`, { days: 3 }));
-      expect(ForemClient.getLatestArticles).toHaveBeenCalledWith(1, 30);
+      expect(ForemClient.getLatestArticles).toHaveBeenCalledWith(1, 100);
     });
 
     it("increments page number on subsequent fetches", async () => {
-      const page1 = Array.from({ length: 30 }, (_, i) => makeArticle(i + 1, 1));
+      const page1 = Array.from({ length: 100 }, (_, i) =>
+        makeArticle(i + 1, 1),
+      );
       const page2: never[] = [];
 
       (ForemClient.getLatestArticles as Mock)
@@ -296,17 +335,22 @@ describe("POST /api/admin/seed", () => {
 
       await POST(makeRequest(`Bearer ${VALID_SECRET}`, { days: 3 }));
 
-      expect(ForemClient.getLatestArticles).toHaveBeenNthCalledWith(1, 1, 30);
-      expect(ForemClient.getLatestArticles).toHaveBeenNthCalledWith(2, 2, 30);
+      expect(ForemClient.getLatestArticles).toHaveBeenNthCalledWith(1, 1, 100);
+      expect(ForemClient.getLatestArticles).toHaveBeenNthCalledWith(2, 2, 100);
     });
   });
 
   // ── Success response ──────────────────────────────────────────────────────
 
   describe("success response", () => {
-    it("returns { success, count, days } on success", async () => {
+    it("returns { success, synced, failed, errors, days } on success", async () => {
       const articles = [makeArticle(1, 1), makeArticle(2, 2)];
       (ForemClient.getLatestArticles as Mock).mockResolvedValue(articles);
+      (syncArticles as Mock).mockResolvedValue({
+        synced: 2,
+        failed: 0,
+        errors: [],
+      });
 
       const res = await POST(
         makeRequest(`Bearer ${VALID_SECRET}`, { days: 7 }),
@@ -314,7 +358,14 @@ describe("POST /api/admin/seed", () => {
       const json = await res.json();
 
       expect(res.status).toBe(200);
-      expect(json).toEqual({ success: true, count: 2, days: 7 });
+      expect(json).toEqual({
+        success: true,
+        collected: 2,
+        synced: 2,
+        failed: 0,
+        errors: [],
+        days: 7,
+      });
     });
   });
 
