@@ -10,3 +10,4 @@
 - **Performance**: You MUST implement performance best practices for all new features. If you cannot implement a performance best practice for a new feature, you MUST explain why and ask for guidance.
 - **CI**: All checks (format, lint, secret scan, security audit, actionlint, hadolint, tests, build, SonarCloud) MUST live in `.github/workflows/ci.yml`. Do not create separate workflow files for individual checks. Test coverage artifacts MUST be uploaded in CI using `actions/upload-artifact` so SonarCloud and future tooling can consume them.
 - **Short-term fixes**: Strictly prohibited at all times in this repo. Your goal is always a long-term maintainable, secure, reliable solution that passes all automated checks and tests.
+- **PR Review Responses**: All responses to PR review comments MUST be posted as inline replies to the specific comment thread. Never post a standalone top-level PR comment as a substitute for inline replies.

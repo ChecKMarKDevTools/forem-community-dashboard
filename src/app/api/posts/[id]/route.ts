@@ -11,7 +11,7 @@ export async function GET(
   // Number() + isInteger() to reject floats like "1.5" and alpha-prefixed
   // strings like "1abc" that parseInt would silently truncate to 1.
   const trimmed = rawId.trim();
-  const id = trimmed ? Number(trimmed) : NaN;
+  const id = trimmed ? Number(trimmed) : Number.NaN;
   if (!Number.isInteger(id)) {
     return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
   }
