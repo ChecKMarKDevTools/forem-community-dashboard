@@ -58,26 +58,36 @@ type PostDetails = Post & {
   recent_posts?: RecentPost[];
 };
 
-/** Attention-level metadata: badge variant and human-readable label. */
+/** Attention-level metadata: badge variant and human-readable label.
+ *  No traffic-light grading — each category has a distinct semantic color.
+ *  neutral = gray (routine), info = soft blue (active), teal = interaction (waiting),
+ *  attention = amber (escalating), critical = red (policy risk).
+ */
 const ATTENTION_META: Record<
   string,
-  { variant: "destructive" | "warning" | "success" | "outline"; label: string }
+  {
+    variant: "neutral" | "info" | "teal" | "attention" | "critical" | "outline";
+    label: string;
+  }
 > = {
-  NEEDS_REVIEW: { variant: "destructive", label: "Needs Review" },
-  POSSIBLY_LOW_QUALITY: { variant: "destructive", label: "Low Quality" },
-  NEEDS_RESPONSE: { variant: "warning", label: "Needs Response" },
-  BOOST_VISIBILITY: { variant: "warning", label: "Boost" },
-  NORMAL: { variant: "success", label: "Normal" },
+  NORMAL: { variant: "neutral", label: "Routine Discussion" },
+  BOOST_VISIBILITY: { variant: "info", label: "Active Conversation" },
+  NEEDS_RESPONSE: { variant: "teal", label: "Community Waiting" },
+  NEEDS_REVIEW: { variant: "attention", label: "Escalating Discussion" },
+  POSSIBLY_LOW_QUALITY: { variant: "critical", label: "Potential Rule Issue" },
 };
 
-const DEFAULT_ATTENTION = { variant: "success" as const, label: "Normal" };
+const DEFAULT_ATTENTION = {
+  variant: "neutral" as const,
+  label: "Routine Discussion",
+};
 
 function getAttentionVariant(
   level: string,
-): "destructive" | "warning" | "success" {
+): "neutral" | "info" | "teal" | "attention" | "critical" {
   const v = (ATTENTION_META[level] ?? DEFAULT_ATTENTION).variant;
-  // "outline" only applies in the recent-posts context; main badges use "success"
-  return v === "outline" ? "success" : v;
+  // "outline" only applies in the recent-posts context; main badges fall back to neutral
+  return v === "outline" ? "neutral" : v;
 }
 
 function getCategoryLabel(level: string): string {
@@ -86,9 +96,40 @@ function getCategoryLabel(level: string): string {
 
 function getRecentPostBadgeVariant(
   level: string,
-): "destructive" | "warning" | "outline" {
+): "neutral" | "info" | "teal" | "attention" | "critical" | "outline" {
   const v = (ATTENTION_META[level] ?? DEFAULT_ATTENTION).variant;
-  return v === "success" ? "outline" : v;
+  // neutral (routine) maps to outline for recent-posts context
+  return v === "neutral" ? "outline" : v;
+}
+
+/** Overall qualitative level for the total score. */
+const QUALITATIVE_HIGH = 50;
+const QUALITATIVE_MODERATE = 20;
+
+function getQualitativeLevel(score: number): string {
+  if (score >= QUALITATIVE_HIGH) return "High";
+  if (score >= QUALITATIVE_MODERATE) return "Moderate";
+  return "Low";
+}
+
+/** Score-specific qualitative labels for breakdown bars. */
+function getScoreQualitativeLabel(category: string, value: number): string {
+  if (category === "heat") {
+    if (value >= 10) return "High";
+    if (value >= 5) return "Moderate";
+    return "Low";
+  }
+  if (category === "risk") {
+    if (value >= 4) return "High";
+    if (value >= 1) return "Moderate";
+    return "Low";
+  }
+  if (category === "support") {
+    if (value >= 4) return "High";
+    if (value >= 2) return "Moderate";
+    return "Low";
+  }
+  return getQualitativeLevel(value);
 }
 
 function getScoreBarClass(value: number): string {
@@ -155,7 +196,53 @@ function getScoreNarrative(category: string, value: number): string {
   return "";
 }
 
-/** Hover-text descriptions for each signal in the Discussion Activity Signals card. */
+/** Derive a contextual behavior description from explanation signals for list-view badges. */
+function getBehaviorDescription(post: Post): string {
+  const breakdown = parseScoreBreakdown(post.explanations);
+  const heat = breakdown.heat ?? 0;
+  const risk = breakdown.risk ?? 0;
+  const support = breakdown.support ?? 0;
+
+  if (heat >= 10) return "Rapidly Growing Discussion";
+  if (risk >= 4) return "Risk Signals Detected";
+  if (heat >= 5) return "Active Discussion";
+  if (support >= 3) return "New Author Awaiting Response";
+
+  // Check for attention delta spike
+  const deltaExp = post.explanations?.find((e) =>
+    e.startsWith("Attention Delta:"),
+  );
+  if (deltaExp) {
+    const deltaMatch = deltaExp.match(/Attention Delta:\s*([\d.]+)/);
+    if (deltaMatch && Number.parseFloat(deltaMatch[1]) >= 5) {
+      return "Sudden Attention Spike";
+    }
+  }
+
+  return getCategoryLabel(post.attention_level);
+}
+
+/** Derive a soft recommendation based on signals for the Suggested Action card. */
+function getSuggestedAction(explanations?: string[]): string {
+  const breakdown = parseScoreBreakdown(explanations);
+  const heat = breakdown.heat ?? 0;
+  const risk = breakdown.risk ?? 0;
+  const support = breakdown.support ?? 0;
+
+  if (risk >= 6)
+    return "Review for potential policy violations — multiple risk signals are present.";
+  if (risk >= 4)
+    return "Skim for promotional or low-quality content — some risk flags were raised.";
+  if (heat >= 10)
+    return "Monitor this conversation — it is growing rapidly and may need moderation soon.";
+  if (heat >= 5)
+    return "Conversation is active, check back later if it continues to escalate.";
+  if (support >= 3)
+    return "Author may benefit from a welcome message or community response.";
+  return "No action needed. Routine community activity.";
+}
+
+/** Hover-text descriptions for each signal in the Conversation Pattern Signals card. */
 const SIGNAL_TOOLTIPS: Record<string, string> = {
   "Word Count":
     "Total words across the conversation; long threads usually mean debate or explanation, not automatically a problem.",
@@ -236,7 +323,7 @@ function DetailPanel({
           Select a post to view details
         </p>
         <p className="mt-2 text-sm">
-          The detailed moderation breakdown will appear here.
+          The conversation analysis will appear here.
         </p>
       </div>
     );
@@ -320,52 +407,14 @@ function DetailPanel({
         </div>
 
         <div className="grid gap-6 md:grid-cols-2">
-          {/* Score Breakdown */}
-          <Card className="border-brand-100 bg-brand-50/30">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-brand-800 text-lg">
-                Score Breakdown
-              </CardTitle>
-              <CardDescription>
-                Total calculated score: {postDetails.score}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {Object.entries(
-                parseScoreBreakdown(postDetails.explanations),
-              ).map(([category, value]) => (
-                <div key={category} className="flex flex-col gap-1.5">
-                  <div className="text-brand-700 flex justify-between text-sm font-medium">
-                    <span className="capitalize">{category} Score</span>
-                    <span>{value} pts</span>
-                  </div>
-                  <div className="bg-brand-100 h-2 w-full overflow-hidden rounded-full">
-                    <div
-                      className={cn(
-                        "h-full rounded-full transition-all",
-                        getScoreBarClass(value),
-                      )}
-                      style={{
-                        width: `${Math.min((value / 50) * 100, 100)}%`,
-                      }}
-                    />
-                  </div>
-                  <p className="text-brand-500 text-xs leading-snug">
-                    {getScoreNarrative(category, value)}
-                  </p>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-
-          {/* Discussion Activity Signals */}
+          {/* Conversation Pattern Signals — LEFT/first */}
           <Card className="border-brand-100">
             <CardHeader className="pb-3">
               <CardTitle className="text-brand-800 text-lg">
-                Discussion Activity Signals
+                Conversation Pattern Signals
               </CardTitle>
               <CardDescription>
-                Metrics computed from the conversation
+                Behavioral signals from the discussion
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -412,7 +461,59 @@ function DetailPanel({
               )}
             </CardContent>
           </Card>
+
+          {/* Why This Surfaced — RIGHT/second */}
+          <Card className="border-brand-100 bg-brand-50/30">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-brand-800 text-lg">
+                Why This Surfaced
+              </CardTitle>
+              <CardDescription>
+                Factors that brought this conversation to your attention
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {Object.entries(
+                parseScoreBreakdown(postDetails.explanations),
+              ).map(([category, value]) => (
+                <div key={category} className="flex flex-col gap-1.5">
+                  <div className="text-brand-700 flex justify-between text-sm font-medium">
+                    <span className="capitalize">{category}</span>
+                    <span>{getScoreQualitativeLabel(category, value)}</span>
+                  </div>
+                  <div className="bg-brand-100 h-2 w-full overflow-hidden rounded-full">
+                    <div
+                      className={cn(
+                        "h-full rounded-full transition-all",
+                        getScoreBarClass(value),
+                      )}
+                      style={{
+                        width: `${Math.min((value / 50) * 100, 100)}%`,
+                      }}
+                    />
+                  </div>
+                  <p className="text-brand-500 text-xs leading-snug">
+                    {getScoreNarrative(category, value)}
+                  </p>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
         </div>
+
+        {/* Suggested Action — full-width card below the grid */}
+        <Card className="border-brand-100 bg-brand-50/30 mt-6">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-brand-800 text-lg">
+              Suggested Action
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-brand-700 text-sm leading-relaxed">
+              {getSuggestedAction(postDetails.explanations)}
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Author History */}
@@ -448,7 +549,7 @@ function DetailPanel({
                       variant={getRecentPostBadgeVariant(rp.attention_level)}
                       className="px-2 py-0 text-[10px]"
                     >
-                      SCORE: {Math.round(rp.score)}
+                      {getQualitativeLevel(rp.score)}
                     </Badge>
                   </div>
                 </CardContent>
@@ -526,10 +627,10 @@ export function Dashboard() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-brand-900 text-2xl font-bold tracking-tight">
-                Community Queue
+                Attention Queue
               </h1>
               <p className="text-brand-500 mt-1 text-sm">
-                Posts requiring moderation attention.
+                Conversations surfaced for review.
               </p>
             </div>
             <a
@@ -570,14 +671,12 @@ export function Dashboard() {
                       </span>
                     </div>
                   </div>
-                  <div className="flex shrink-0 flex-col items-end gap-2">
-                    <Badge variant={getAttentionVariant(post.attention_level)}>
-                      {getCategoryLabel(post.attention_level)}
-                    </Badge>
-                    <span className="text-brand-600 text-xs font-medium">
-                      Score: {post.score}
-                    </span>
-                  </div>
+                  <Badge
+                    variant={getAttentionVariant(post.attention_level)}
+                    className="shrink-0"
+                  >
+                    {getBehaviorDescription(post)}
+                  </Badge>
                 </div>
               </CardContent>
             </Card>

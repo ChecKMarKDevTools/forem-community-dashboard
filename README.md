@@ -1,6 +1,6 @@
 # Forem Community Observability Dashboard
 
-A moderation intelligence dashboard for [Forem](https://forem.com/) communities (dev.to and self-hosted instances). It ingests the latest posts via the public Forem API, classifies each one into actionable categories (Needs Review, Boost Visibility, Needs Response, Low Quality, Normal), and persists the results in Supabase so community managers can surface posts needing attention at a glance.
+A moderation intelligence dashboard for [Forem](https://forem.com/) communities (dev.to and self-hosted instances). It ingests the latest posts via the public Forem API, classifies each one into actionable categories (Escalating Discussion, Active Conversation, Community Waiting, Potential Rule Issue, Routine Discussion), and persists the results in Supabase so community managers can surface posts needing attention at a glance.
 
 **Production:** https://forem-signal.checkmarkdevtools.dev _(Cloud Run — deployed post-initial-release)_
 
@@ -81,7 +81,7 @@ sequenceDiagram
   Posts->>SB: SELECT articles ORDER BY score DESC LIMIT 100
   SB-->>Posts: scored article rows
   Posts-->>D: article list
-  D-->>U: Ranked list with category badges (NEEDS_REVIEW, BOOST, etc.)
+  D-->>U: Ranked list with category badges (Escalating Discussion, Active Conversation, etc.)
 
   U->>D: Click a post
   D->>Detail: fetch(/api/posts/42)

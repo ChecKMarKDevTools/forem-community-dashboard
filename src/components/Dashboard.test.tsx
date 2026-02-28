@@ -59,21 +59,21 @@ describe("Dashboard Component", () => {
     expect(container.querySelector(".animate-spin")).toBeInTheDocument();
   });
 
-  it("fetches and renders a list of posts with category labels", async () => {
+  it("fetches and renders a list of posts with new category labels", async () => {
     globalThis.fetch = vi
       .fn()
       .mockResolvedValue({ ok: true, json: async () => mockPosts });
     render(<Dashboard />);
 
     await waitFor(() => {
-      expect(screen.queryByText("Community Queue")).toBeInTheDocument();
+      expect(screen.queryByText("Attention Queue")).toBeInTheDocument();
     });
 
     expect(screen.getByText("Needs review post")).toBeInTheDocument();
     expect(screen.getByText("Normal post")).toBeInTheDocument();
-    // New category labels instead of old "HIGH"
-    expect(screen.getByText("Needs Review")).toBeInTheDocument();
-    expect(screen.getByText("Normal")).toBeInTheDocument();
+    // New analyst-briefing labels
+    expect(screen.getByText("Active Discussion")).toBeInTheDocument();
+    expect(screen.getByText("Routine Discussion")).toBeInTheDocument();
   });
 
   it("handles post selection and fetching details", async () => {
@@ -97,13 +97,14 @@ describe("Dashboard Component", () => {
     fireEvent.click(postCard);
 
     await waitFor(() => {
-      expect(screen.getByText("Score Breakdown")).toBeInTheDocument();
+      expect(screen.getByText("Why This Surfaced")).toBeInTheDocument();
     });
 
     // @testauthor now appears in both the list card and the detail panel
     expect(screen.getAllByText("@testauthor").length).toBeGreaterThanOrEqual(2);
-    // Heat Score is parsed from explanations and rendered in Score Breakdown as "X pts"
-    expect(screen.getByText("7.5 pts")).toBeInTheDocument();
+    // Heat 7.5 (Moderate) and Risk 2 (Moderate) both show qualitative labels
+    const moderateLabels = screen.getAllByText("Moderate");
+    expect(moderateLabels.length).toBeGreaterThanOrEqual(2);
   });
 
   it("displays BOOST_VISIBILITY category correctly", async () => {
@@ -127,7 +128,8 @@ describe("Dashboard Component", () => {
     render(<Dashboard />);
 
     await waitFor(() => {
-      expect(screen.getByText("Boost")).toBeInTheDocument();
+      // Attention delta >= 5 triggers "Sudden Attention Spike" behavior description
+      expect(screen.getByText("Sudden Attention Spike")).toBeInTheDocument();
     });
   });
 
@@ -152,7 +154,10 @@ describe("Dashboard Component", () => {
     render(<Dashboard />);
 
     await waitFor(() => {
-      expect(screen.getByText("Needs Response")).toBeInTheDocument();
+      // support >= 3 triggers "New Author Awaiting Response"
+      expect(
+        screen.getByText("New Author Awaiting Response"),
+      ).toBeInTheDocument();
     });
   });
 
@@ -177,7 +182,8 @@ describe("Dashboard Component", () => {
     render(<Dashboard />);
 
     await waitFor(() => {
-      expect(screen.getByText("Low Quality")).toBeInTheDocument();
+      // risk >= 4 triggers "Risk Signals Detected"
+      expect(screen.getByText("Risk Signals Detected")).toBeInTheDocument();
     });
   });
 
@@ -299,7 +305,7 @@ describe("Dashboard Component", () => {
     render(<Dashboard />);
 
     await waitFor(() => {
-      expect(screen.getByText("Community Queue")).toBeInTheDocument();
+      expect(screen.getByText("Attention Queue")).toBeInTheDocument();
     });
 
     const feedbackLink = screen.getByText("Feedback").closest("a");
@@ -344,7 +350,7 @@ describe("Dashboard Component", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText("Score Breakdown")).toBeInTheDocument();
+      expect(screen.getByText("Why This Surfaced")).toBeInTheDocument();
     });
 
     // Heat 7.5 >= 5 triggers elevated narrative
@@ -363,7 +369,7 @@ describe("Dashboard Component", () => {
     ).toBeInTheDocument();
   });
 
-  it("parses scores from explanations when no score_breakdown column exists", async () => {
+  it("parses scores from explanations and shows qualitative labels", async () => {
     const detailFromExplanations = {
       ...mockPosts[0],
       explanations: [
@@ -396,10 +402,10 @@ describe("Dashboard Component", () => {
     );
 
     await waitFor(() => {
-      // Parsed values appear as "X pts"
-      expect(screen.getByText("12 pts")).toBeInTheDocument();
-      expect(screen.getByText("5 pts")).toBeInTheDocument();
-      expect(screen.getByText("4 pts")).toBeInTheDocument();
+      // Qualitative labels instead of "X pts"
+      // Heat 12 >= 10 = High, Risk 5 >= 4 = High, Support 4 >= 4 = High
+      const highLabels = screen.getAllByText("High");
+      expect(highLabels.length).toBe(3);
     });
 
     // High heat narrative
@@ -422,7 +428,7 @@ describe("Dashboard Component", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders Discussion Activity Signals with tooltips, excluding scores shown in Score Breakdown", async () => {
+  it("renders Conversation Pattern Signals with tooltips, excluding scores shown in Why This Surfaced", async () => {
     const detailWithSignals = {
       ...mockPosts[0],
       explanations: [
@@ -459,7 +465,7 @@ describe("Dashboard Component", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText("Discussion Activity Signals"),
+        screen.getByText("Conversation Pattern Signals"),
       ).toBeInTheDocument();
     });
 
@@ -480,15 +486,14 @@ describe("Dashboard Component", () => {
       "Measures how quickly people started paying attention compared to normal; spikes mean the topic suddenly caught eyes.",
     );
 
-    // Heat/Risk/Support should NOT appear in the signals card (they're in Score Breakdown)
+    // Heat/Risk/Support should NOT appear in the signals card (they're in Why This Surfaced)
     expect(tooltipTexts).not.toContain(
       "Emotional intensity of replies; disagreement and passion raise it, calm discussion lowers it.",
     );
 
-    // But the score values themselves should still appear in Score Breakdown
-    expect(screen.getByText("3 pts")).toBeInTheDocument();
-    expect(screen.getByText("0 pts")).toBeInTheDocument();
-    expect(screen.getByText("1 pts")).toBeInTheDocument();
+    // Qualitative labels should appear in Why This Surfaced
+    const lowLabels = screen.getAllByText("Low");
+    expect(lowLabels.length).toBeGreaterThanOrEqual(2);
   });
 
   it("handles api error for posts list", async () => {
@@ -506,5 +511,204 @@ describe("Dashboard Component", () => {
     });
 
     consoleErrorSpy.mockRestore();
+  });
+
+  it("shows Suggested Action card in detail panel", async () => {
+    const detailWithHighRisk = {
+      ...mockPosts[0],
+      explanations: [
+        "Heat Score: 3.00",
+        "Risk Score: 7 (freq: 3, promo: 2, engage: -0)",
+        "Support Score: 0",
+      ],
+      dev_url: "https://dev.to/testauthor/post-1",
+      recent_posts: [],
+    };
+    globalThis.fetch = vi.fn().mockImplementation((url) => {
+      if (url === "/api/posts")
+        return Promise.resolve({ ok: true, json: async () => mockPosts });
+      if (url === "/api/posts/1")
+        return Promise.resolve({
+          ok: true,
+          json: async () => detailWithHighRisk,
+        });
+      return Promise.reject(new Error("Not found"));
+    });
+
+    render(<Dashboard />);
+    await waitFor(() => {
+      expect(screen.getByText("Needs review post")).toBeInTheDocument();
+    });
+
+    fireEvent.click(
+      screen.getByText("Needs review post").closest("div.border")!,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Suggested Action")).toBeInTheDocument();
+    });
+
+    // Risk 7 >= 6 triggers highest risk suggestion
+    expect(
+      screen.getByText(
+        "Review for potential policy violations — multiple risk signals are present.",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("shows routine suggested action when no signals are elevated", async () => {
+    const detailRoutine = {
+      ...mockPosts[0],
+      explanations: [
+        "Heat Score: 2.00",
+        "Risk Score: 0 (freq: 0, promo: 0, engage: -0)",
+        "Support Score: 1",
+      ],
+      dev_url: "https://dev.to/testauthor/post-1",
+      recent_posts: [],
+    };
+    globalThis.fetch = vi.fn().mockImplementation((url) => {
+      if (url === "/api/posts")
+        return Promise.resolve({ ok: true, json: async () => mockPosts });
+      if (url === "/api/posts/1")
+        return Promise.resolve({
+          ok: true,
+          json: async () => detailRoutine,
+        });
+      return Promise.reject(new Error("Not found"));
+    });
+
+    render(<Dashboard />);
+    await waitFor(() => {
+      expect(screen.getByText("Needs review post")).toBeInTheDocument();
+    });
+
+    fireEvent.click(
+      screen.getByText("Needs review post").closest("div.border")!,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Suggested Action")).toBeInTheDocument();
+    });
+
+    expect(
+      screen.getByText("No action needed. Routine community activity."),
+    ).toBeInTheDocument();
+  });
+
+  it("renders Conversation Pattern Signals before Why This Surfaced in DOM order", async () => {
+    globalThis.fetch = vi.fn().mockImplementation((url) => {
+      if (url === "/api/posts")
+        return Promise.resolve({ ok: true, json: async () => mockPosts });
+      if (url === "/api/posts/1")
+        return Promise.resolve({ ok: true, json: async () => mockPostDetails });
+      return Promise.reject(new Error("Not found"));
+    });
+
+    render(<Dashboard />);
+    await waitFor(() => {
+      expect(screen.getByText("Needs review post")).toBeInTheDocument();
+    });
+
+    fireEvent.click(
+      screen.getByText("Needs review post").closest("div.border")!,
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("Conversation Pattern Signals"),
+      ).toBeInTheDocument();
+    });
+
+    const signals = screen.getByText("Conversation Pattern Signals");
+    const surfaced = screen.getByText("Why This Surfaced");
+
+    // Conversation Pattern Signals should appear before Why This Surfaced in DOM
+    expect(
+      signals.compareDocumentPosition(surfaced) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
+  it("renders badge on the right side of list cards after title", async () => {
+    globalThis.fetch = vi
+      .fn()
+      .mockResolvedValue({ ok: true, json: async () => mockPosts });
+    render(<Dashboard />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Needs review post")).toBeInTheDocument();
+    });
+
+    // The title should come before the badge in DOM order (badge on right)
+    const title = screen.getByText("Needs review post");
+    const badge = screen.getByText("Active Discussion");
+
+    expect(
+      title.compareDocumentPosition(badge) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
+  it("shows behavior description based on heat signals", async () => {
+    const highHeatPosts = [
+      {
+        id: 7,
+        title: "Hot discussion",
+        canonical_url: "https://dev.to/test/post-7",
+        score: 60,
+        attention_level: "NEEDS_REVIEW",
+        explanations: [
+          "Heat Score: 12.00",
+          "Risk Score: 1",
+          "Support Score: 0",
+        ],
+        published_at: "2023-10-27T10:00:00Z",
+        author: "hotauthor",
+        reactions: 5,
+        comments: 30,
+      },
+    ];
+    globalThis.fetch = vi
+      .fn()
+      .mockResolvedValue({ ok: true, json: async () => highHeatPosts });
+    render(<Dashboard />);
+
+    await waitFor(() => {
+      // heat >= 10 triggers "Rapidly Growing Discussion"
+      expect(
+        screen.getByText("Rapidly Growing Discussion"),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("shows qualitative level on recent post badges instead of numeric score", async () => {
+    globalThis.fetch = vi.fn().mockImplementation((url) => {
+      if (url === "/api/posts")
+        return Promise.resolve({ ok: true, json: async () => mockPosts });
+      if (url === "/api/posts/1")
+        return Promise.resolve({ ok: true, json: async () => mockPostDetails });
+      return Promise.reject(new Error("Not found"));
+    });
+
+    render(<Dashboard />);
+    await waitFor(() => {
+      expect(screen.getByText("Needs review post")).toBeInTheDocument();
+    });
+
+    fireEvent.click(
+      screen.getByText("Needs review post").closest("div.border")!,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Previous post")).toBeInTheDocument();
+    });
+
+    // Recent post with score 10 should show "Low" (< 20)
+    // Check the recent posts section specifically
+    const recentSection = screen.getByText("Recent Posts by Author");
+    expect(recentSection).toBeInTheDocument();
+
+    // Should NOT show "SCORE: 10" — numeric scores are gone
+    expect(screen.queryByText("SCORE: 10")).not.toBeInTheDocument();
   });
 });

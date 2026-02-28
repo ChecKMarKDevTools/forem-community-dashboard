@@ -9,25 +9,39 @@ describe("Badge", () => {
     expect(badge).toHaveClass("bg-brand-500");
   });
 
-  it("renders destructive badge", () => {
-    render(<Badge variant="destructive">Error</Badge>);
-    const badge = screen.getByText("Error");
+  it("renders neutral badge", () => {
+    render(<Badge variant="neutral">Routine</Badge>);
+    const badge = screen.getByText("Routine");
     expect(badge).toBeInTheDocument();
-    expect(badge).toHaveClass("bg-danger-500");
+    expect(badge).toHaveClass("bg-neutral-200");
   });
 
-  it("renders success badge", () => {
-    render(<Badge variant="success">OK</Badge>);
-    const badge = screen.getByText("OK");
+  it("renders info badge", () => {
+    render(<Badge variant="info">Active</Badge>);
+    const badge = screen.getByText("Active");
     expect(badge).toBeInTheDocument();
-    expect(badge).toHaveClass("bg-success-500");
+    expect(badge).toHaveClass("bg-info-100");
   });
 
-  it("renders warning badge", () => {
-    render(<Badge variant="warning">Warn</Badge>);
-    const badge = screen.getByText("Warn");
+  it("renders teal badge", () => {
+    render(<Badge variant="teal">Waiting</Badge>);
+    const badge = screen.getByText("Waiting");
     expect(badge).toBeInTheDocument();
-    expect(badge).toHaveClass("bg-warning-500");
+    expect(badge).toHaveClass("bg-teal-100");
+  });
+
+  it("renders attention badge", () => {
+    render(<Badge variant="attention">Escalating</Badge>);
+    const badge = screen.getByText("Escalating");
+    expect(badge).toBeInTheDocument();
+    expect(badge).toHaveClass("bg-attention-100");
+  });
+
+  it("renders critical badge", () => {
+    render(<Badge variant="critical">Issue</Badge>);
+    const badge = screen.getByText("Issue");
+    expect(badge).toBeInTheDocument();
+    expect(badge).toHaveClass("bg-critical-100");
   });
 
   it("renders secondary badge", () => {

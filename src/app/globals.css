@@ -12,6 +12,25 @@
   --color-brand-800: #364079;
   --color-brand-900: #2f3861;
   --color-brand-950: #1a1e38;
+
+  /* Semantic badge palette — no traffic-light grading */
+  --color-neutral-200: #e5e7eb;
+  --color-neutral-300: #d1d5db;
+  --color-neutral-700: #374151;
+  --color-info-100: #dbeafe;
+  --color-info-200: #bfdbfe;
+  --color-info-700: #1d4ed8;
+  --color-teal-100: #ccfbf1;
+  --color-teal-200: #99f6e4;
+  --color-teal-700: #0f766e;
+  --color-attention-100: #fef3c7;
+  --color-attention-200: #fde68a;
+  --color-attention-700: #b45309;
+  --color-critical-100: #fee2e2;
+  --color-critical-200: #fecaca;
+  --color-critical-700: #b91c1c;
+
+  /* Legacy tokens kept for non-badge UI elements (score bars, icons) */
   --color-danger-50: #fef2f2;
   --color-danger-500: #ef4444;
   --color-danger-900: #7f1d1d;
