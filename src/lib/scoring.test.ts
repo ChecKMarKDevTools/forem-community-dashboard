@@ -7,7 +7,6 @@ describe("Scoring Logic", () => {
     title: "Hello world",
     public_reactions_count: 5,
     comments_count: 2,
-    page_views_count: 100,
     tag_list: ["testing", "hello"],
     published_at: new Date().toISOString(),
     canonical_url: "https://dev.to/something",

@@ -1,6 +1,8 @@
 // Forem Community API Client
 
 const BASE_URL = "https://dev.to/api";
+const MAX_RETRIES = 3;
+const RETRY_BASE_DELAY_MS = 1000;
 
 export interface ForemArticle {
   id: number;
@@ -69,36 +71,75 @@ export interface ForemComment {
   children: ForemComment[];
 }
 
+/** Returns headers that include the API key when FOREM_API_KEY is configured. */
+function buildHeaders(): Record<string, string> {
+  const apiKey = process.env.FOREM_API_KEY;
+  return apiKey ? { "api-key": apiKey } : {};
+}
+
+/**
+ * Wraps fetch with exponential-backoff retry on HTTP 429 (rate-limited).
+ * Respects the Retry-After response header when present; otherwise uses
+ * RETRY_BASE_DELAY_MS * 2^attempt. Gives up after MAX_RETRIES retries and
+ * returns the final response so the caller can inspect the status.
+ */
+async function fetchWithRetry(
+  url: string,
+  init?: RequestInit,
+  attempt = 0,
+): Promise<Response> {
+  const mergedHeaders = {
+    ...buildHeaders(),
+    ...(init?.headers as Record<string, string> | undefined),
+  };
+  const res = await fetch(url, { ...init, headers: mergedHeaders });
+
+  if (res.status === 429 && attempt < MAX_RETRIES) {
+    const retryAfterHeader = res.headers.get("retry-after");
+    const retryAfterSec = retryAfterHeader
+      ? Number.parseInt(retryAfterHeader, 10)
+      : Number.NaN;
+    const delayMs = Number.isNaN(retryAfterSec)
+      ? RETRY_BASE_DELAY_MS * 2 ** attempt
+      : retryAfterSec * 1000;
+    await new Promise<void>((resolve) => setTimeout(resolve, delayMs));
+    return fetchWithRetry(url, init, attempt + 1);
+  }
+
+  return res;
+}
+
 export class ForemClient {
   static async getLatestArticles(
     page: number = 1,
     perPage: number = 100,
   ): Promise<ForemArticle[]> {
-    const res = await fetch(
+    const res = await fetchWithRetry(
       `${BASE_URL}/articles?per_page=${perPage}&page=${page}`,
-      {
-        next: { revalidate: 300 }, // Used sparingly in next apps, but standard fetch options apply
-      },
+      // next.revalidate is a Next.js fetch extension for CDN cache control
+      { next: { revalidate: 300 } } as RequestInit,
     );
     if (!res.ok) throw new Error("Failed to fetch articles");
     return res.json();
   }
 
   static async getArticle(id: number): Promise<ForemArticle> {
-    const res = await fetch(`${BASE_URL}/articles/${id}`);
+    const res = await fetchWithRetry(`${BASE_URL}/articles/${id}`);
     if (!res.ok) throw new Error(`Failed to fetch article ${id}`);
     return res.json();
   }
 
   static async getUserByUsername(username: string): Promise<ForemUser | null> {
-    const res = await fetch(`${BASE_URL}/users/by_username?url=${username}`);
+    const res = await fetchWithRetry(
+      `${BASE_URL}/users/by_username?url=${username}`,
+    );
     if (res.status === 404) return null;
     if (!res.ok) throw new Error(`Failed to fetch user ${username}`);
     return res.json();
   }
 
   static async getComments(articleId: number): Promise<ForemComment[]> {
-    const res = await fetch(`${BASE_URL}/comments?a_id=${articleId}`);
+    const res = await fetchWithRetry(`${BASE_URL}/comments?a_id=${articleId}`);
     if (!res.ok)
       throw new Error(`Failed to fetch comments for article ${articleId}`);
     return res.json();

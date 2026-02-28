@@ -26,6 +26,7 @@
 .vscode/
 .claude/
 *.tmp
+.mcp.json
 
 # debug
 npm-debug.log*

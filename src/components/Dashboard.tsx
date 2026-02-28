@@ -16,28 +16,36 @@ import {
   User,
   MessageSquare,
   Heart,
-  Eye,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+// Matches the DB `articles` table schema returned by /api/posts and /api/posts/[id].
 type Post = {
-  id: string;
+  id: number;
   title: string;
-  url: string;
+  canonical_url: string;
   score: number;
   attention_level: "low" | "medium" | "high";
   explanations: string[];
-  created_at: string;
-  author_name: string;
-  author_username: string;
-  comments_count: number;
-  public_reactions_count: number;
-  page_views_count: number;
+  published_at: string;
+  author: string;
+  reactions: number;
+  comments: number;
+};
+
+// Subset returned for recent posts by /api/posts/[id] (includes canonical_url for linking).
+type RecentPost = {
+  id: number;
+  title: string;
+  canonical_url: string;
+  published_at: string;
+  score: number;
+  attention_level: "low" | "medium" | "high";
 };
 
 type PostDetails = Post & {
   score_breakdown?: Record<string, number>;
-  recent_posts?: Post[];
+  recent_posts?: RecentPost[];
 };
 
 function getAttentionVariant(
@@ -63,7 +71,7 @@ function getScoreBarClass(value: number): string {
 }
 
 type DetailPanelProps = Readonly<{
-  selectedPostId: string | null;
+  selectedPostId: number | null;
   detailsLoading: boolean;
   postDetails: PostDetails | null;
   onBack: () => void;
@@ -119,7 +127,7 @@ function DetailPanel({
           <div>
             <h2 className="text-brand-900 text-2xl leading-tight font-bold md:text-3xl">
               <a
-                href={postDetails.url}
+                href={postDetails.canonical_url}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hover:text-brand-600 transition-colors hover:underline"
@@ -129,11 +137,11 @@ function DetailPanel({
             </h2>
             <div className="text-brand-600 mt-4 flex flex-wrap items-center gap-4 text-sm">
               <span className="bg-brand-50 flex items-center gap-1.5 rounded-full px-3 py-1.5 font-medium">
-                <User className="h-4 w-4" /> @{postDetails.author_username}
+                <User className="h-4 w-4" /> @{postDetails.author}
               </span>
               <span className="flex items-center gap-1.5">
                 <Clock className="h-4 w-4" />{" "}
-                {new Date(postDetails.created_at).toLocaleString()}
+                {new Date(postDetails.published_at).toLocaleString()}
               </span>
             </div>
           </div>
@@ -148,19 +156,11 @@ function DetailPanel({
         <div className="border-brand-100 mb-8 flex items-center gap-6 border-y py-4">
           <div className="text-brand-700 flex items-center gap-2">
             <Heart className="text-danger-500 h-5 w-5" />{" "}
-            <span className="font-semibold">
-              {postDetails.public_reactions_count}
-            </span>
+            <span className="font-semibold">{postDetails.reactions}</span>
           </div>
           <div className="text-brand-700 flex items-center gap-2">
             <MessageSquare className="text-brand-500 h-5 w-5" />{" "}
-            <span className="font-semibold">{postDetails.comments_count}</span>
-          </div>
-          <div className="text-brand-700 flex items-center gap-2">
-            <Eye className="text-brand-400 h-5 w-5" />{" "}
-            <span className="font-semibold">
-              {postDetails.page_views_count}
-            </span>
+            <span className="font-semibold">{postDetails.comments}</span>
           </div>
         </div>
 
@@ -240,7 +240,7 @@ function DetailPanel({
             Recent Posts by Author
           </h3>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {postDetails.recent_posts.map((rp: Post) => (
+            {postDetails.recent_posts.map((rp: RecentPost) => (
               <Card
                 key={rp.id}
                 className="border-brand-100 hover:border-brand-300 transition-colors"
@@ -248,7 +248,7 @@ function DetailPanel({
                 <CardHeader className="p-4 pb-2">
                   <CardTitle className="text-brand-800 line-clamp-2 text-base">
                     <a
-                      href={rp.url}
+                      href={rp.canonical_url}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="hover:underline"
@@ -260,7 +260,7 @@ function DetailPanel({
                 <CardContent className="p-4 pt-0">
                   <div className="mt-2 flex items-center justify-between">
                     <span className="text-brand-500 text-xs">
-                      {new Date(rp.created_at).toLocaleDateString()}
+                      {new Date(rp.published_at).toLocaleDateString()}
                     </span>
                     <Badge
                       variant={getRecentPostBadgeVariant(rp.attention_level)}
@@ -282,7 +282,7 @@ function DetailPanel({
 export function Dashboard() {
   const [posts, setPosts] = React.useState<Post[]>([]);
   const [loading, setLoading] = React.useState(true);
-  const [selectedPostId, setSelectedPostId] = React.useState<string | null>(
+  const [selectedPostId, setSelectedPostId] = React.useState<number | null>(
     null,
   );
   const [postDetails, setPostDetails] = React.useState<PostDetails | null>(
@@ -292,8 +292,11 @@ export function Dashboard() {
 
   React.useEffect(() => {
     fetch("/api/posts")
-      .then((res) => res.json())
-      .then((data) => {
+      .then((res) => {
+        if (!res.ok) throw new Error(`API error ${res.status}`);
+        return res.json();
+      })
+      .then((data: Post[]) => {
         setPosts(data);
         setLoading(false);
       })
@@ -365,11 +368,11 @@ export function Dashboard() {
                     </h3>
                     <div className="text-brand-500 mt-2 flex items-center gap-2 text-xs">
                       <span className="flex items-center gap-1">
-                        <User className="h-3 w-3" /> {post.author_name}
+                        <User className="h-3 w-3" /> @{post.author}
                       </span>
                       <span className="flex items-center gap-1">
                         <Clock className="h-3 w-3" />{" "}
-                        {new Date(post.created_at).toLocaleDateString()}
+                        {new Date(post.published_at).toLocaleDateString()}
                       </span>
                     </div>
                   </div>

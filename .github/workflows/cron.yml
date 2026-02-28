@@ -11,7 +11,9 @@ jobs:
     steps:
       - name: Ping Cron Endpoint
         env:
-          APP_URL: ${{ secrets.APP_URL }}
+          # APP_URL is a non-sensitive deployment URL stored as a repository
+          # variable (vars), not a secret, so it is safe to log and inject here.
+          APP_URL: ${{ vars.APP_URL }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
           if [ -z "$APP_URL" ] || [ -z "$CRON_SECRET" ]; then
