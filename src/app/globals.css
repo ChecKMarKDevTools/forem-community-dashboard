@@ -46,33 +46,33 @@
 /* ── Light mode (default) ────────────────────────────────────── */
 @layer base {
   :root {
-    /* Surfaces */
-    --surface-primary: #f8f6f3;
-    --surface-secondary: #f1ede8;
-    --surface-raised: #ece7e0;
-    --surface-border: #d6cfc5;
-    --paper-clue: #fffef9;
+    /* Surfaces — cool grey-blue */
+    --surface-primary: #f1f2f6;
+    --surface-secondary: #e6e8ee;
+    --surface-raised: #dadde6;
+    --surface-border: #c5c9d6;
+    --paper-clue: #fbf8f2;
 
-    /* Text */
-    --text-primary: #1c1917;
-    --text-secondary: #44403c;
-    --text-muted: #78716c;
+    /* Text — charcoal-violet */
+    --text-primary: #2b2d42;
+    --text-secondary: #44475a;
+    --text-muted: #7b7f96;
 
-    /* Accent */
-    --accent-primary: #7c5e3c;
-    --accent-hover: #5c4328;
+    /* Accent — violet */
+    --accent-primary: #6c5fa7;
+    --accent-hover: #5a4e8f;
 
     /* State */
     --state-negative: #dc2626;
     --state-warning: #d97706;
 
     /* Badge palette */
-    --badge-neutral-bg: #e7e5e4;
-    --badge-neutral-hover: #d6d3d1;
-    --badge-neutral-text: #44403c;
-    --badge-info-bg: #dbeafe;
-    --badge-info-hover: #bfdbfe;
-    --badge-info-text: #1d4ed8;
+    --badge-neutral-bg: #e1e2e8;
+    --badge-neutral-hover: #d0d2da;
+    --badge-neutral-text: #44475a;
+    --badge-info-bg: #e0ddef;
+    --badge-info-hover: #ccc8e3;
+    --badge-info-text: #5a4e8f;
     --badge-teal-bg: #ccfbf1;
     --badge-teal-hover: #99f6e4;
     --badge-teal-text: #0f766e;
@@ -84,47 +84,47 @@
     --badge-critical-text: #b91c1c;
 
     /* Gradient */
-    --gradient-from: #f8f6f3;
-    --gradient-via: #f1ede8;
-    --gradient-to: #e8e2da;
+    --gradient-from: #f1f2f6;
+    --gradient-via: #e6e8ee;
+    --gradient-to: #dadde6;
 
     /* Card (used by Card.tsx via bg-card / text-card-foreground) */
-    --background: #f8f6f3;
-    --foreground: #1c1917;
-    --card: #fffef9;
-    --card-foreground: #1c1917;
-    --border: #d6cfc5;
+    --background: #f1f2f6;
+    --foreground: #2b2d42;
+    --card: #fbf8f2;
+    --card-foreground: #2b2d42;
+    --border: #c5c9d6;
   }
 
   /* ── Dark mode ───────────────────────────────────────────── */
   .dark {
-    /* Surfaces */
-    --surface-primary: #1c1917;
-    --surface-secondary: #292524;
-    --surface-raised: #3a3330;
-    --surface-border: #57534e;
-    --paper-clue: #292524;
+    /* Surfaces — deep charcoal-violet */
+    --surface-primary: #1a1b2e;
+    --surface-secondary: #2b2d42;
+    --surface-raised: #3d3f54;
+    --surface-border: #52546b;
+    --paper-clue: #24253a;
 
     /* Text */
-    --text-primary: #fafaf9;
-    --text-secondary: #d6d3d1;
-    --text-muted: #a8a29e;
+    --text-primary: #eeeef2;
+    --text-secondary: #c5c9d6;
+    --text-muted: #8e90a3;
 
-    /* Accent */
-    --accent-primary: #c4a882;
-    --accent-hover: #dbc4a4;
+    /* Accent — soft lavender */
+    --accent-primary: #b5a8c9;
+    --accent-hover: #cfc3e0;
 
     /* State */
     --state-negative: #f87171;
     --state-warning: #fbbf24;
 
     /* Badge palette */
-    --badge-neutral-bg: #3a3330;
-    --badge-neutral-hover: #57534e;
-    --badge-neutral-text: #d6d3d1;
-    --badge-info-bg: #1e3a5f;
-    --badge-info-hover: #1e40af;
-    --badge-info-text: #93c5fd;
+    --badge-neutral-bg: #3d3f54;
+    --badge-neutral-hover: #52546b;
+    --badge-neutral-text: #c5c9d6;
+    --badge-info-bg: #2d2a4a;
+    --badge-info-hover: #3d3860;
+    --badge-info-text: #b5a8c9;
     --badge-teal-bg: #134e4a;
     --badge-teal-hover: #115e59;
     --badge-teal-text: #5eead4;
@@ -136,16 +136,16 @@
     --badge-critical-text: #fca5a5;
 
     /* Gradient */
-    --gradient-from: #1c1917;
-    --gradient-via: #292524;
-    --gradient-to: #1c1917;
+    --gradient-from: #1a1b2e;
+    --gradient-via: #2b2d42;
+    --gradient-to: #1a1b2e;
 
     /* Card */
-    --background: #1c1917;
-    --foreground: #fafaf9;
-    --card: #292524;
-    --card-foreground: #fafaf9;
-    --border: #57534e;
+    --background: #1a1b2e;
+    --foreground: #eeeef2;
+    --card: #24253a;
+    --card-foreground: #eeeef2;
+    --border: #52546b;
   }
 }
 
