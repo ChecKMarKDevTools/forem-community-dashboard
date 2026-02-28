@@ -196,6 +196,16 @@ describe("POST /api/admin/seed", () => {
       expect(res.status).toBe(200);
       expect(json.days).toBe(7);
     });
+
+    it("returns 400 when days is an object (prevents [object Object] stringification)", async () => {
+      const res = await POST(
+        makeRequest(`Bearer ${VALID_SECRET}`, { days: { value: 7 } }),
+      );
+      expect(res.status).toBe(400);
+      expect((await res.json()).error).toMatch(
+        /days must be an integer between 1 and 90/,
+      );
+    });
   });
 
   // ── Pagination logic ──────────────────────────────────────────────────────
