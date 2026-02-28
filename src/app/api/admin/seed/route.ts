@@ -3,7 +3,8 @@ import { syncArticles } from "@/lib/sync";
 
 export async function POST(request: Request): Promise<NextResponse> {
   const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  const token = authHeader?.replace(/^Bearer\s+/i, "").trim();
+  if (!token || token !== process.env.CRON_SECRET) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
