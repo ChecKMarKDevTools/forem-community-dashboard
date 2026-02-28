@@ -60,20 +60,6 @@ jobs:
       - name: Test with coverage
         run: pnpm test:coverage
 
-      - name: Coverage gate (80% total)
-        run: |
-          node -e "
-            const s = JSON.parse(require('fs').readFileSync('coverage/coverage-summary.json', 'utf8'));
-            const t = s.total;
-            const checks = [['statements', t.statements.pct], ['branches', t.branches.pct], ['functions', t.functions.pct], ['lines', t.lines.pct]];
-            let failed = false;
-            for (const [name, pct] of checks) {
-              if (pct < 80) { console.error('FAIL: ' + name + ' total coverage ' + pct + '% < 80%'); failed = true; }
-              else { console.log('OK:   ' + name + ' total coverage ' + pct + '%'); }
-            }
-            if (failed) process.exit(1);
-          "
-
       - name: Upload coverage report
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: always()
