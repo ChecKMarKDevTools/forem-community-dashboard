@@ -13,6 +13,7 @@ import {
   AlertCircle,
   ChevronRight,
   Clock,
+  ExternalLink,
   User,
   MessageSquare,
   Heart,
@@ -53,7 +54,6 @@ type RecentPost = {
 };
 type PostDetails = Post & {
   dev_url: string;
-  score_breakdown?: Record<string, number>;
   recent_posts?: RecentPost[];
 };
 
@@ -100,6 +100,55 @@ function extractWordCount(explanations?: string[]): number {
     .find((e) => e.startsWith("Word Count:"))
     ?.match(/\d+/);
   return match ? Number(match[0]) : 0;
+}
+
+/**
+ * Parse the explanations array into a score_breakdown object.
+ * The sync pipeline stores scores as strings like "Heat Score: 7.50",
+ * "Risk Score: 2 (freq: 0, promo: 1, engage: -2)", "Support Score: 3".
+ */
+function parseScoreBreakdown(explanations?: string[]): Record<string, number> {
+  if (!explanations) return {};
+  const breakdown: Record<string, number> = {};
+  for (const exp of explanations) {
+    if (exp.startsWith("Heat Score:")) {
+      breakdown.heat = Number.parseFloat(exp.split(":")[1]);
+    } else if (exp.startsWith("Risk Score:")) {
+      // "Risk Score: 2 (freq: ...)" — grab the leading number
+      const match = exp.match(/Risk Score:\s*([\d.]+)/);
+      if (match) breakdown.risk = Number.parseFloat(match[1]);
+    } else if (exp.startsWith("Support Score:")) {
+      breakdown.support = Number.parseFloat(exp.split(":")[1]);
+    }
+  }
+  return breakdown;
+}
+
+/** Plain-English explanation for each score type so moderators understand what they mean. */
+function getScoreNarrative(category: string, value: number): string {
+  if (category === "heat") {
+    if (value >= 10)
+      return "Very active discussion with rapid comments and mixed sentiment.";
+    if (value >= 5)
+      return "Elevated activity — comments are arriving faster than typical.";
+    return "Normal conversation pace with steady engagement.";
+  }
+  if (category === "risk") {
+    if (value >= 6)
+      return "Multiple risk signals detected: possible spam or self-promotion.";
+    if (value >= 4)
+      return "Some risk flags raised — short content or promotional language.";
+    if (value >= 1) return "Minor flags present but likely not concerning.";
+    return "No risk indicators found.";
+  }
+  if (category === "support") {
+    if (value >= 4)
+      return "Author appears to need community help — new user with little engagement.";
+    if (value >= 2)
+      return "Some signs the author could use encouragement or a response.";
+    return "Author seems established with normal engagement.";
+  }
+  return "";
 }
 
 /** Compute age in hours from published_at timestamp */
@@ -224,7 +273,7 @@ function DetailPanel({
           </div>
           <div className="text-brand-700 flex items-center gap-2">
             <span className="font-semibold">
-              {extractWordCount(postDetails.explanations)} Words
+              ~{extractWordCount(postDetails.explanations)} Words
             </span>
           </div>
           <div className="text-brand-700 flex items-center gap-2">
@@ -246,27 +295,30 @@ function DetailPanel({
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {Object.entries(postDetails.score_breakdown || {}).map(
-                ([category, value]) => (
-                  <div key={category} className="flex flex-col gap-1.5">
-                    <div className="text-brand-700 flex justify-between text-sm font-medium">
-                      <span className="capitalize">{category} Score</span>
-                      <span>{value} pts</span>
-                    </div>
-                    <div className="bg-brand-100 h-2 w-full overflow-hidden rounded-full">
-                      <div
-                        className={cn(
-                          "h-full rounded-full transition-all",
-                          getScoreBarClass(value),
-                        )}
-                        style={{
-                          width: `${Math.min((value / 50) * 100, 100)}%`,
-                        }}
-                      />
-                    </div>
+              {Object.entries(
+                parseScoreBreakdown(postDetails.explanations),
+              ).map(([category, value]) => (
+                <div key={category} className="flex flex-col gap-1.5">
+                  <div className="text-brand-700 flex justify-between text-sm font-medium">
+                    <span className="capitalize">{category} Score</span>
+                    <span>{value} pts</span>
                   </div>
-                ),
-              )}
+                  <div className="bg-brand-100 h-2 w-full overflow-hidden rounded-full">
+                    <div
+                      className={cn(
+                        "h-full rounded-full transition-all",
+                        getScoreBarClass(value),
+                      )}
+                      style={{
+                        width: `${Math.min((value / 50) * 100, 100)}%`,
+                      }}
+                    />
+                  </div>
+                  <p className="text-brand-500 text-xs leading-snug">
+                    {getScoreNarrative(category, value)}
+                  </p>
+                </div>
+              ))}
             </CardContent>
           </Card>
 
@@ -411,12 +463,24 @@ export function Dashboard() {
         )}
       >
         <div className="border-brand-100 border-b bg-white p-6">
-          <h1 className="text-brand-900 text-2xl font-bold tracking-tight">
-            Community Queue
-          </h1>
-          <p className="text-brand-500 mt-1 text-sm">
-            Posts requiring moderation attention.
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-brand-900 text-2xl font-bold tracking-tight">
+                Community Queue
+              </h1>
+              <p className="text-brand-500 mt-1 text-sm">
+                Posts requiring moderation attention.
+              </p>
+            </div>
+            <a
+              href="https://github.com/ChecKMarKDevTools/forem-community-dashboard/issues"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="border-brand-200 text-brand-600 hover:bg-brand-50 hover:text-brand-800 inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-colors"
+            >
+              Feedback <ExternalLink className="h-3 w-3" />
+            </a>
+          </div>
         </div>
         <div className="flex-1 space-y-4 overflow-y-auto p-4">
           {posts.map((post) => (

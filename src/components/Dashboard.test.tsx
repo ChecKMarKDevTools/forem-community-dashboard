@@ -33,7 +33,6 @@ const mockPosts = [
 const mockPostDetails = {
   ...mockPosts[0],
   dev_url: "https://dev.to/testauthor/post-1",
-  score_breakdown: { heat: 7.5, risk: 2, support: 0 },
   recent_posts: [
     {
       id: 3,
@@ -263,7 +262,6 @@ describe("Dashboard Component", () => {
       published_at: threeHoursAgo,
       explanations: ["Word Count: 1200", "Heat Score: 5.00"],
       dev_url: "https://dev.to/testauthor/post-1",
-      score_breakdown: {},
       recent_posts: [],
     };
     globalThis.fetch = vi.fn().mockImplementation((url) => {
@@ -288,9 +286,139 @@ describe("Dashboard Component", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText("1200 Words")).toBeInTheDocument();
+      expect(screen.getByText("~1200 Words")).toBeInTheDocument();
       expect(screen.getByText("3 Hours Old")).toBeInTheDocument();
     });
+  });
+
+  it("renders GitHub feedback link in header", async () => {
+    globalThis.fetch = vi
+      .fn()
+      .mockResolvedValue({ ok: true, json: async () => mockPosts });
+    render(<Dashboard />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Community Queue")).toBeInTheDocument();
+    });
+
+    const feedbackLink = screen.getByText("Feedback").closest("a");
+    expect(feedbackLink).toHaveAttribute(
+      "href",
+      "https://github.com/ChecKMarKDevTools/forem-community-dashboard/issues",
+    );
+    expect(feedbackLink).toHaveAttribute("target", "_blank");
+    expect(feedbackLink).toHaveAttribute("rel", "noopener noreferrer");
+  });
+
+  it("displays score narratives explaining each score in plain language", async () => {
+    const detailWithScores = {
+      ...mockPosts[0],
+      explanations: [
+        "Heat Score: 7.50",
+        "Risk Score: 2 (freq: 0, promo: 1, engage: -1)",
+        "Support Score: 0",
+      ],
+      dev_url: "https://dev.to/testauthor/post-1",
+      recent_posts: [],
+    };
+    globalThis.fetch = vi.fn().mockImplementation((url) => {
+      if (url === "/api/posts")
+        return Promise.resolve({ ok: true, json: async () => mockPosts });
+      if (url === "/api/posts/1")
+        return Promise.resolve({
+          ok: true,
+          json: async () => detailWithScores,
+        });
+      return Promise.reject(new Error("Not found"));
+    });
+
+    render(<Dashboard />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Needs review post")).toBeInTheDocument();
+    });
+
+    fireEvent.click(
+      screen.getByText("Needs review post").closest("div.border")!,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Score Breakdown")).toBeInTheDocument();
+    });
+
+    // Heat 7.5 >= 5 triggers elevated narrative
+    expect(
+      screen.getByText(
+        "Elevated activity — comments are arriving faster than typical.",
+      ),
+    ).toBeInTheDocument();
+    // Risk 2 >= 1 triggers minor flags narrative
+    expect(
+      screen.getByText("Minor flags present but likely not concerning."),
+    ).toBeInTheDocument();
+    // Support 0 triggers established narrative
+    expect(
+      screen.getByText("Author seems established with normal engagement."),
+    ).toBeInTheDocument();
+  });
+
+  it("parses scores from explanations when no score_breakdown column exists", async () => {
+    const detailFromExplanations = {
+      ...mockPosts[0],
+      explanations: [
+        "Word Count: 500",
+        "Heat Score: 12.00",
+        "Risk Score: 5 (freq: 2, promo: 1, engage: -0)",
+        "Support Score: 4",
+      ],
+      dev_url: "https://dev.to/testauthor/post-1",
+      recent_posts: [],
+    };
+    globalThis.fetch = vi.fn().mockImplementation((url) => {
+      if (url === "/api/posts")
+        return Promise.resolve({ ok: true, json: async () => mockPosts });
+      if (url === "/api/posts/1")
+        return Promise.resolve({
+          ok: true,
+          json: async () => detailFromExplanations,
+        });
+      return Promise.reject(new Error("Not found"));
+    });
+
+    render(<Dashboard />);
+    await waitFor(() => {
+      expect(screen.getByText("Needs review post")).toBeInTheDocument();
+    });
+
+    fireEvent.click(
+      screen.getByText("Needs review post").closest("div.border")!,
+    );
+
+    await waitFor(() => {
+      // Parsed values appear as "X pts"
+      expect(screen.getByText("12 pts")).toBeInTheDocument();
+      expect(screen.getByText("5 pts")).toBeInTheDocument();
+      expect(screen.getByText("4 pts")).toBeInTheDocument();
+    });
+
+    // High heat narrative
+    expect(
+      screen.getByText(
+        "Very active discussion with rapid comments and mixed sentiment.",
+      ),
+    ).toBeInTheDocument();
+    // High risk narrative
+    expect(
+      screen.getByText(
+        "Some risk flags raised — short content or promotional language.",
+      ),
+    ).toBeInTheDocument();
+    // High support narrative
+    expect(
+      screen.getByText(
+        "Author appears to need community help — new user with little engagement.",
+      ),
+    ).toBeInTheDocument();
   });
 
   it("handles api error for posts list", async () => {
