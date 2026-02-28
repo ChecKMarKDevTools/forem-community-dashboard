@@ -75,3 +75,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+      - name: Lighthouse CI (desktop)
+        run: pnpm lhci:desktop
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://dummy.supabase.co
+          SUPABASE_SECRET_KEY: dummy-ci-placeholder
