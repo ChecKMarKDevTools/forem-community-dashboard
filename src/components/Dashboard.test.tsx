@@ -51,6 +51,28 @@ globalThis.fetch = vi.fn() as Mock;
 describe("Dashboard Component", () => {
   beforeEach(() => {
     vi.resetAllMocks();
+
+    // Re-stub matchMedia + localStorage after resetAllMocks (ThemeToggle needs these)
+    Object.defineProperty(globalThis, "matchMedia", {
+      writable: true,
+      value: vi.fn().mockImplementation((query: string) => ({
+        matches: query.includes("dark") ? false : false,
+        media: query,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      })),
+    });
+    Object.defineProperty(globalThis, "localStorage", {
+      writable: true,
+      value: {
+        getItem: vi.fn().mockReturnValue(null),
+        setItem: vi.fn(),
+        removeItem: vi.fn(),
+        clear: vi.fn(),
+        length: 0,
+        key: vi.fn(),
+      },
+    });
   });
 
   it("renders loading state initially", () => {
@@ -753,5 +775,88 @@ describe("Dashboard Component", () => {
     const recentCard = screen.getByText("Previous post").closest(".border")!;
     const badge = recentCard.querySelector(".text-\\[10px\\]");
     expect(badge?.textContent).toBe("Routine Discussion");
+  });
+
+  // ── Close button & Escape key ───────────────────────────────────────────
+
+  it("closes detail panel when close button is clicked", async () => {
+    globalThis.fetch = vi.fn().mockImplementation((url) => {
+      if (url === "/api/posts")
+        return Promise.resolve({ ok: true, json: async () => mockPosts });
+      if (url === "/api/posts/1")
+        return Promise.resolve({ ok: true, json: async () => mockPostDetails });
+      return Promise.reject(new Error("Not found"));
+    });
+
+    render(<Dashboard />);
+    await waitFor(() => {
+      expect(screen.getByText("Needs review post")).toBeInTheDocument();
+    });
+
+    fireEvent.click(
+      screen.getByText("Needs review post").closest("div.border")!,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Discussion State")).toBeInTheDocument();
+    });
+
+    // Click the close button
+    const closeBtn = screen.getByRole("button", {
+      name: "Close detail panel",
+    });
+    fireEvent.click(closeBtn);
+
+    // Detail panel should be gone
+    await waitFor(() => {
+      expect(screen.queryByText("Discussion State")).not.toBeInTheDocument();
+    });
+  });
+
+  it("closes detail panel when Escape key is pressed", async () => {
+    globalThis.fetch = vi.fn().mockImplementation((url) => {
+      if (url === "/api/posts")
+        return Promise.resolve({ ok: true, json: async () => mockPosts });
+      if (url === "/api/posts/1")
+        return Promise.resolve({ ok: true, json: async () => mockPostDetails });
+      return Promise.reject(new Error("Not found"));
+    });
+
+    render(<Dashboard />);
+    await waitFor(() => {
+      expect(screen.getByText("Needs review post")).toBeInTheDocument();
+    });
+
+    fireEvent.click(
+      screen.getByText("Needs review post").closest("div.border")!,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Discussion State")).toBeInTheDocument();
+    });
+
+    // Press Escape
+    fireEvent.keyDown(document, { key: "Escape" });
+
+    // Detail panel should be gone
+    await waitFor(() => {
+      expect(screen.queryByText("Discussion State")).not.toBeInTheDocument();
+    });
+  });
+
+  it("renders theme toggle button in header", async () => {
+    globalThis.fetch = vi
+      .fn()
+      .mockResolvedValue({ ok: true, json: async () => mockPosts });
+    render(<Dashboard />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Attention Queue")).toBeInTheDocument();
+    });
+
+    // ThemeToggle renders a button with aria-label
+    expect(
+      screen.getByRole("button", { name: "Light mode" }),
+    ).toBeInTheDocument();
   });
 });

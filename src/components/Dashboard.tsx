@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { motion } from "framer-motion";
 import {
   CardHeader,
   CardTitle,
@@ -15,7 +16,8 @@ import { ScoreBar } from "@/components/ui/ScoreBar";
 import { PostMeta } from "@/components/ui/PostMeta";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { QueueCard } from "@/components/ui/QueueCard";
-import { AlertCircle, ChevronRight, ExternalLink } from "lucide-react";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { AlertCircle, ChevronRight, ExternalLink, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   getAttentionVariant,
@@ -43,6 +45,7 @@ type DetailPanelProps = Readonly<{
   detailsLoading: boolean;
   postDetails: PostDetails | null;
   onBack: () => void;
+  onClose: () => void;
 }>;
 
 function DetailPanel({
@@ -50,6 +53,7 @@ function DetailPanel({
   detailsLoading,
   postDetails,
   onBack,
+  onClose,
 }: DetailPanelProps) {
   if (!selectedPostId) {
     return null;
@@ -68,25 +72,42 @@ function DetailPanel({
   }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 pb-20">
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.2 }}
+      className="mx-auto max-w-4xl space-y-6 pb-20"
+    >
+      {/* Mobile back button */}
       <div className="mb-4 md:hidden">
         <button
           onClick={onBack}
-          className="text-brand-600 hover:text-brand-800 flex items-center gap-1 text-sm font-medium"
+          className="text-accent-primary hover:text-accent-hover flex items-center gap-1 text-sm font-medium"
         >
           <ChevronRight className="h-4 w-4 rotate-180" /> Back to queue
         </button>
       </div>
 
-      <div className="border-brand-100 rounded-2xl border bg-white p-6 shadow-sm md:p-8">
+      <div className="border-surface-border bg-paper-clue rounded-2xl border p-6 shadow-sm md:p-8">
+        {/* Desktop close button */}
+        <div className="mb-2 hidden justify-end md:flex">
+          <button
+            onClick={onClose}
+            aria-label="Close detail panel"
+            className="text-text-muted hover:text-text-primary rounded-lg p-1.5 transition-colors"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
         <div className="mb-6 flex items-start justify-between gap-4">
           <div className="min-w-0 flex-1">
-            <h2 className="text-brand-900 text-2xl leading-tight font-bold md:text-3xl">
+            <h2 className="font-heading text-text-primary text-2xl leading-tight font-bold md:text-3xl">
               <a
                 href={postDetails.dev_url || postDetails.canonical_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hover:text-brand-600 transition-colors hover:underline"
+                className="hover:text-accent-primary transition-colors hover:underline"
               >
                 {postDetails.title}
               </a>
@@ -106,7 +127,7 @@ function DetailPanel({
           </Badge>
         </div>
 
-        <p className="text-brand-500 border-brand-100 mb-8 border-y py-4 text-sm">
+        <p className="text-text-muted border-surface-border mb-8 border-y py-4 text-sm">
           {postDetails.reactions} reactions &middot; {postDetails.comments}{" "}
           comments &middot; ~{extractWordCount(postDetails.explanations)} words
           &middot; {computeAgeHours(postDetails.published_at)}h old
@@ -116,7 +137,7 @@ function DetailPanel({
           {/* Conversation Signals — LEFT/first */}
           <SectionCard>
             <CardHeader className="pb-3">
-              <CardTitle className="text-brand-800 text-lg">
+              <CardTitle className="font-heading text-text-secondary text-lg">
                 Conversation Signals
               </CardTitle>
               <CardDescription>
@@ -141,7 +162,7 @@ function DetailPanel({
                     ))}
                 </ul>
               ) : (
-                <p className="text-brand-500 text-sm italic">
+                <p className="text-text-muted text-sm italic">
                   No specific flags raised. Routine interaction patterns
                   detected.
                 </p>
@@ -152,7 +173,7 @@ function DetailPanel({
           {/* Discussion State — RIGHT/second */}
           <SectionCard variant="muted">
             <CardHeader className="pb-3">
-              <CardTitle className="text-brand-800 text-lg">
+              <CardTitle className="font-heading text-text-secondary text-lg">
                 Discussion State
               </CardTitle>
               <CardDescription>
@@ -180,12 +201,12 @@ function DetailPanel({
         {/* Thread Momentum — full-width card below the grid */}
         <SectionCard variant="muted" className="mt-6">
           <CardHeader className="pb-3">
-            <CardTitle className="text-brand-800 text-lg">
+            <CardTitle className="font-heading text-text-secondary text-lg">
               Thread Momentum
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-brand-700 text-sm leading-relaxed">
+            <p className="text-text-secondary text-sm leading-relaxed">
               {getWhatsHappening(postDetails.explanations)}
             </p>
           </CardContent>
@@ -195,17 +216,17 @@ function DetailPanel({
       {/* Author History */}
       {postDetails.recent_posts && postDetails.recent_posts.length > 0 && (
         <div className="mt-8">
-          <h3 className="text-brand-900 mb-4 px-1 text-xl font-bold">
+          <h3 className="font-heading text-text-primary mb-4 px-1 text-xl font-bold">
             Recent Posts by Author
           </h3>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {postDetails.recent_posts.map((rp: RecentPost) => (
               <SectionCard
                 key={rp.id}
-                className="hover:border-brand-300 transition-colors"
+                className="hover:border-surface-raised transition-colors"
               >
                 <CardHeader className="p-4 pb-2">
-                  <CardTitle className="text-brand-800 line-clamp-2 text-base">
+                  <CardTitle className="text-text-secondary line-clamp-2 text-base">
                     <a
                       href={rp.dev_url || rp.canonical_url}
                       target="_blank"
@@ -218,7 +239,7 @@ function DetailPanel({
                 </CardHeader>
                 <CardContent className="p-4 pt-0">
                   <div className="mt-2 flex items-center justify-between">
-                    <span className="text-brand-500 text-xs">
+                    <span className="text-text-muted text-xs">
                       {new Date(rp.published_at).toLocaleDateString()}
                     </span>
                     <Badge
@@ -234,7 +255,7 @@ function DetailPanel({
           </div>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 }
 
@@ -280,41 +301,54 @@ export function Dashboard() {
     }
   }, [selectedPostId]);
 
+  /* Close detail panel on Escape key */
+  React.useEffect(() => {
+    if (!selectedPostId) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setSelectedPostId(null);
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [selectedPostId]);
+
   if (loading) {
     return (
-      <div className="bg-brand-50 flex min-h-screen items-center justify-center">
+      <div className="bg-surface-primary flex min-h-screen items-center justify-center">
         <Spinner size="lg" />
       </div>
     );
   }
 
   return (
-    <div className="bg-brand-50 flex h-screen overflow-hidden">
+    <div className="flex h-screen overflow-hidden">
       {/* Left panel: Post List */}
       <div
         className={cn(
-          "border-brand-200 flex w-full flex-col border-r bg-white transition-all duration-300",
+          "border-surface-border bg-paper-clue flex w-full flex-col border-r transition-all duration-300",
           selectedPostId ? "hidden md:flex md:w-1/2 lg:w-4/12" : "w-full",
         )}
       >
-        <div className="border-brand-100 border-b bg-white p-6">
+        <div className="from-surface-secondary via-surface-raised to-surface-secondary border-surface-border border-b bg-gradient-to-r p-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-brand-900 text-2xl font-bold tracking-tight">
+              <h1 className="font-heading text-text-primary text-2xl font-bold tracking-tight">
                 Attention Queue
               </h1>
-              <p className="text-brand-500 mt-1 text-sm">
+              <p className="text-text-muted mt-1 text-sm">
                 Conversations surfaced for review.
               </p>
             </div>
-            <a
-              href="https://github.com/ChecKMarKDevTools/forem-community-dashboard/issues"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="border-brand-200 text-brand-600 hover:bg-brand-50 hover:text-brand-800 inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-colors"
-            >
-              Feedback <ExternalLink className="h-3 w-3" />
-            </a>
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              <a
+                href="https://github.com/ChecKMarKDevTools/forem-community-dashboard/issues"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="border-surface-border text-accent-primary hover:bg-surface-secondary hover:text-accent-hover inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-colors"
+              >
+                Feedback <ExternalLink className="h-3 w-3" />
+              </a>
+            </div>
           </div>
         </div>
         <div className="flex-1 space-y-4 overflow-y-auto p-4">
@@ -326,7 +360,7 @@ export function Dashboard() {
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0 flex-1">
-                  <h3 className="text-brand-900 truncate font-semibold">
+                  <h3 className="font-heading text-text-primary truncate font-semibold">
                     {post.title}
                   </h3>
                   <PostMeta
@@ -355,12 +389,13 @@ export function Dashboard() {
 
       {/* Right panel: Post Details — only rendered when a post is selected */}
       {selectedPostId !== null && (
-        <div className="bg-brand-50/50 relative flex-1 overflow-y-auto p-6 md:p-8">
+        <div className="bg-surface-primary/50 relative flex-1 overflow-y-auto p-6 md:p-8">
           <DetailPanel
             selectedPostId={selectedPostId}
             detailsLoading={detailsLoading}
             postDetails={postDetails}
             onBack={() => setSelectedPostId(null)}
+            onClose={() => setSelectedPostId(null)}
           />
         </div>
       )}
