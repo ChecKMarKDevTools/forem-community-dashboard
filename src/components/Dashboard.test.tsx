@@ -88,7 +88,7 @@ describe("Dashboard Component", () => {
     render(<Dashboard />);
 
     await waitFor(() => {
-      expect(screen.queryByText("Attention Queue")).toBeInTheDocument();
+      expect(screen.queryByText("DEV Community Dashboard")).toBeInTheDocument();
     });
 
     expect(screen.getByText("Needs review post")).toBeInTheDocument();
@@ -327,7 +327,7 @@ describe("Dashboard Component", () => {
     render(<Dashboard />);
 
     await waitFor(() => {
-      expect(screen.getByText("Attention Queue")).toBeInTheDocument();
+      expect(screen.getByText("DEV Community Dashboard")).toBeInTheDocument();
     });
 
     const feedbackLink = screen.getByText("Feedback").closest("a");
@@ -851,7 +851,7 @@ describe("Dashboard Component", () => {
     render(<Dashboard />);
 
     await waitFor(() => {
-      expect(screen.getByText("Attention Queue")).toBeInTheDocument();
+      expect(screen.getByText("DEV Community Dashboard")).toBeInTheDocument();
     });
 
     // ThemeToggle renders a button with aria-label

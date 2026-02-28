@@ -6,6 +6,12 @@ import { cn } from "@/lib/utils";
 
 type Theme = "light" | "dark" | "system";
 const CYCLE: Theme[] = ["light", "dark", "system"];
+const THEME_ICON = { light: Sun, dark: Moon, system: Monitor } as const;
+const THEME_LABEL = {
+  light: "Light mode",
+  dark: "Dark mode",
+  system: "System theme",
+} as const;
 
 function applyTheme(theme: Theme): void {
   const prefersDark = matchMedia("(prefers-color-scheme:dark)").matches;
@@ -50,13 +56,8 @@ export function ThemeToggle({ className }: ThemeToggleProps) {
     applyTheme(next);
   };
 
-  const Icon = theme === "dark" ? Moon : theme === "system" ? Monitor : Sun;
-  const label =
-    theme === "dark"
-      ? "Dark mode"
-      : theme === "system"
-        ? "System theme"
-        : "Light mode";
+  const Icon = THEME_ICON[theme];
+  const label = THEME_LABEL[theme];
 
   return (
     <button

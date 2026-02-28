@@ -332,10 +332,11 @@ export function Dashboard() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="font-heading text-text-primary text-2xl font-bold tracking-tight">
-                Attention Queue
+                DEV Community Dashboard
               </h1>
               <p className="text-text-muted mt-1 text-sm">
-                Conversations surfaced for review.
+                Identify meaningful discussions on Forem by measuring
+                interaction patterns, not popularity.
               </p>
             </div>
             <div className="flex items-center gap-2">

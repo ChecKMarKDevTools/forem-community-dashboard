@@ -16,10 +16,25 @@
   /* ── Accent ────────────────────────────────────────────────── */
   --color-accent-primary: var(--accent-primary);
   --color-accent-hover: var(--accent-hover);
+  --color-accent-active: var(--accent-active);
+  --color-accent-soft: var(--accent-soft);
 
   /* ── State indicators ──────────────────────────────────────── */
+  --color-state-positive: var(--state-positive);
   --color-state-negative: var(--state-negative);
   --color-state-warning: var(--state-warning);
+  --color-state-info: var(--state-info);
+
+  /* ── Chart ──────────────────────────────────────────────────── */
+  --color-chart-grid: var(--chart-grid);
+  --color-chart-axis: var(--chart-axis);
+  --color-chart-series-primary: var(--chart-series-primary);
+  --color-chart-series-secondary: var(--chart-series-secondary);
+  --color-chart-series-tertiary: var(--chart-series-tertiary);
+
+  /* ── Interactive ────────────────────────────────────────────── */
+  --color-focus-ring: var(--focus-ring);
+  --color-selection-bg: var(--selection-bg);
 
   /* ── Semantic badge palette (unchanged names for Badge.tsx) ── */
   --color-neutral-200: var(--badge-neutral-bg);
@@ -46,33 +61,48 @@
 /* ── Light mode (default) ────────────────────────────────────── */
 @layer base {
   :root {
-    /* Surfaces — cool grey-blue */
-    --surface-primary: #f1f2f6;
-    --surface-secondary: #e6e8ee;
-    --surface-raised: #dadde6;
-    --surface-border: #c5c9d6;
-    --paper-clue: #fbf8f2;
+    /* Surfaces */
+    --surface-primary: #f6f7fb;
+    --surface-secondary: #eef1f7;
+    --surface-raised: #e3e6f0;
+    --surface-border: #d7dbe7;
+    --paper-clue: #fff;
 
-    /* Text — charcoal-violet */
-    --text-primary: #2b2d42;
-    --text-secondary: #44475a;
-    --text-muted: #7b7f96;
+    /* Text */
+    --text-primary: #1e2230;
+    --text-secondary: #4b5266;
+    --text-muted: #7a8196;
 
-    /* Accent — violet */
-    --accent-primary: #6c5fa7;
-    --accent-hover: #5a4e8f;
+    /* Accent */
+    --accent-primary: #6e5a86;
+    --accent-hover: #7f6aa0;
+    --accent-active: #5a496f;
+    --accent-soft: #e7e3f1;
 
     /* State */
-    --state-negative: #dc2626;
-    --state-warning: #d97706;
+    --state-positive: #7c6fa3;
+    --state-negative: #5e5476;
+    --state-warning: #9b8fb9;
+    --state-info: #b4a8d6;
+
+    /* Chart */
+    --chart-grid: #e3e6f0;
+    --chart-axis: #8c92a8;
+    --chart-series-primary: #6e5a86;
+    --chart-series-secondary: #9a8bc1;
+    --chart-series-tertiary: #c7bedf;
+
+    /* Interactive */
+    --focus-ring: #8a79af;
+    --selection-bg: #e2dcf3;
 
     /* Badge palette */
-    --badge-neutral-bg: #e1e2e8;
-    --badge-neutral-hover: #d0d2da;
-    --badge-neutral-text: #44475a;
-    --badge-info-bg: #e0ddef;
-    --badge-info-hover: #ccc8e3;
-    --badge-info-text: #5a4e8f;
+    --badge-neutral-bg: #e3e6f0;
+    --badge-neutral-hover: #d7dbe7;
+    --badge-neutral-text: #4b5266;
+    --badge-info-bg: #e7e3f1;
+    --badge-info-hover: #d4cce8;
+    --badge-info-text: #6e5a86;
     --badge-teal-bg: #ccfbf1;
     --badge-teal-hover: #99f6e4;
     --badge-teal-text: #0f766e;
@@ -84,26 +114,26 @@
     --badge-critical-text: #b91c1c;
 
     /* Gradient */
-    --gradient-from: #f1f2f6;
-    --gradient-via: #e6e8ee;
-    --gradient-to: #dadde6;
+    --gradient-from: #f6f7fb;
+    --gradient-via: #eef1f7;
+    --gradient-to: #e3e6f0;
 
     /* Card (used by Card.tsx via bg-card / text-card-foreground) */
-    --background: #f1f2f6;
-    --foreground: #2b2d42;
-    --card: #fbf8f2;
-    --card-foreground: #2b2d42;
-    --border: #c5c9d6;
+    --background: #f6f7fb;
+    --foreground: #1e2230;
+    --card: #fff;
+    --card-foreground: #1e2230;
+    --border: #d7dbe7;
   }
 
   /* ── Dark mode ───────────────────────────────────────────── */
   .dark {
     /* Surfaces — deep charcoal-violet */
     --surface-primary: #1a1b2e;
-    --surface-secondary: #2b2d42;
-    --surface-raised: #3d3f54;
-    --surface-border: #52546b;
-    --paper-clue: #24253a;
+    --surface-secondary: #24253a;
+    --surface-raised: #2f3148;
+    --surface-border: #3d3f56;
+    --paper-clue: #2b2d42;
 
     /* Text */
     --text-primary: #eeeef2;
@@ -113,14 +143,29 @@
     /* Accent — soft lavender */
     --accent-primary: #b5a8c9;
     --accent-hover: #cfc3e0;
+    --accent-active: #9b8fb9;
+    --accent-soft: #2d2a4a;
 
     /* State */
-    --state-negative: #f87171;
-    --state-warning: #fbbf24;
+    --state-positive: #b5a8c9;
+    --state-negative: #9b8fb9;
+    --state-warning: #cfc3e0;
+    --state-info: #d4cce8;
+
+    /* Chart */
+    --chart-grid: #2f3148;
+    --chart-axis: #8e90a3;
+    --chart-series-primary: #b5a8c9;
+    --chart-series-secondary: #9b8fb9;
+    --chart-series-tertiary: #7c6fa3;
+
+    /* Interactive */
+    --focus-ring: #b5a8c9;
+    --selection-bg: #2d2a4a;
 
     /* Badge palette */
-    --badge-neutral-bg: #3d3f54;
-    --badge-neutral-hover: #52546b;
+    --badge-neutral-bg: #2f3148;
+    --badge-neutral-hover: #3d3f56;
     --badge-neutral-text: #c5c9d6;
     --badge-info-bg: #2d2a4a;
     --badge-info-hover: #3d3860;
@@ -137,15 +182,15 @@
 
     /* Gradient */
     --gradient-from: #1a1b2e;
-    --gradient-via: #2b2d42;
+    --gradient-via: #24253a;
     --gradient-to: #1a1b2e;
 
     /* Card */
     --background: #1a1b2e;
     --foreground: #eeeef2;
-    --card: #24253a;
+    --card: #2b2d42;
     --card-foreground: #eeeef2;
-    --border: #52546b;
+    --border: #3d3f56;
   }
 }
 
