@@ -334,7 +334,7 @@ export function Dashboard() {
           selectedPostId ? "hidden md:flex md:w-1/2 lg:w-4/12" : "w-full",
         )}
       >
-        <div className="from-surface-secondary via-surface-raised to-surface-secondary border-surface-border border-b bg-gradient-to-r p-6">
+        <div className="header-gradient border-surface-border border-b p-6">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="font-heading text-text-primary text-2xl font-bold tracking-tight">

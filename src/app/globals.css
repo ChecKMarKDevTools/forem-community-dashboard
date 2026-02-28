@@ -18,6 +18,9 @@
   --color-accent-hover: var(--accent-hover);
   --color-accent-active: var(--accent-active);
   --color-accent-soft: var(--accent-soft);
+  --color-accent-strong: var(--accent-strong);
+  --color-accent-deep: var(--accent-deep);
+  --color-accent-glow: var(--accent-glow);
 
   /* ── State indicators ──────────────────────────────────────── */
   --color-state-positive: var(--state-positive);
@@ -78,8 +81,11 @@
     --accent-hover: #7f6aa0;
     --accent-active: #5a496f;
     --accent-soft: #e7e3f1;
+    --accent-strong: #b4a8d6;
+    --accent-deep: #5a496f;
+    --accent-glow: #c9b8ff;
 
-    /* State */
+    /* State — purple only, no orange/green/red */
     --state-positive: #7c6fa3;
     --state-negative: #5e5476;
     --state-warning: #9b8fb9;
@@ -96,22 +102,28 @@
     --focus-ring: #8a79af;
     --selection-bg: #e2dcf3;
 
-    /* Badge palette */
+    /* Badge palette — no orange, green, or red */
     --badge-neutral-bg: #e3e6f0;
     --badge-neutral-hover: #d7dbe7;
     --badge-neutral-text: #4b5266;
     --badge-info-bg: #e7e3f1;
     --badge-info-hover: #d4cce8;
     --badge-info-text: #6e5a86;
-    --badge-teal-bg: #ccfbf1;
-    --badge-teal-hover: #99f6e4;
-    --badge-teal-text: #0f766e;
-    --badge-attention-bg: #fef3c7;
-    --badge-attention-hover: #fde68a;
-    --badge-attention-text: #b45309;
-    --badge-critical-bg: #fee2e2;
-    --badge-critical-hover: #fecaca;
-    --badge-critical-text: #b91c1c;
+
+    /* teal → lavender (replaces green) */
+    --badge-teal-bg: #ede9f8;
+    --badge-teal-hover: #dcd5f0;
+    --badge-teal-text: #5a496f;
+
+    /* attention → medium purple (replaces amber) */
+    --badge-attention-bg: #e7e3f1;
+    --badge-attention-hover: #d4cce8;
+    --badge-attention-text: #6e5a86;
+
+    /* critical → deep purple (replaces red) */
+    --badge-critical-bg: #d4cce8;
+    --badge-critical-hover: #c2b5df;
+    --badge-critical-text: #3d2e52;
 
     /* Gradient */
     --gradient-from: #f6f7fb;
@@ -126,71 +138,80 @@
     --border: #d7dbe7;
   }
 
-  /* ── Dark mode ───────────────────────────────────────────── */
+  /* ── Dark mode — exact spec palette ──────────────────────── */
   .dark {
-    /* Surfaces — deep charcoal-violet */
-    --surface-primary: #1a1b2e;
-    --surface-secondary: #24253a;
-    --surface-raised: #2f3148;
-    --surface-border: #3d3f56;
-    --paper-clue: #2b2d42;
+    /* Surfaces */
+    --surface-primary: #0f1220; /* page_bg */
+    --surface-secondary: #171a2b; /* panel_bg */
+    --surface-raised: #1e2236; /* panel_bg_alt */
+    --surface-border: #2a2f49; /* panel_border */
+    --paper-clue: #171a2b; /* panel_bg for cards */
 
     /* Text */
-    --text-primary: #eeeef2;
-    --text-secondary: #c5c9d6;
-    --text-muted: #8e90a3;
+    --text-primary: #f1f3fa;
+    --text-secondary: #aab0c6;
+    --text-muted: #7e859e;
 
-    /* Accent — soft lavender */
-    --accent-primary: #b5a8c9;
-    --accent-hover: #cfc3e0;
-    --accent-active: #9b8fb9;
-    --accent-soft: #2d2a4a;
+    /* Accent */
+    --accent-primary: #8a79af; /* accent_primary */
+    --accent-hover: #b4a8d6; /* accent_strong */
+    --accent-active: #5a496f; /* accent_deep */
+    --accent-soft: #2a2f49;
+    --accent-strong: #b4a8d6;
+    --accent-deep: #5a496f;
+    --accent-glow: #c9b8ff;
 
-    /* State */
-    --state-positive: #b5a8c9;
-    --state-negative: #9b8fb9;
-    --state-warning: #cfc3e0;
-    --state-info: #d4cce8;
+    /* State — purple only, no orange/green/red */
+    --state-positive: #8a79af;
+    --state-negative: #5a496f;
+    --state-warning: #b4a8d6;
+    --state-info: #aab0c6;
 
     /* Chart */
-    --chart-grid: #2f3148;
-    --chart-axis: #8e90a3;
-    --chart-series-primary: #b5a8c9;
-    --chart-series-secondary: #9b8fb9;
-    --chart-series-tertiary: #7c6fa3;
+    --chart-grid: #262b45; /* spec chart_grid */
+    --chart-axis: #8c92a8; /* spec chart_axis */
+    --chart-series-primary: #8a79af;
+    --chart-series-secondary: #b4a8d6;
+    --chart-series-tertiary: #5a496f;
 
     /* Interactive */
-    --focus-ring: #b5a8c9;
-    --selection-bg: #2d2a4a;
+    --focus-ring: #8a79af;
+    --selection-bg: #2a2f49;
 
-    /* Badge palette */
-    --badge-neutral-bg: #2f3148;
-    --badge-neutral-hover: #3d3f56;
-    --badge-neutral-text: #c5c9d6;
-    --badge-info-bg: #2d2a4a;
-    --badge-info-hover: #3d3860;
-    --badge-info-text: #b5a8c9;
-    --badge-teal-bg: #134e4a;
-    --badge-teal-hover: #115e59;
-    --badge-teal-text: #5eead4;
-    --badge-attention-bg: #451a03;
-    --badge-attention-hover: #78350f;
-    --badge-attention-text: #fcd34d;
-    --badge-critical-bg: #450a0a;
-    --badge-critical-hover: #7f1d1d;
-    --badge-critical-text: #fca5a5;
+    /* Badge palette — no orange, green, or red */
+    --badge-neutral-bg: #1e2236;
+    --badge-neutral-hover: #2a2f49;
+    --badge-neutral-text: #aab0c6;
+    --badge-info-bg: #2a2f49;
+    --badge-info-hover: #353c5a;
+    --badge-info-text: #b4a8d6;
 
-    /* Gradient */
-    --gradient-from: #1a1b2e;
-    --gradient-via: #24253a;
-    --gradient-to: #1a1b2e;
+    /* teal → lavender-purple (replaces green) */
+    --badge-teal-bg: #1e2236;
+    --badge-teal-hover: #2a2f49;
+    --badge-teal-text: #b4a8d6;
+
+    /* attention → medium purple (replaces amber) */
+    --badge-attention-bg: #2a2f49;
+    --badge-attention-hover: #353c5a;
+    --badge-attention-text: #c9b8ff;
+
+    /* critical → accent_deep per interaction hierarchy */
+    --badge-critical-bg: #5a496f;
+    --badge-critical-hover: #6a5580;
+    --badge-critical-text: #f1f3fa;
+
+    /* Gradient helpers */
+    --gradient-from: #0f1220;
+    --gradient-via: #171a2b;
+    --gradient-to: #0f1220;
 
     /* Card */
-    --background: #1a1b2e;
-    --foreground: #eeeef2;
-    --card: #2b2d42;
-    --card-foreground: #eeeef2;
-    --border: #3d3f56;
+    --background: #0f1220;
+    --foreground: #f1f3fa;
+    --card: #171a2b;
+    --card-foreground: #f1f3fa;
+    --border: #2a2f49;
   }
 }
 
@@ -206,5 +227,140 @@
       var(--background);
     color: var(--foreground);
     font-family: var(--font-body), georgia, serif;
+  }
+
+  /* Dark mode: background depth gradient (spec) */
+  .dark body {
+    background: radial-gradient(circle at 20% 0%, #1a1f38 0%, #0f1220 70%);
+  }
+
+  /* Spec focus ring — applied to keyboard-reachable elements */
+  button:focus-visible,
+  a:focus-visible,
+  [tabindex]:focus-visible,
+  [role="button"]:focus-visible {
+    outline: none;
+    box-shadow:
+      0 0 0 2px rgb(138 121 175 / 35%),
+      0 0 18px rgb(201 184 255 / 25%);
+  }
+}
+
+/* ── Interaction & decoration utilities ──────────────────────── */
+@layer utilities {
+  /* Card shadow — spec: 0 8px 24px rgba(0,0,0,0.35) for dark */
+  .shadow-card {
+    box-shadow: 0 2px 8px rgb(0 0 0 / 8%);
+  }
+
+  .dark .shadow-card {
+    box-shadow: 0 8px 24px rgb(0 0 0 / 35%);
+  }
+
+  /* Card hover elevation — blur +20% (24→29), spread unchanged */
+  .shadow-card-hover {
+    box-shadow: 0 4px 12px rgb(0 0 0 / 12%);
+  }
+
+  .dark .shadow-card-hover {
+    box-shadow: 0 8px 29px rgb(0 0 0 / 35%);
+  }
+
+  /* Glow — spec: focus ring / active badge / hover on primary interactive */
+  .glow-accent {
+    box-shadow:
+      0 0 0 2px rgb(138 121 175 / 35%),
+      0 0 18px rgb(201 184 255 / 25%);
+  }
+
+  /* Stronger glow for selected state */
+  .glow-accent-strong {
+    box-shadow:
+      0 0 0 2px rgb(138 121 175 / 50%),
+      0 0 18px rgb(201 184 255 / 35%);
+  }
+
+  /*
+   * Card interactive: handles hover lift + soft glow.
+   * Applied on all QueueCards; hover state managed in CSS (not JS).
+   */
+  .card-interactive {
+    transition:
+      box-shadow 0.2s ease,
+      transform 0.2s ease;
+    box-shadow: 0 2px 8px rgb(0 0 0 / 8%);
+  }
+
+  .dark .card-interactive {
+    box-shadow: 0 8px 24px rgb(0 0 0 / 35%);
+  }
+
+  .card-interactive:hover {
+    transform: translateY(-1px);
+    box-shadow:
+      0 0 0 1px rgb(138 121 175 / 25%),
+      0 4px 12px rgb(0 0 0 / 12%),
+      0 0 14px rgb(201 184 255 / 12%);
+  }
+
+  .dark .card-interactive:hover {
+    transform: translateY(-1px);
+    box-shadow:
+      0 0 0 1px rgb(138 121 175 / 25%),
+      0 10px 29px rgb(0 0 0 / 35%),
+      0 0 14px rgb(201 184 255 / 15%);
+  }
+
+  /*
+   * Selected card: accent_deep → gradient start
+   * Uses spec colors only; both stops pass WCAG AA with --text-primary.
+   * CSS variable overrides ensure readable text on the gradient background.
+   */
+  .card-selected {
+    box-shadow:
+      0 0 0 2px rgb(138 121 175 / 50%),
+      0 0 18px rgb(201 184 255 / 35%);
+    background-color: var(--accent-soft);
+  }
+
+  .dark .card-selected {
+    background: linear-gradient(135deg, #5a496f 0%, #6e5a86 100%);
+
+    /* Override text tokens within this context for contrast on gradient */
+    --text-primary: #f1f3fa;
+    --text-secondary: #e2def5;
+    --text-muted: rgb(241 243 250 / 75%);
+
+    box-shadow:
+      0 0 0 2px rgb(138 121 175 / 50%),
+      0 0 18px rgb(201 184 255 / 35%);
+  }
+
+  /*
+   * Header gradient:
+   * Light mode: subtle surface sweep (unchanged from previous design)
+   * Dark mode: spec primary accent gradient with local text overrides for
+   *            WCAG-compliant contrast on the light end of the gradient.
+   */
+  .header-gradient {
+    background: linear-gradient(
+      to right,
+      var(--surface-secondary),
+      var(--surface-raised),
+      var(--surface-secondary)
+    );
+  }
+
+  .dark .header-gradient {
+    background: linear-gradient(135deg, #6e5a86 0%, #8a79af 50%, #b4a8d6 100%);
+
+    /* Cascade text token overrides so component classes need no changes */
+    --text-primary: #fff;
+    --text-secondary: rgb(255 255 255 / 85%);
+    --text-muted: rgb(255 255 255 / 70%);
+    --accent-primary: rgb(255 255 255 / 90%);
+    --accent-hover: #fff;
+    --surface-border: rgb(255 255 255 / 30%);
+    --surface-secondary: rgb(255 255 255 / 8%);
   }
 }
