@@ -102,22 +102,22 @@
     --focus-ring: #6e5a86;
     --selection-bg: #e2dcf3;
 
-    /* Badge palette — muted, accessible tones */
+    /* Badge palette — neutral identifiers, not danger/warning labels */
     --badge-neutral-bg: #e3e6f0;
     --badge-neutral-hover: #d7dbe7;
     --badge-neutral-text: #4b5266;
-    --badge-info-bg: #e7e3f1;
-    --badge-info-hover: #d4cce8;
-    --badge-info-text: #6e5a86;
-    --badge-teal-bg: #e1f0ee;
-    --badge-teal-hover: #cfe6e3;
-    --badge-teal-text: #3b6b62;
-    --badge-attention-bg: #ede9f8;
-    --badge-attention-hover: #dcd5f0;
-    --badge-attention-text: #5a496f;
-    --badge-critical-bg: #f0e5ec;
-    --badge-critical-hover: #e5d5df;
-    --badge-critical-text: #6b3a50;
+    --badge-info-bg: #dce8f5;
+    --badge-info-hover: #c8dbf0;
+    --badge-info-text: #2e5a8a;
+    --badge-teal-bg: #ddf0ed;
+    --badge-teal-hover: #c8e6e1;
+    --badge-teal-text: #2b6058;
+    --badge-attention-bg: #f0ead8;
+    --badge-attention-hover: #e6dec6;
+    --badge-attention-text: #6b5d30;
+    --badge-critical-bg: #f0e1e6;
+    --badge-critical-hover: #e6d2da;
+    --badge-critical-text: #7a3b52;
 
     /* Gradient */
     --gradient-from: #f6f7fb;
@@ -178,22 +178,22 @@
     --focus-ring: #8b7ec8;
     --selection-bg: #1e1b3a;
 
-    /* Badge palette — dark-mode safe, distinguishable */
-    --badge-neutral-bg: #1a2035;
-    --badge-neutral-hover: #232d44;
-    --badge-neutral-text: #9ca3b4;
-    --badge-info-bg: #182040;
-    --badge-info-hover: #1e2a50;
-    --badge-info-text: #7ba3d4;
-    --badge-teal-bg: #0f2a28;
-    --badge-teal-hover: #163835;
-    --badge-teal-text: #5eead4;
-    --badge-attention-bg: #1e1b3a;
-    --badge-attention-hover: #282450;
-    --badge-attention-text: #c4b5ff;
-    --badge-critical-bg: #2d1525;
-    --badge-critical-hover: #3d1e33;
-    --badge-critical-text: #f0a0c0;
+    /* Badge palette — dark-mode safe, distinct from accent/selection state */
+    --badge-neutral-bg: #1e2435;
+    --badge-neutral-hover: #272e42;
+    --badge-neutral-text: #a0a8ba;
+    --badge-info-bg: #142538;
+    --badge-info-hover: #1a3048;
+    --badge-info-text: #6eaad8;
+    --badge-teal-bg: #0e2826;
+    --badge-teal-hover: #163533;
+    --badge-teal-text: #52d9c0;
+    --badge-attention-bg: #2a2518;
+    --badge-attention-hover: #363020;
+    --badge-attention-text: #d4b86e;
+    --badge-critical-bg: #2c1a22;
+    --badge-critical-hover: #3a222e;
+    --badge-critical-text: #d98aa5;
 
     /* Gradient helpers */
     --gradient-from: #0b0f1a;

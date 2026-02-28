@@ -341,7 +341,7 @@ export function Dashboard() {
                 DEV Community Dashboard
               </h1>
               <p className="text-text-muted mt-1 text-sm">
-                Identify meaningful discussions on Forem by measuring
+                Identify meaningful discussions on DEV.to by measuring
                 interaction patterns, not popularity.
               </p>
             </div>
