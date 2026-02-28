@@ -108,7 +108,7 @@ Each article is classified at sync time (not at read time) into one of four atte
 
 | Metric               | Formula                                                                |
 | -------------------- | ---------------------------------------------------------------------- |
-| `word_count`         | `reading_time_minutes * 200` (estimated)                               |
+| `word_count`         | Exact word count of the article body                                   |
 | `comments_per_hour`  | `comment_count / max(1, time_since_post / 60)`                         |
 | `avg_comment_length` | `total_comment_words / max(1, comment_count)`                          |
 | `reply_ratio`        | `replies_with_parent / max(1, comment_count)`                          |
@@ -218,7 +218,7 @@ gcloud run deploy forem-community-dashboard \
   --set-env-vars NEXT_PUBLIC_SUPABASE_URL=...,FOREM_API_KEY=...
 ```
 
-Once deployed, set `APP_URL` as a **GitHub repository variable** (not a secret — it is a public URL) and `CRON_SECRET` as a **GitHub secret** so the cron workflow (`.github/workflows/cron.yml`) can reach the live endpoint. Uncomment the `schedule` trigger in that file to enable the 15-minute cadence.
+Once deployed, set `APP_URL` as a **GitHub repository variable** (not a secret — it is a public URL) and `CRON_SECRET` as a **GitHub secret** so the cron workflow (`.github/workflows/cron.yml`) can reach the live endpoint. Uncomment the `schedule` trigger in that file to enable the 2-hour cadence.
 
 ---
 
