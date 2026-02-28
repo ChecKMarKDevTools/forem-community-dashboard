@@ -30,17 +30,22 @@ function getAgeHours(published_at: string): number {
 }
 
 function stripHtmlTags(html: string): string {
-  // Iteratively remove complete tags until none remain.
-  // A single-pass regex can leave residual partial tags (e.g. "<scr" + "ipt>")
-  // because the regex matches greedily on each pass. Looping until stable
-  // guarantees no HTML element fragments survive. (CodeQL: incomplete-multi-character-sanitization)
-  let result = html;
-  let previous: string;
-  do {
-    previous = result;
-    result = result.replaceAll(/<[^>]*>/g, "");
-  } while (result !== previous);
-  return result;
+  // Character-walking approach: O(n) with no regex backtracking risk (Sonar S5852).
+  // Skips everything between '<' and '>' in a single pass, which also handles
+  // nested/malformed fragments that a single-pass regex could miss
+  // (CodeQL: incomplete-multi-character-sanitization).
+  let out = "";
+  let inTag = false;
+  for (const ch of html) {
+    if (ch === "<") {
+      inTag = true;
+    } else if (ch === ">") {
+      inTag = false;
+    } else if (!inTag) {
+      out += ch;
+    }
+  }
+  return out;
 }
 
 function countWords(textHtml?: string): number {
