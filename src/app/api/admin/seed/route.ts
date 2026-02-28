@@ -8,7 +8,7 @@ const PER_PAGE = 30;
 
 export async function POST(request: Request): Promise<NextResponse> {
   const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.SEED_SECRET}`) {
+  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

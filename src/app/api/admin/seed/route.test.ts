@@ -17,7 +17,7 @@ vi.mock("@/lib/sync", () => ({
 // Helpers
 // ---------------------------------------------------------------------------
 
-const VALID_SECRET = "seed-secret";
+const VALID_SECRET = "test-cron-secret";
 
 function makeRequest(authHeader: string | undefined, body?: unknown): Request {
   const init: RequestInit = { method: "POST" };
@@ -53,12 +53,12 @@ function makeArticle(id: number, daysAgo: number, username = "author") {
 describe("POST /api/admin/seed", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env.SEED_SECRET = VALID_SECRET;
+    process.env.CRON_SECRET = VALID_SECRET;
     (syncArticles as Mock).mockResolvedValue(undefined);
   });
 
   afterEach(() => {
-    delete process.env.SEED_SECRET;
+    delete process.env.CRON_SECRET;
   });
 
   // ── Authentication ────────────────────────────────────────────────────────
@@ -80,8 +80,8 @@ describe("POST /api/admin/seed", () => {
       expect(res.status).toBe(401);
     });
 
-    it("returns 401 when SEED_SECRET env var is undefined", async () => {
-      delete process.env.SEED_SECRET;
+    it("returns 401 when CRON_SECRET env var is undefined", async () => {
+      delete process.env.CRON_SECRET;
       const res = await POST(makeRequest(`Bearer ${VALID_SECRET}`));
       expect(res.status).toBe(401);
     });
