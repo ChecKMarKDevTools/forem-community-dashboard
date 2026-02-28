@@ -38,12 +38,15 @@ type RecentPost = {
   id: number;
   title: string;
   canonical_url: string;
+  url: string;
   published_at: string;
   score: number;
   attention_level: "low" | "medium" | "high";
 };
-
 type PostDetails = Post & {
+  word_count?: number;
+  age_hours?: number;
+  url: string;
   score_breakdown?: Record<string, number>;
   recent_posts?: RecentPost[];
 };
@@ -127,7 +130,7 @@ function DetailPanel({
           <div>
             <h2 className="text-brand-900 text-2xl leading-tight font-bold md:text-3xl">
               <a
-                href={postDetails.canonical_url}
+                href={postDetails.url || postDetails.canonical_url}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hover:text-brand-600 transition-colors hover:underline"
@@ -160,7 +163,19 @@ function DetailPanel({
           </div>
           <div className="text-brand-700 flex items-center gap-2">
             <MessageSquare className="text-brand-500 h-5 w-5" />{" "}
-            <span className="font-semibold">{postDetails.comments}</span>
+            <span className="font-semibold">
+              {postDetails.comments} Comments
+            </span>
+          </div>
+          <div className="text-brand-700 flex items-center gap-2">
+            <span className="font-semibold">
+              {postDetails.word_count || 0} Words
+            </span>
+          </div>
+          <div className="text-brand-700 flex items-center gap-2">
+            <span className="font-semibold">
+              {postDetails.age_hours || 0} Hours Old
+            </span>
           </div>
         </div>
 
@@ -248,7 +263,7 @@ function DetailPanel({
                 <CardHeader className="p-4 pb-2">
                   <CardTitle className="text-brand-800 line-clamp-2 text-base">
                     <a
-                      href={rp.canonical_url}
+                      href={rp.url || rp.canonical_url}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="hover:underline"
