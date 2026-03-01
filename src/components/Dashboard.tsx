@@ -258,13 +258,12 @@ function DetailPanel({
         {/* Thread Momentum — full-width card below the grid */}
         <SectionCard variant="muted" className="mt-6">
           <CardHeader className="pb-3">
-            <CardTitle className="font-heading text-text-secondary text-lg">
+            <CardTitle
+              className="font-heading text-text-secondary text-lg"
+              title="A plain-language read of how the conversation is evolving right now."
+            >
               Thread Momentum
             </CardTitle>
-            <CardDescription>
-              A plain-language read of how the conversation is evolving right
-              now.
-            </CardDescription>
           </CardHeader>
           <CardContent>
             <p className="text-text-secondary text-sm leading-relaxed">
@@ -280,15 +279,9 @@ function DetailPanel({
           transition={{ duration: 0.2, delay: 0.1 }}
           className="mt-6 space-y-6"
         >
-          <div>
-            <h3 className="font-heading text-text-primary text-xl font-bold">
-              Post Analytics
-            </h3>
-            <p className="text-text-muted mt-1 text-sm">
-              Quantitative breakdowns of engagement timing, participation, and
-              interaction quality.
-            </p>
-          </div>
+          <h3 className="font-heading text-text-primary text-xl font-bold">
+            Post Analytics
+          </h3>
 
           <div className="grid gap-6 md:grid-cols-2">
             {/* Reply Velocity */}
