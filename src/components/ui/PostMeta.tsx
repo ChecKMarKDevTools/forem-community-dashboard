@@ -26,7 +26,12 @@ export function PostMeta({
           <User className="h-4 w-4" /> @{author}
         </span>
         <span className="flex items-center gap-1.5">
-          <Clock className="h-4 w-4" /> {new Date(date).toLocaleString()}
+          <Clock className="h-4 w-4" />{" "}
+          {new Date(date).toLocaleDateString(undefined, {
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+          })}
         </span>
       </div>
     );
