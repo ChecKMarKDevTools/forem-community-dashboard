@@ -194,7 +194,8 @@ function DetailPanel({
                 Conversation Signals
               </CardTitle>
               <CardDescription>
-                Signals computed from the conversation
+                Observable data points extracted from the conversation thread.
+                Hover over any signal for an explanation.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -231,7 +232,8 @@ function DetailPanel({
                 Discussion State
               </CardTitle>
               <CardDescription>
-                Observed patterns in the current window
+                Composite indicators derived from conversation signals. Each bar
+                shows intensity relative to community baselines.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -259,6 +261,10 @@ function DetailPanel({
             <CardTitle className="font-heading text-text-secondary text-lg">
               Thread Momentum
             </CardTitle>
+            <CardDescription>
+              A plain-language read of how the conversation is evolving right
+              now.
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <p className="text-text-secondary text-sm leading-relaxed">
@@ -274,9 +280,15 @@ function DetailPanel({
           transition={{ duration: 0.2, delay: 0.1 }}
           className="mt-6 space-y-6"
         >
-          <h3 className="font-heading text-text-primary text-xl font-bold">
-            Post Analytics
-          </h3>
+          <div>
+            <h3 className="font-heading text-text-primary text-xl font-bold">
+              Post Analytics
+            </h3>
+            <p className="text-text-muted mt-1 text-sm">
+              Quantitative breakdowns of engagement timing, participation, and
+              interaction quality.
+            </p>
+          </div>
 
           <div className="grid gap-6 md:grid-cols-2">
             {/* Reply Velocity */}
@@ -308,9 +320,15 @@ function DetailPanel({
             title="Interaction Signal"
             tooltip="Depth and substance of comments so far. Guides how you can contribute most constructively to the conversation."
           >
-            {getInteractionMethod(postDetails.metrics) !== "unknown" && (
-              <SignalBar {...getSignalSpreadData(postDetails.metrics)} />
-            )}
+            {(() => {
+              const spread = getSignalSpreadData(postDetails.metrics);
+              const hasSpreadData =
+                spread.strong + spread.moderate + spread.faint > 0;
+              return (
+                getInteractionMethod(postDetails.metrics) !== "unknown" &&
+                hasSpreadData && <SignalBar {...spread} />
+              );
+            })()}
             <p className="text-text-secondary mt-3 text-xs leading-relaxed">
               {getSignalSummary(
                 getInteractionSignal(postDetails.metrics),
@@ -357,32 +375,6 @@ function DetailPanel({
                   ))}
                 </div>
               )}
-              {/* Per-comment score breakdown — metric transparency */}
-              {postDetails.metrics?.interaction_scores &&
-                postDetails.metrics.interaction_scores.length > 0 && (
-                  <details className="mt-2">
-                    <summary className="text-text-muted hover:text-text-secondary cursor-pointer text-[10px]">
-                      Per-comment scores (
-                      {postDetails.metrics.interaction_scores.length})
-                    </summary>
-                    <div className="mt-1.5 max-h-40 space-y-1 overflow-y-auto">
-                      {postDetails.metrics.interaction_scores.map((s) => (
-                        <p
-                          key={s.index}
-                          className="text-text-muted text-[10px] tabular-nums"
-                        >
-                          <span className="text-text-secondary font-medium">
-                            #{s.index + 1}
-                          </span>{" "}
-                          tone {s.tone > 0 ? "+" : ""}
-                          {s.tone.toFixed(1)} · rel {s.relevance.toFixed(1)} ·
-                          depth {s.depth.toFixed(1)} · constr{" "}
-                          {s.constructiveness.toFixed(1)}
-                        </p>
-                      ))}
-                    </div>
-                  </details>
-                )}
             </div>
           </ChartContainer>
 
@@ -531,8 +523,9 @@ export function Dashboard() {
                 DEV Community Dashboard
               </h1>
               <p className="text-text-muted mt-2 text-sm tracking-wide md:text-base">
-                Identify meaningful discussions on DEV.to by measuring
-                interaction patterns, not popularity.
+                Surface meaningful conversations on DEV.to. Posts are ranked by
+                interaction quality, not popularity — click any card to explore
+                the full analysis.
               </p>
             </div>
             <nav aria-label="Site actions" className="flex items-center gap-2">

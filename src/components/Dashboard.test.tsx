@@ -181,6 +181,36 @@ describe("Dashboard Component", () => {
     });
   });
 
+  it("displays NEEDS_SUPPORT category with rose badge", async () => {
+    const supportPosts = [
+      {
+        id: 10,
+        title: "Struggling with burnout",
+        canonical_url: "https://dev.to/test/post-10",
+        score: 5,
+        attention_level: "NEEDS_SUPPORT",
+        explanations: ["Support Score: 2"],
+        published_at: "2023-10-27T10:00:00Z",
+        author: "burntout",
+        reactions: 0,
+        comments: 0,
+      },
+    ];
+    globalThis.fetch = vi
+      .fn()
+      .mockResolvedValue({ ok: true, json: async () => supportPosts });
+    render(<Dashboard />);
+
+    await waitFor(() => {
+      // NEEDS_SUPPORT triggers "Needs Support" badge
+      expect(screen.getByText("Needs Support")).toBeInTheDocument();
+    });
+
+    // Verify the badge has the rose variant class
+    const badge = screen.getByText("Needs Support");
+    expect(badge).toHaveClass("bg-rose-100");
+  });
+
   it("displays SIGNAL_AT_RISK category correctly", async () => {
     const lowQPosts = [
       {

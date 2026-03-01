@@ -8,7 +8,12 @@ export function Footer() {
     >
       <div className="mx-auto max-w-7xl px-6 py-5">
         <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
-          {/* Left — AI attribution */}
+          {/* Left — Copyright */}
+          <p className="text-text-muted text-xs">
+            &copy; 2026 ChecKMarK DevTools | Ashley Childress
+          </p>
+
+          {/* Center — AI attribution */}
           <div className="flex items-center gap-2 text-sm">
             <Sparkles
               className="text-accent-primary h-4 w-4 shrink-0"
@@ -22,7 +27,7 @@ export function Footer() {
             </span>
           </div>
 
-          {/* Center — DEV Weekend Challenge */}
+          {/* Right — DEV Weekend Challenge */}
           <a
             href="https://dev.to"
             target="_blank"
@@ -35,11 +40,6 @@ export function Footer() {
               aria-hidden="true"
             />
           </a>
-
-          {/* Right — Copyright */}
-          <p className="text-text-muted text-xs">
-            &copy; 2026 ChecKMarK DevTools | Ashley Childress
-          </p>
         </div>
       </div>
     </footer>
