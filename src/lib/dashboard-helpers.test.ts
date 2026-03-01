@@ -18,7 +18,7 @@ import {
   sortByAttentionPriority,
   ATTENTION_META,
   SIGNAL_TOOLTIPS,
-  SCORE_BREAKDOWN_SIGNALS,
+  DISCUSSION_STATE_SIGNALS,
   ATTENTION_PRIORITY,
 } from "./dashboard-helpers";
 
@@ -42,7 +42,7 @@ describe("getCategoryLabel", () => {
     expect(getCategoryLabel("NORMAL")).toBe("Steady Signal");
     expect(getCategoryLabel("BOOST_VISIBILITY")).toBe("Trending Signal");
     expect(getCategoryLabel("NEEDS_RESPONSE")).toBe("Awaiting Collaboration");
-    expect(getCategoryLabel("NEEDS_REVIEW")).toBe("Elevated Signal");
+    expect(getCategoryLabel("NEEDS_REVIEW")).toBe("Rapid Discussion");
     expect(getCategoryLabel("POSSIBLY_LOW_QUALITY")).toBe("Anomalous Signal");
   });
 
@@ -367,7 +367,7 @@ describe("formatSignalDisplay", () => {
     expect(formatSignalDisplay("Unique Commenters: 18")).toBe(
       "Participants: 18",
     );
-    expect(formatSignalDisplay("Effort: 30.01")).toBe("Effort Score: 30");
+    expect(formatSignalDisplay("Effort: 30.01")).toBe("Effort Level: 30");
     expect(formatSignalDisplay("Attention Delta: 23.62")).toBe(
       "Attention Shift: 24",
     );
@@ -492,19 +492,22 @@ describe("constants", () => {
     ]);
   });
 
-  it("SIGNAL_TOOLTIPS has entries for expected signals", () => {
+  it("SIGNAL_TOOLTIPS has entries for non-discussion-state signals only", () => {
     expect(Object.keys(SIGNAL_TOOLTIPS)).toContain("Word Count");
-    expect(Object.keys(SIGNAL_TOOLTIPS)).toContain("Heat Score");
-    expect(Object.keys(SIGNAL_TOOLTIPS)).toContain("Risk Score");
-    expect(Object.keys(SIGNAL_TOOLTIPS)).toContain("Support Score");
+    expect(Object.keys(SIGNAL_TOOLTIPS)).toContain("Unique Commenters");
+    expect(Object.keys(SIGNAL_TOOLTIPS)).toContain("Effort");
     expect(Object.keys(SIGNAL_TOOLTIPS)).toContain("Attention Delta");
+    // Heat/Risk/Support removed — they are shown in Discussion State, not Conversation Signals
+    expect(Object.keys(SIGNAL_TOOLTIPS)).not.toContain("Heat Score");
+    expect(Object.keys(SIGNAL_TOOLTIPS)).not.toContain("Risk Score");
+    expect(Object.keys(SIGNAL_TOOLTIPS)).not.toContain("Support Score");
   });
 
-  it("SCORE_BREAKDOWN_SIGNALS contains the 3 score types", () => {
-    expect(SCORE_BREAKDOWN_SIGNALS.has("Heat Score")).toBe(true);
-    expect(SCORE_BREAKDOWN_SIGNALS.has("Risk Score")).toBe(true);
-    expect(SCORE_BREAKDOWN_SIGNALS.has("Support Score")).toBe(true);
-    expect(SCORE_BREAKDOWN_SIGNALS.has("Word Count")).toBe(false);
+  it("DISCUSSION_STATE_SIGNALS contains the 3 score types", () => {
+    expect(DISCUSSION_STATE_SIGNALS.has("Heat Score")).toBe(true);
+    expect(DISCUSSION_STATE_SIGNALS.has("Risk Score")).toBe(true);
+    expect(DISCUSSION_STATE_SIGNALS.has("Support Score")).toBe(true);
+    expect(DISCUSSION_STATE_SIGNALS.has("Word Count")).toBe(false);
   });
 
   it("ATTENTION_PRIORITY has ascending values for decreasing urgency", () => {

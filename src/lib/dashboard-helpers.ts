@@ -15,7 +15,7 @@ export const ATTENTION_META: Record<
   NORMAL: { variant: "neutral", label: "Steady Signal" },
   BOOST_VISIBILITY: { variant: "info", label: "Trending Signal" },
   NEEDS_RESPONSE: { variant: "teal", label: "Awaiting Collaboration" },
-  NEEDS_REVIEW: { variant: "attention", label: "Elevated Signal" },
+  NEEDS_REVIEW: { variant: "attention", label: "Rapid Discussion" },
   POSSIBLY_LOW_QUALITY: { variant: "critical", label: "Anomalous Signal" },
 };
 
@@ -191,18 +191,12 @@ export const SIGNAL_TOOLTIPS: Record<string, string> = {
     "Rough estimate of how much thinking and replying participants put in; long thoughtful replies raise it, short reactions barely move it.",
   "Attention Delta":
     "Measures how quickly people started paying attention compared to normal; spikes mean the topic suddenly caught eyes.",
-  "Heat Score":
-    "Emotional intensity of replies; disagreement and passion raise it, calm discussion lowers it.",
-  "Risk Score":
-    "Probability the thread breaks platform rules; zero means nothing looks unsafe, even if people disagree loudly.",
-  "Support Score":
-    "Signs of constructive interaction like helping, clarifying, or agreeing; higher means collaborative tone.",
 };
 
 /** Display-name overrides for signal prefixes shown in the Conversation Signals card. */
 const SIGNAL_DISPLAY_NAMES: Record<string, string> = {
   "Unique Commenters": "Participants",
-  Effort: "Effort Score",
+  Effort: "Effort Level",
   "Attention Delta": "Attention Shift",
 };
 
@@ -233,8 +227,8 @@ export function formatSignalDisplay(explanation: string): string {
   return `${displayName}: ${displayValue}`;
 }
 
-/** Signals already shown in the Score Breakdown card — filter them from Activity Signals. */
-export const SCORE_BREAKDOWN_SIGNALS = new Set([
+/** Signals already shown in the Discussion State card — filter them from Conversation Signals. */
+export const DISCUSSION_STATE_SIGNALS = new Set([
   "Heat Score",
   "Risk Score",
   "Support Score",

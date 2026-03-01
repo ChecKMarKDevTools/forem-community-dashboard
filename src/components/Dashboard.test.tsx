@@ -94,7 +94,7 @@ describe("Dashboard Component", () => {
     expect(screen.getByText("Needs review post")).toBeInTheDocument();
     expect(screen.getByText("Normal post")).toBeInTheDocument();
     // New analyst-briefing labels
-    expect(screen.getByText("Elevated Signal")).toBeInTheDocument();
+    expect(screen.getByText("Rapid Discussion")).toBeInTheDocument();
     expect(screen.getByText("Steady Signal")).toBeInTheDocument();
   });
 
@@ -331,7 +331,7 @@ describe("Dashboard Component", () => {
     const feedbackLink = screen.getByText("Feedback").closest("a");
     expect(feedbackLink).toHaveAttribute(
       "href",
-      "https://github.com/ChecKMarKDevTools/forem-community-dashboard/issues",
+      "https://github.com/ChecKMarKDevTools/dev-community-dashboard/issues",
     );
     expect(feedbackLink).toHaveAttribute("target", "_blank");
     expect(feedbackLink).toHaveAttribute("rel", "noopener noreferrer");
@@ -703,7 +703,7 @@ describe("Dashboard Component", () => {
 
     // The title should come before the badge in DOM order (badge on right)
     const title = screen.getByText("Needs review post");
-    const badge = screen.getByText("Elevated Signal");
+    const badge = screen.getByText("Rapid Discussion");
 
     expect(
       title.compareDocumentPosition(badge) & Node.DOCUMENT_POSITION_FOLLOWING,
@@ -735,8 +735,8 @@ describe("Dashboard Component", () => {
     render(<Dashboard />);
 
     await waitFor(() => {
-      // NEEDS_REVIEW triggers "Elevated Signal"
-      expect(screen.getAllByText("Elevated Signal").length).toBeGreaterThan(0);
+      // NEEDS_REVIEW triggers "Rapid Discussion"
+      expect(screen.getAllByText("Rapid Discussion").length).toBeGreaterThan(0);
     });
   });
 
@@ -922,12 +922,13 @@ describe("Dashboard Component", () => {
       expect(screen.getByText("Post Analytics")).toBeInTheDocument();
     });
 
-    // All chart sections should be visible (always shown)
+    // All chart sections should be visible (5 charts — Contributing Signals in Post Analytics)
     expect(screen.getByText("Reply Velocity")).toBeInTheDocument();
     expect(screen.getByText("Participation Distribution")).toBeInTheDocument();
     expect(screen.getByText("Sentiment Spread")).toBeInTheDocument();
     expect(screen.getByText("Constructiveness Trend")).toBeInTheDocument();
-    expect(screen.getByText("Risk Signal Timeline")).toBeInTheDocument();
+    expect(screen.getByText("Contributing Signals")).toBeInTheDocument();
+    expect(screen.queryByText("Risk Signal Timeline")).not.toBeInTheDocument();
   });
 
   it("shows Post Analytics with empty states when metrics is null", async () => {
@@ -962,13 +963,14 @@ describe("Dashboard Component", () => {
       expect(screen.getByText("Discussion State")).toBeInTheDocument();
     });
 
-    // Post Analytics always shown, even without data
+    // Post Analytics always shown, even without data (5 charts, no Risk Signal Timeline)
     expect(screen.getByText("Post Analytics")).toBeInTheDocument();
     expect(screen.getByText("Reply Velocity")).toBeInTheDocument();
-    expect(screen.getByText("Risk Signal Timeline")).toBeInTheDocument();
+    expect(screen.getByText("Contributing Signals")).toBeInTheDocument();
+    expect(screen.queryByText("Risk Signal Timeline")).not.toBeInTheDocument();
   });
 
-  it("renders risk markers with full labels", async () => {
+  it("renders Contributing Signals chart in Post Analytics with risk marker labels", async () => {
     const detailWithRisk = {
       ...mockPosts[0],
       dev_url: "https://dev.to/testauthor/post-1",
@@ -1020,12 +1022,17 @@ describe("Dashboard Component", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText("Risk Signal Timeline")).toBeInTheDocument();
+      expect(screen.getByText("Discussion State")).toBeInTheDocument();
     });
 
-    // Risk markers use full labels (not shorthand)
+    // Contributing Signals chart appears in Post Analytics
+    expect(screen.getByText("Contributing Signals")).toBeInTheDocument();
     expect(screen.getByText("Frequency Penalty")).toBeInTheDocument();
     expect(screen.getByText("Short Content")).toBeInTheDocument();
     expect(screen.getByText("Promotional Keywords")).toBeInTheDocument();
+    // Old name "Risk Signal Timeline" should not exist
+    expect(screen.queryByText("Risk Signal Timeline")).not.toBeInTheDocument();
+    // Inline "Contributing signals:" label in Discussion State should not exist
+    expect(screen.queryByText("Contributing signals:")).not.toBeInTheDocument();
   });
 });

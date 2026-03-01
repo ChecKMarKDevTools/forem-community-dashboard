@@ -143,26 +143,24 @@ The detail panel groups information into three sections. These are display-level
 
 | Section                  | Shows                                                                                                    |
 | ------------------------ | -------------------------------------------------------------------------------------------------------- |
-| **Conversation Signals** | Per-thread metrics: Word Count, Participants, Effort Score, Attention Shift (values rounded to integers) |
-| **Discussion State**     | Activity Level, Policy Risk, and Constructiveness with qualitative labels (Low / Moderate / High)        |
+| **Conversation Signals** | Per-thread metrics: Word Count, Participants, Effort Level, Attention Shift (values rounded to integers) |
+| **Discussion State**     | Activity Level, Signal Divergence (with risk markers), and Constructiveness with qualitative labels      |
 | **Thread Momentum**      | A one-line observation about the current pace of the conversation                                        |
 | **Post Analytics**       | Per-post visualizations gated on available data (see below)                                              |
 
 ### Post Analytics Visualizations
 
-When the sync pipeline computes enough data for a post, the detail panel renders five chart types. These show motion and trajectory for a single post against its own baselines — never comparing posts to each other.
+The detail panel renders five chart types for each post. These show motion and trajectory for a single post against its own baselines — never comparing posts to each other.
 
-| Chart                          | Component            | Data Source                     | What It Shows                                                        |
-| ------------------------------ | -------------------- | ------------------------------- | -------------------------------------------------------------------- |
-| **Reply Velocity**             | `LineChart`          | `velocity_buckets`              | Hourly comment arrivals with a dashed baseline (average)             |
-| **Participation Distribution** | `HorizontalBarChart` | `commenter_shares`              | Top 5 commenters by share of total comments                          |
-| **Sentiment Spread**           | `DivergingBar`       | `positive/neutral/negative_pct` | 3-segment bar showing sentiment balance                              |
-| **Constructiveness Trend**     | `LineChart`          | `constructiveness_buckets`      | Average reply depth per hour (higher = more threaded discussion)     |
-| **Risk Signal Timeline**       | `MarkerTimeline`     | `risk_components`               | 5 risk markers (Freq, Short, No Eng, Promo, Links) — active or inert |
+| Chart                          | Component            | Data Source                     | What It Shows                                                    |
+| ------------------------------ | -------------------- | ------------------------------- | ---------------------------------------------------------------- |
+| **Reply Velocity**             | `LineChart`          | `velocity_buckets`              | Hourly comment arrivals with a dashed baseline (average)         |
+| **Participation Distribution** | `HorizontalBarChart` | `commenter_shares`              | Top 5 commenters by share of total comments                      |
+| **Sentiment Spread**           | `DivergingBar`       | `positive/neutral/negative_pct` | 3-segment bar showing sentiment balance                          |
+| **Constructiveness Trend**     | `LineChart`          | `constructiveness_buckets`      | Average reply depth per hour (higher = more threaded discussion) |
+| **Contributing Signals**       | `MarkerTimeline`     | `risk_components`               | The specific risk factors detected; each marker shows a signal that raised the risk score |
 
 All charts are custom SVG components with zero external chart dependencies. They use the CSS custom property theme (`--chart-grid`, `--chart-axis`, `--chart-series-primary/secondary/tertiary`) for automatic light/dark mode support.
-
-The Risk Signal Timeline only renders when `risk_score > 0`. The entire Post Analytics section is gated behind `hasAnalyticsData()`, which checks whether any chart has meaningful data to display.
 
 ---
 
@@ -230,7 +228,7 @@ pnpm build            # type-check + Next.js production build
 The app is deployed to Google Cloud Run via `deploy.sh`. Set the environment variables listed above as Cloud Run secrets or environment variables:
 
 ```bash
-gcloud run deploy forem-community-dashboard \
+gcloud run deploy dev-community-dashboard \
   --set-secrets SUPABASE_SECRET_KEY=...,CRON_SECRET=... \
   --set-env-vars NEXT_PUBLIC_SUPABASE_URL=...,DEV_API_KEY=...
 ```
@@ -271,7 +269,7 @@ Copyright (c) 2026 ChecKMarK DevTools & Ashley Childress
 - **You CAN** use, copy, fork, or adapt this for your own workflows, inside your company, for client projects, demos, education, or anything else—as long as you are not selling the code, charging for it, or making money from the project itself.
 - **You CANNOT** resell, offer as a paid service, or monetize this project or its derivatives without prior written approval from Ashley Childress.
 - Any public fork, copy, or substantial reuse must include the `LICENSE` file and a clear attribution statement in your documentation or README:
-  > "Based on original work by ChecKMarK DevTools & Ashley Childress – see [https://github.com/checkmarkdevtools/forem-community-dashboard](https://github.com/checkmarkdevtools/forem-community-dashboard)."
+  > "Based on original work by ChecKMarK DevTools & Ashley Childress – see [https://github.com/checkmarkdevtools/dev-community-dashboard](https://github.com/checkmarkdevtools/dev-community-dashboard)."
 
 For exceptions or monetization/commercialization questions, contact Ashley Childress at [human@checkmarkdevtools.dev](mailto:human@checkmarkdevtools.dev).
 

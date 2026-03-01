@@ -41,7 +41,7 @@ import {
   computeAgeHours,
   sortByAttentionPriority,
   SIGNAL_TOOLTIPS,
-  SCORE_BREAKDOWN_SIGNALS,
+  DISCUSSION_STATE_SIGNALS,
 } from "@/lib/dashboard-helpers";
 import type { Post, PostDetails, RecentPost } from "@/types/dashboard";
 import {
@@ -171,7 +171,8 @@ function DetailPanel({
                 <ul className="space-y-3">
                   {postDetails.explanations
                     .filter(
-                      (exp) => !SCORE_BREAKDOWN_SIGNALS.has(getSignalName(exp)),
+                      (exp) =>
+                        !DISCUSSION_STATE_SIGNALS.has(getSignalName(exp)),
                     )
                     .map((exp: string) => (
                       <SignalItem
@@ -205,15 +206,16 @@ function DetailPanel({
               {Object.entries(
                 parseScoreBreakdown(postDetails.explanations),
               ).map(([category, value]) => (
-                <ScoreBar
-                  key={category}
-                  label={getCategoryDisplayName(category)}
-                  sublabel={getScoreQualitativeLabel(category, value)}
-                  description={getScoreNarrative(category, value)}
-                  value={value}
-                  max={50}
-                  colorClass={getScoreBarClass(value)}
-                />
+                <div key={category}>
+                  <ScoreBar
+                    label={getCategoryDisplayName(category)}
+                    sublabel={getScoreQualitativeLabel(category, value)}
+                    description={getScoreNarrative(category, value)}
+                    value={value}
+                    max={50}
+                    colorClass={getScoreBarClass(value)}
+                  />
+                </div>
               ))}
             </CardContent>
           </SectionCard>
@@ -290,10 +292,10 @@ function DetailPanel({
             />
           </ChartContainer>
 
-          {/* Risk Signal Timeline */}
+          {/* Contributing Signals */}
           <ChartContainer
-            title="Risk Signal Timeline"
-            tooltip="Shows which risk factors are active for this post. Active markers indicate signals that contributed to the risk score."
+            title="Contributing Signals"
+            tooltip="The specific risk factors that were detected for this post. Each marker identifies a signal that contributed to the risk score."
           >
             <MarkerTimeline markers={getRiskMarkers(postDetails.metrics)} />
           </ChartContainer>
@@ -429,7 +431,7 @@ export function Dashboard() {
             <div className="flex items-center gap-2">
               <ThemeToggle />
               <a
-                href="https://github.com/ChecKMarKDevTools/forem-community-dashboard/issues"
+                href="https://github.com/ChecKMarKDevTools/dev-community-dashboard/issues"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="border-surface-border text-accent-primary hover:bg-surface-secondary hover:text-accent-hover inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-colors"
