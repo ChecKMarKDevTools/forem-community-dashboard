@@ -40,7 +40,6 @@ export function HorizontalBarChart({
     );
   }
 
-  const maxVal = Math.max(...data.map((d) => d.value), 0.01);
   const width = 400;
   const barAreaWidth = width - LABEL_WIDTH - PADDING.left - PADDING.right;
   const height =
@@ -58,7 +57,9 @@ export function HorizontalBarChart({
       <title id={titleId}>Participation distribution chart</title>
       {data.map((item, i) => {
         const y = PADDING.top + i * (BAR_HEIGHT + BAR_GAP);
-        const barWidth = (item.value / maxVal) * barAreaWidth;
+        // values are shares in [0, 1] — scale directly so bar width matches
+        // the displayed percentage label (e.g. 0.35 → 35 % of bar area).
+        const barWidth = Math.min(item.value, 1) * barAreaWidth;
         const pct = Math.round(item.value * 100);
 
         return (

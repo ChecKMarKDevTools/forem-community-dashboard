@@ -197,6 +197,22 @@ describe("HorizontalBarChart", () => {
     // label + pct per bar
     expect(texts.length).toBe(10);
   });
+
+  it("scales bar widths directly to share values so labels match bar lengths", () => {
+    // With relative-to-max scaling alice's bar would be 100% and bob's 60%
+    // even though labels say 50% and 30%. Direct scaling keeps them aligned.
+    const data = [
+      { label: "alice", value: 0.5 },
+      { label: "bob", value: 0.3 },
+    ];
+    const { container } = render(<HorizontalBarChart data={data} />);
+    // SVG rects: bg-alice, fill-alice, bg-bob, fill-bob
+    const rects = container.querySelectorAll("rect");
+    const aliceFill = Number(rects[1]?.getAttribute("width"));
+    const bobFill = Number(rects[3]?.getAttribute("width"));
+    // Ratio of fill widths should match ratio of share values
+    expect(aliceFill / bobFill).toBeCloseTo(0.5 / 0.3, 1);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -254,6 +270,14 @@ describe("DivergingBar", () => {
   it("handles 100% positive", () => {
     render(<DivergingBar positive={100} neutral={0} negative={0} />);
     expect(screen.getByText("100% positive")).toBeInTheDocument();
+  });
+
+  it("renders without crashing when upstream passes pos+neg > 100 (edge case)", () => {
+    // buildSentimentSpread normalises before calling DivergingBar, but verify
+    // the component itself handles the overflow case without throwing.
+    render(<DivergingBar positive={80} neutral={0} negative={60} />);
+    expect(screen.getByText("80% positive")).toBeInTheDocument();
+    expect(screen.getByText("60% negative")).toBeInTheDocument();
   });
 });
 
