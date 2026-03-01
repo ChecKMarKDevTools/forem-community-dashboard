@@ -1546,10 +1546,16 @@ describe("buildSentimentSpread", () => {
     expect(result.neutral_pct).toBe(0);
   });
 
-  it("clamps neutral to 0 when pos+neg exceeds total", () => {
-    // Edge case: a comment can be both positive AND negative
+  it("scales pos/neg proportionally when double-counted comments push sum over 100%", () => {
+    // 8 pos + 5 neg from 10 total → rawPos=80, rawNeg=50, rawTotal=130
+    // Both are scaled by 100/130 so the three segments always sum to exactly 100
+    // and DivergingBar widths match the displayed labels.
     const result = buildSentimentSpread(8, 5, 10);
     expect(result.neutral_pct).toBe(0);
+    const sum = result.positive_pct + result.neutral_pct + result.negative_pct;
+    expect(sum).toBeCloseTo(100, 5);
+    // Original pos/neg ratio must be preserved after scaling
+    expect(result.positive_pct / result.negative_pct).toBeCloseTo(8 / 5, 5);
   });
 });
 

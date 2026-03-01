@@ -426,7 +426,13 @@ export function buildCommenterShares(
     }));
 }
 
-/** Compute sentiment percentages from pos/neg counts and total comments. */
+/** Compute sentiment percentages from pos/neg counts and total comments.
+ *
+ * A comment that contains both positive and negative keywords is counted in
+ * both buckets, so rawPos + rawNeg can exceed 100 %. When that happens both
+ * values are scaled down proportionally so the three segments always sum to
+ * exactly 100 and the DivergingBar proportions match the displayed labels.
+ */
 export function buildSentimentSpread(
   posComments: number,
   negComments: number,
@@ -435,8 +441,12 @@ export function buildSentimentSpread(
   if (totalComments === 0) {
     return { positive_pct: 0, neutral_pct: 100, negative_pct: 0 };
   }
-  const positive_pct = (posComments / totalComments) * 100;
-  const negative_pct = (negComments / totalComments) * 100;
+  const rawPos = (posComments / totalComments) * 100;
+  const rawNeg = (negComments / totalComments) * 100;
+  const rawTotal = rawPos + rawNeg;
+  const scale = rawTotal > 100 ? 100 / rawTotal : 1;
+  const positive_pct = rawPos * scale;
+  const negative_pct = rawNeg * scale;
   const neutral_pct = Math.max(0, 100 - positive_pct - negative_pct);
   return { positive_pct, neutral_pct, negative_pct };
 }
