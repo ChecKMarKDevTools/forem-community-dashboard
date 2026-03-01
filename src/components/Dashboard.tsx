@@ -28,6 +28,7 @@ import { cn } from "@/lib/utils";
 import {
   getAttentionVariant,
   getCategoryLabel,
+  getCategoryTooltip,
   getCategoryDisplayName,
   getRecentPostBadgeVariant,
   getScoreQualitativeLabel,
@@ -144,6 +145,7 @@ function DetailPanel({
           <Badge
             variant={getAttentionVariant(postDetails.attention_level)}
             className="shrink-0 px-3 py-1 text-sm"
+            title={getCategoryTooltip(postDetails.attention_level)}
           >
             {getCategoryLabel(postDetails.attention_level)}
           </Badge>
@@ -464,6 +466,7 @@ export function Dashboard() {
                 <Badge
                   variant={getAttentionVariant(post.attention_level)}
                   className="shrink-0"
+                  title={getCategoryTooltip(post.attention_level)}
                 >
                   {getCategoryLabel(post.attention_level)}
                 </Badge>

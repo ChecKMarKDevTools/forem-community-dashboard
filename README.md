@@ -98,7 +98,7 @@ graph TB
 
 ### Background Sync Flow
 
-Triggered by the GitHub Actions cron or `workflow_dispatch`. Each run fetches articles page-by-page (100/page) until the oldest article on a page exceeds the 5-day (120 h) sync window, filters to the 2 h – 120 h age range, deep-scores every valid article, backfills any articles with empty metrics, upserts results, and purges articles older than 5 days.
+Triggered by the GitHub Actions cron or `workflow_dispatch`. Each run: (1) purges articles older than 10 days (240 h) first, then (2) fetches articles page-by-page (100/page) until the oldest article on a page exceeds the 5-day (120 h) sync window, (3) filters to the 2 h – 120 h age range and deep-scores every valid article, and (4) backfills any articles that were persisted with empty metrics.
 
 ```mermaid
 sequenceDiagram
@@ -110,6 +110,11 @@ sequenceDiagram
 
   GHA->>Cron: POST (Authorization: Bearer)
   Cron->>Sync: syncArticles()
+
+  Note over Sync,SB: Step 1 — Purge articles older than 10 days before fetching
+  Sync->>SB: DELETE articles WHERE published_at < now - 240h (cascades to commenters)
+  SB-->>Sync: purged count
+
   Sync->>FC: getLatestArticles(page N, 100) [loop until age > 120h]
   FC-->>Sync: ForemArticle[] (all valid articles in 5-day window)
   Note over Sync: Filter 2h–120h window, deep-process all
@@ -125,7 +130,7 @@ sequenceDiagram
     Sync->>SB: upsert commenters rows
   end
 
-  Note over Sync,SB: Backfill — find articles with empty metrics
+  Note over Sync,SB: Step 4 — Backfill articles with empty metrics
   Sync->>SB: SELECT articles WHERE metrics = '{}'
   SB-->>Sync: stale article IDs
 
@@ -135,10 +140,6 @@ sequenceDiagram
     Note over Sync: Re-run deep scoring pipeline
     Sync->>SB: upsert article with computed metrics
   end
-
-  Note over Sync,SB: Purge — remove articles older than 5 days
-  Sync->>SB: DELETE articles WHERE published_at < now - 120h
-  SB-->>Sync: purged count
 
   Sync-->>Cron: {synced, failed, errors[]}
   Cron-->>GHA: {success, synced, failed, errors[]}
@@ -159,7 +160,7 @@ sequenceDiagram
 
   U->>D: Open dashboard
   D->>Posts: fetch()
-  Posts->>SB: SELECT articles WHERE published_at >= now-120h ORDER BY (non-NORMAL first, score DESC) LIMIT 50
+  Posts->>SB: SELECT articles WHERE published_at >= now-168h ORDER BY (non-NORMAL first, score DESC, published_at ASC) LIMIT 50
   SB-->>Posts: scored article rows
   Posts-->>D: article list
   D-->>U: Ranked list — actionable categories first (Awaiting Collaboration, Anomalous Signal, etc.), then Steady Signal
@@ -203,6 +204,7 @@ Each article is classified at sync time (not at read time) into one of four atte
 | **Anomalous Signal**       | SIGNAL_AT_RISK   | `risk_score >= 4` (high post freq, short body, no engagement, author promo keywords, repeated links, minus engagement credit)   | Something looks off compared to normal behavior. It may be harmless, but a human should double-check.                              |
 | **Rapid Discussion**       | NEEDS_REVIEW     | `comments >= 6` AND `heat_score >= 5` AND `reactions / comments < 1.2`                                                          | The thread is active but unclear. People are talking, just not necessarily about the same thing yet.                               |
 | **Trending Signal**        | BOOST_VISIBILITY | `word_count >= 600` AND `unique_commenters >= 2` AND `avg_comment_length >= 18` AND `reactions <= 5` AND `attention_delta >= 3` | The content is useful but under-seen. A little amplification could help the right people find it.                                  |
+| **Silent Signal**          | SILENT_SIGNAL    | `reactions >= 5` AND `comments <= 1`                                                                                            | The post is getting noticed (reactions) but isn't drawing conversation. Worth a nudge to get people talking.                       |
 | **Steady Signal**          | NORMAL           | Default when no category thresholds are met; also forced for `devteam` org posts (weekly threads, challenges)                   | Routine community activity. Nothing unusual happening, including regular community threads like weekly discussions and challenges. |
 
 ### Sub-Scores
@@ -307,12 +309,12 @@ pnpm build            # type-check + Next.js production build
 
 ## API Reference
 
-| Method | Path              | Auth   | Description                                                       |
-| ------ | ----------------- | ------ | ----------------------------------------------------------------- |
-| `GET`  | `/api/posts`      | none   | Top 50 articles (5-day window), non-NORMAL first, then score desc |
-| `GET`  | `/api/posts/:id`  | none   | Article detail + 5 most recent posts by same author               |
-| `POST` | `/api/cron`       | Bearer | Sync all articles in the 5-day window from Forem                  |
-| `POST` | `/api/admin/seed` | Bearer | Same as cron — populate the database on first deploy              |
+| Method | Path              | Auth   | Description                                                                  |
+| ------ | ----------------- | ------ | ---------------------------------------------------------------------------- |
+| `GET`  | `/api/posts`      | none   | Top 50 articles (7-day window), non-NORMAL first → score desc → oldest first |
+| `GET`  | `/api/posts/:id`  | none   | Article detail + 5 most recent posts by same author                          |
+| `POST` | `/api/cron`       | Bearer | Purge articles > 10 days, then sync articles in the 5-day window from Forem  |
+| `POST` | `/api/admin/seed` | Bearer | Same as cron — populate the database on first deploy                         |
 
 ---
 
@@ -352,6 +354,14 @@ Three workflows live in `.github/workflows/`. All CI checks run in `ci.yml`; do 
 ### Lighthouse CI
 
 Lighthouse runs as the last step in `ci.yml` (`pnpm lhci:desktop`). Results are written to `.lighthouseci/` (filesystem target — no external upload service or status-check callback). Minimum thresholds: performance ≥ 0.90 (desktop), accessibility = 1.0 (100%), best-practices = 1.0 (100%), SEO ≥ 0.90. The `.lighthouseci/` directory is git-ignored.
+
+---
+
+## AI & Guardrails
+
+This project uses AI tooling to generate code — and that is precisely why the guardrails are as strict as they are. AI writes plausible-looking code that is sometimes subtly wrong. The CI pipeline, Sonar analysis, test coverage requirements, and pre-commit hooks all exist to catch what AI misses.
+
+AI use is encouraged here, not discouraged. But it is not a standalone solution. Use it with the safety net on.
 
 ---
 

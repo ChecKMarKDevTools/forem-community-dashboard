@@ -3,6 +3,7 @@ import type { Post } from "@/types/dashboard";
 import {
   getAttentionVariant,
   getCategoryLabel,
+  getCategoryTooltip,
   getRecentPostBadgeVariant,
   getQualitativeLevel,
   getScoreQualitativeLabel,
@@ -29,6 +30,7 @@ describe("getAttentionVariant", () => {
     expect(getAttentionVariant("NEEDS_RESPONSE")).toBe("teal");
     expect(getAttentionVariant("NEEDS_REVIEW")).toBe("attention");
     expect(getAttentionVariant("SIGNAL_AT_RISK")).toBe("critical");
+    expect(getAttentionVariant("SILENT_SIGNAL")).toBe("violet");
   });
 
   it("returns neutral for unknown levels", () => {
@@ -44,11 +46,35 @@ describe("getCategoryLabel", () => {
     expect(getCategoryLabel("NEEDS_RESPONSE")).toBe("Awaiting Collaboration");
     expect(getCategoryLabel("NEEDS_REVIEW")).toBe("Rapid Discussion");
     expect(getCategoryLabel("SIGNAL_AT_RISK")).toBe("Anomalous Signal");
+    expect(getCategoryLabel("SILENT_SIGNAL")).toBe("Silent Signal");
   });
 
   it("returns default label for unknown levels", () => {
     expect(getCategoryLabel("UNKNOWN")).toBe("Steady Signal");
     expect(getCategoryLabel("")).toBe("Steady Signal");
+  });
+});
+
+describe("getCategoryTooltip", () => {
+  it("returns a tooltip string for NEEDS_RESPONSE listing all help words", () => {
+    const tooltip = getCategoryTooltip("NEEDS_RESPONSE");
+    expect(tooltip).toBeDefined();
+    expect(tooltip).toContain("need help");
+    expect(tooltip).toContain("stuck");
+    expect(tooltip).toContain("beginner question");
+    expect(tooltip).toContain("confused");
+    expect(tooltip).toContain("how do i");
+    expect(tooltip).toContain("what am i missing");
+    expect(tooltip).toContain("why doesn't");
+  });
+
+  it("returns undefined for categories that need no tooltip", () => {
+    expect(getCategoryTooltip("NORMAL")).toBeUndefined();
+    expect(getCategoryTooltip("BOOST_VISIBILITY")).toBeUndefined();
+    expect(getCategoryTooltip("SIGNAL_AT_RISK")).toBeUndefined();
+    expect(getCategoryTooltip("NEEDS_REVIEW")).toBeUndefined();
+    expect(getCategoryTooltip("SILENT_SIGNAL")).toBeUndefined();
+    expect(getCategoryTooltip("UNKNOWN")).toBeUndefined();
   });
 });
 
@@ -62,6 +88,7 @@ describe("getRecentPostBadgeVariant", () => {
     expect(getRecentPostBadgeVariant("NEEDS_RESPONSE")).toBe("teal");
     expect(getRecentPostBadgeVariant("NEEDS_REVIEW")).toBe("attention");
     expect(getRecentPostBadgeVariant("SIGNAL_AT_RISK")).toBe("critical");
+    expect(getRecentPostBadgeVariant("SILENT_SIGNAL")).toBe("violet");
   });
 
   it("returns outline for unknown levels (defaults to neutral → outline)", () => {
@@ -241,25 +268,25 @@ describe("getScoreNarrative", () => {
   describe("risk narratives", () => {
     it("returns high narrative for risk >= 6", () => {
       expect(getScoreNarrative("risk", 6)).toBe(
-        "Multiple risk signals detected: possible spam or self-promotion.",
+        "Significant divergence from typical community patterns; human review recommended.",
       );
     });
 
     it("returns moderate narrative for risk >= 4", () => {
       expect(getScoreNarrative("risk", 4)).toBe(
-        "Some risk flags raised — short content or promotional language.",
+        "Noticeable deviation from normal discussion behavior.",
       );
     });
 
     it("returns minor narrative for risk >= 1", () => {
       expect(getScoreNarrative("risk", 1)).toBe(
-        "Minor flags present but likely not concerning.",
+        "Minor divergence from baseline patterns.",
       );
     });
 
     it("returns clean narrative for risk 0", () => {
       expect(getScoreNarrative("risk", 0)).toBe(
-        "No rule-risk patterns detected.",
+        "No meaningful divergence detected.",
       );
     });
   });
@@ -339,12 +366,12 @@ describe("getWhatsHappening", () => {
         "Risk Score: 0",
         "Support Score: 1",
       ]),
-    ).toBe("Tone is becoming sharper between participants.");
+    ).toBe("It's pretty quiet—just routine discussion so far.");
   });
 
   it("returns default observation for undefined explanations", () => {
     expect(getWhatsHappening(undefined)).toBe(
-      "Tone is becoming sharper between participants.",
+      "It's pretty quiet—just routine discussion so far.",
     );
   });
 });
@@ -444,10 +471,11 @@ describe("sortByAttentionPriority", () => {
       makePost(3, "BOOST_VISIBILITY", 30),
       makePost(4, "SIGNAL_AT_RISK", 20),
       makePost(5, "NEEDS_REVIEW", 40),
+      makePost(6, "SILENT_SIGNAL", 25),
     ];
     const sorted = sortByAttentionPriority(posts);
-    // Awaiting Collaboration > Anomalous Signal > Trending Signal > Rapid Discussion > Steady
-    expect(sorted.map((p) => p.id)).toEqual([2, 4, 3, 5, 1]);
+    // Awaiting Collaboration > Anomalous Signal > Trending Signal > Rapid Discussion > Silent Signal > Steady
+    expect(sorted.map((p) => p.id)).toEqual([2, 4, 3, 5, 6, 1]);
   });
 
   it("sorts by score descending within same priority", () => {
@@ -474,7 +502,7 @@ describe("sortByAttentionPriority", () => {
     expect(sortByAttentionPriority([])).toEqual([]);
   });
 
-  it("uses default priority 4 for unknown attention levels", () => {
+  it("uses default priority (same as NORMAL) for unknown attention levels", () => {
     const posts = [
       makePost(1, "UNKNOWN_LEVEL", 50),
       makePost(2, "NEEDS_RESPONSE", 10),
@@ -485,13 +513,14 @@ describe("sortByAttentionPriority", () => {
 });
 
 describe("constants", () => {
-  it("ATTENTION_META has entries for all 5 known levels", () => {
+  it("ATTENTION_META has entries for all 6 known levels", () => {
     expect(Object.keys(ATTENTION_META)).toEqual([
       "NORMAL",
       "BOOST_VISIBILITY",
       "NEEDS_RESPONSE",
       "NEEDS_REVIEW",
       "SIGNAL_AT_RISK",
+      "SILENT_SIGNAL",
     ]);
   });
 
@@ -524,6 +553,9 @@ describe("constants", () => {
       ATTENTION_PRIORITY.NEEDS_REVIEW,
     );
     expect(ATTENTION_PRIORITY.NEEDS_REVIEW).toBeLessThan(
+      ATTENTION_PRIORITY.SILENT_SIGNAL,
+    );
+    expect(ATTENTION_PRIORITY.SILENT_SIGNAL).toBeLessThan(
       ATTENTION_PRIORITY.NORMAL,
     );
   });

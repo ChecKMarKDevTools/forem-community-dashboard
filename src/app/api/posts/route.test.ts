@@ -150,6 +150,52 @@ describe("GET /api/posts", () => {
     expect(json[0].score).toBeGreaterThanOrEqual(json[1].score);
   });
 
+  it("breaks score ties by published_at ascending (oldest first) within each group", async () => {
+    const newer = "2024-01-10T10:00:00Z";
+    const older = "2024-01-05T10:00:00Z";
+    const mockData = [
+      {
+        id: "1",
+        title: "Newer Non-Normal",
+        score: 50,
+        attention_level: "NEEDS_REVIEW",
+        published_at: newer,
+      },
+      {
+        id: "2",
+        title: "Older Non-Normal",
+        score: 50,
+        attention_level: "SIGNAL_AT_RISK",
+        published_at: older,
+      },
+      {
+        id: "3",
+        title: "Newer Normal",
+        score: 20,
+        attention_level: "NORMAL",
+        published_at: newer,
+      },
+      {
+        id: "4",
+        title: "Older Normal",
+        score: 20,
+        attention_level: "NORMAL",
+        published_at: older,
+      },
+    ];
+    buildChain({ data: mockData, error: null });
+
+    const res = await GET();
+    const json = await res.json();
+
+    // Non-NORMAL group: same score, older should sort first
+    expect(json[0].id).toBe("2"); // older non-normal
+    expect(json[1].id).toBe("1"); // newer non-normal
+    // NORMAL group: same score, older should sort first
+    expect(json[2].id).toBe("4"); // older normal
+    expect(json[3].id).toBe("3"); // newer normal
+  });
+
   it("returns 200 with empty array when no articles exist", async () => {
     buildChain({ data: [], error: null });
 

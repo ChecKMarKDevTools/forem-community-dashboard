@@ -44,6 +44,13 @@ describe("Badge", () => {
     expect(badge).toHaveClass("bg-critical-100");
   });
 
+  it("renders violet badge", () => {
+    render(<Badge variant="violet">Silent</Badge>);
+    const badge = screen.getByText("Silent");
+    expect(badge).toBeInTheDocument();
+    expect(badge).toHaveClass("bg-violet-100");
+  });
+
   it("renders secondary badge", () => {
     render(<Badge variant="secondary">Sec</Badge>);
     const badge = screen.getByText("Sec");

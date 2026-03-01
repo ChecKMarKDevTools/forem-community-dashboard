@@ -4,13 +4,16 @@ import { supabase } from "@/lib/supabase";
 /**
  * GET /api/posts
  *
- * Returns the top 50 articles from the 7-day sync window, ordered so that
+ * Returns the top 50 articles from the display window, ordered so that
  * actionable categories surface first:
- *   1. Non-NORMAL articles (NEEDS_RESPONSE, SIGNAL_AT_RISK,
- *      NEEDS_REVIEW, BOOST_VISIBILITY) — highest-score first within group
- *   2. NORMAL articles — highest-score first, filling up to the 50 limit
+ *   1. Non-NORMAL articles (NEEDS_RESPONSE, SIGNAL_AT_RISK, SILENT_SIGNAL,
+ *      NEEDS_REVIEW, BOOST_VISIBILITY) — highest-score first within group,
+ *      then oldest published_at first for equal-score ties
+ *   2. NORMAL articles — same ordering, filling up to the 50 limit
  *
- * The time-window filter mirrors SYNC_WINDOW_HOURS (168 h) from sync.ts.
+ * The API window is 168 h (7 days) — intentionally wider than
+ * SYNC_WINDOW_HOURS (120 h / 5 days) in sync.ts — to surface articles
+ * scored near the sync-window boundary without re-scoring them.
  * Articles are only written to the DB during sync runs, so the window here
  * simply avoids surfacing very old records that somehow survived longer than
  * the intended retention horizon.
@@ -44,16 +47,27 @@ export async function GET() {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // Re-sort client-side: non-NORMAL first (by score desc), then NORMAL (by score desc).
-    // This is correct and safe because we fetched at most 50 rows and sorting
-    // 50 items in JS is negligible — avoids needing a raw Postgres expression.
+    // Re-sort client-side: non-NORMAL first, then NORMAL. Within each group:
+    // primary sort is score descending; secondary sort is published_at ascending
+    // (oldest first) so equal-score articles surface in chronological order.
+    // Sorting 50 items in JS is negligible — avoids needing a raw Postgres expression.
     const rows = data ?? [];
+    const byScoreThenAge = (
+      a: { score: number; published_at: string | null },
+      b: { score: number; published_at: string | null },
+    ) => {
+      if (b.score !== a.score) return b.score - a.score;
+      return (
+        new Date(a.published_at ?? 0).getTime() -
+        new Date(b.published_at ?? 0).getTime()
+      );
+    };
     const nonNormal = rows
       .filter((r) => r.attention_level !== "NORMAL")
-      .sort((a, b) => b.score - a.score);
+      .sort(byScoreThenAge);
     const normal = rows
       .filter((r) => r.attention_level === "NORMAL")
-      .sort((a, b) => b.score - a.score);
+      .sort(byScoreThenAge);
 
     return NextResponse.json([...nonNormal, ...normal]);
   } catch (error: unknown) {

@@ -155,6 +155,44 @@ function setupBasicMocks(
 // Tests
 // ---------------------------------------------------------------------------
 
+describe("isPublishedArticle predicate and getAgeHours(null)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("skips articles with null published_at — they are excluded from validArticles", async () => {
+    // An article with published_at: null should be treated as a draft/unlisted
+    // and never reach deepScoreAndPersist.
+    const published = makeArticle({ id: 100, published_at: THREE_HOURS_AGO });
+    const nullPublished = makeArticle({ id: 101, published_at: null });
+
+    setupBasicMocks([published, nullPublished]);
+
+    const result = await syncArticles(10);
+
+    // Only the published article is synced
+    expect(result.synced).toBe(1);
+    expect(result.failed).toBe(0);
+  });
+
+  it("treats null published_at as Infinity age — excluded from window and author-frequency counts", async () => {
+    // An article with null published_at has getAgeHours → Infinity, which
+    // exceeds SYNC_WINDOW_HOURS and causes it to be filtered out of validArticles.
+    // It also does not contribute to the 24h author-frequency map.
+    const articles = [
+      makeArticle({ id: 200, published_at: THREE_HOURS_AGO }),
+      makeArticle({ id: 201, published_at: null }),
+    ];
+
+    setupBasicMocks(articles);
+
+    const result = await syncArticles(10);
+
+    // Article 201 is skipped; only 200 is synced
+    expect(result.synced).toBe(1);
+  });
+});
+
 describe("syncArticles scoring pipeline", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -310,6 +348,61 @@ describe("syncArticles scoring pipeline", () => {
     expect(result.failed).toBe(0);
   });
 
+  // ── Category: SILENT_SIGNAL ────────────────────────────────────────────
+
+  it("classifies SILENT_SIGNAL when reaction_count >= 5 and comment_count <= 1", async () => {
+    // 10 reactions but 0 comments → noticed but nobody talking.
+    // risk_score = 0 (engagement_credit=2 for reactions>=10), support_score = 2 (no comments)
+    // < 3 threshold so NEEDS_RESPONSE is not triggered. Not BOOST_VISIBILITY (word_count < 600).
+    const article = makeArticle({
+      id: 6,
+      public_reactions_count: 10,
+      comments_count: 0,
+      reading_time_minutes: 2,
+    });
+
+    setupBasicMocks([article]);
+
+    const result = await syncArticles(1);
+
+    expect(result.synced).toBe(1);
+    expect(result.failed).toBe(0);
+  });
+
+  it("does not classify SILENT_SIGNAL when comment_count > 1", async () => {
+    // Same reactions but 2 comments → falls through to NORMAL
+    const article = makeArticle({
+      id: 7,
+      public_reactions_count: 10,
+      comments_count: 2,
+      reading_time_minutes: 2,
+    });
+
+    setupBasicMocks([article]);
+
+    const result = await syncArticles(1);
+
+    expect(result.synced).toBe(1);
+    expect(result.failed).toBe(0);
+  });
+
+  it("does not classify SILENT_SIGNAL when reaction_count < 5", async () => {
+    // 4 reactions and 0 comments → below the noticed threshold, falls to NORMAL
+    const article = makeArticle({
+      id: 8,
+      public_reactions_count: 4,
+      comments_count: 0,
+      reading_time_minutes: 2,
+    });
+
+    setupBasicMocks([article]);
+
+    const result = await syncArticles(1);
+
+    expect(result.synced).toBe(1);
+    expect(result.failed).toBe(0);
+  });
+
   // ── Category: NORMAL ───────────────────────────────────────────────────
 
   it("classifies NORMAL when no category thresholds are met", async () => {
@@ -328,9 +421,9 @@ describe("syncArticles scoring pipeline", () => {
     expect(result.failed).toBe(0);
   });
 
-  // ── All 5 categories in a single run ───────────────────────────────────
+  // ── All 6 categories in a single run ───────────────────────────────────
 
-  it("covers all 5 category branches in a single sync run", async () => {
+  it("covers all 6 category branches in a single sync run", async () => {
     const articles = [
       // NEEDS_RESPONSE: old post, fresh user, no engagement
       makeArticle({
@@ -361,6 +454,13 @@ describe("syncArticles scoring pipeline", () => {
         public_reactions_count: 1,
         comments_count: 2,
         reading_time_minutes: 5,
+      }),
+      // SILENT_SIGNAL: noticed (10 reactions) but nobody talking (0 comments)
+      makeArticle({
+        id: 45,
+        public_reactions_count: 10,
+        comments_count: 0,
+        reading_time_minutes: 2,
       }),
       // NORMAL: average post
       makeArticle({
@@ -439,9 +539,9 @@ describe("syncArticles scoring pipeline", () => {
       },
     );
 
-    const result = await syncArticles(5);
+    const result = await syncArticles(6);
 
-    expect(result.synced).toBe(5);
+    expect(result.synced).toBe(6);
     expect(result.failed).toBe(0);
     expect(supabase.from).toHaveBeenCalledWith("articles");
     expect(supabase.from).toHaveBeenCalledWith("users");
@@ -1360,7 +1460,7 @@ describe("syncArticles — purge step", () => {
     vi.clearAllMocks();
   });
 
-  it("includes purge count in errors array when stale articles are deleted (production path)", async () => {
+  it("purges stale articles as the FIRST step and reports count in errors (production path)", async () => {
     const article = makeArticle({ id: 900 });
 
     vi.mocked(ForemClient.getLatestArticles).mockImplementation(
@@ -1375,7 +1475,9 @@ describe("syncArticles — purge step", () => {
     vi.mocked(ForemClient.getUserByUsername).mockResolvedValue(mockUser);
     vi.mocked(ForemClient.getComments).mockResolvedValue([]);
 
-    // Mock select chain (backfill returns empty) and delete chain (purge returns 2 rows)
+    // Mock select chain (backfill returns empty) and delete chain (purge returns 2 rows).
+    // Purge now runs FIRST (before fetchAndFilterArticles), but mockReturnValue applies
+    // to all supabase.from calls so the order does not affect the mock setup.
     const selectChain = {
       eq: vi.fn().mockReturnThis(),
       gte: vi.fn().mockResolvedValue({ data: [], error: null }),
@@ -1394,7 +1496,7 @@ describe("syncArticles — purge step", () => {
       delete: vi.fn().mockReturnValue(deleteChain),
     } as never);
 
-    // No maxToProcess → production path (includes purge)
+    // No maxToProcess → production path (purge runs first, then sync, then backfill)
     const result = await syncArticles();
 
     expect(result.synced).toBe(1);
@@ -1412,6 +1514,248 @@ describe("syncArticles — purge step", () => {
 
     // With maxToProcess set, purge is skipped — no purge message in errors
     expect(result.errors).not.toContainEqual(expect.stringContaining("Purged"));
+  });
+
+  it("logs purge error and returns 0 purged when Supabase delete fails", async () => {
+    vi.mocked(ForemClient.getLatestArticles).mockResolvedValue([]);
+    vi.mocked(ForemClient.getArticle).mockResolvedValue(
+      makeArticle({ id: 920 }) as never,
+    );
+    vi.mocked(ForemClient.getUserByUsername).mockResolvedValue(mockUser);
+    vi.mocked(ForemClient.getComments).mockResolvedValue([]);
+
+    // Purge returns an error — covers the error branch in purgeStaleArticles
+    const selectChain = {
+      eq: vi.fn().mockReturnThis(),
+      gte: vi.fn().mockResolvedValue({ data: [], error: null }),
+    };
+    const deleteChain = {
+      lt: vi.fn().mockReturnValue({
+        select: vi
+          .fn()
+          .mockResolvedValue({ data: null, error: { message: "DB timeout" } }),
+      }),
+    };
+    vi.mocked(supabase.from).mockReturnValue({
+      upsert: vi.fn().mockResolvedValue({ error: null }),
+      select: vi.fn().mockReturnValue(selectChain),
+      delete: vi.fn().mockReturnValue(deleteChain),
+    } as never);
+
+    const result = await syncArticles();
+
+    // Purge failed silently (returns 0), so no "Purged N" message in errors
+    expect(result.errors).not.toContainEqual(expect.stringContaining("Purged"));
+  });
+});
+
+// ---------------------------------------------------------------------------
+// backfillEmptyMetrics tests
+// ---------------------------------------------------------------------------
+
+describe("syncArticles — backfill step", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("backfills articles with empty metrics from Supabase (production path)", async () => {
+    const backfillArticle = makeArticle({ id: 950 });
+
+    // No articles from the paginated API → main sync loop processes 0
+    vi.mocked(ForemClient.getLatestArticles).mockResolvedValue([]);
+    // getArticle is called during backfill with the row id
+    vi.mocked(ForemClient.getArticle).mockResolvedValue(
+      backfillArticle as never,
+    );
+    vi.mocked(ForemClient.getUserByUsername).mockResolvedValue(mockUser);
+    vi.mocked(ForemClient.getComments).mockResolvedValue([]);
+
+    // Sequence of supabase.from calls in the production path:
+    //   1) purge:           delete → lt → select → {data:[], error:null}
+    //   2) backfill query:  select → eq → gte → {data:[{id:950}], error:null}
+    //   3+) deepScoreAndPersist upserts (commenters + articles)
+    const purgeChain = {
+      lt: vi.fn().mockReturnValue({
+        select: vi.fn().mockResolvedValue({ data: [], error: null }),
+      }),
+    };
+    const backfillQueryChain = {
+      eq: vi.fn().mockReturnThis(),
+      gte: vi.fn().mockResolvedValue({ data: [{ id: 950 }], error: null }),
+    };
+    const upsertOnlyMock = {
+      upsert: vi.fn().mockResolvedValue({ error: null }),
+      select: vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnThis(),
+        gte: vi.fn().mockResolvedValue({ data: [], error: null }),
+      }),
+      delete: vi.fn().mockReturnValue(purgeChain),
+    };
+
+    let callCount = 0;
+    vi.mocked(supabase.from).mockImplementation(() => {
+      callCount++;
+      if (callCount === 1) {
+        // First call: purge
+        return { delete: vi.fn().mockReturnValue(purgeChain) } as never;
+      }
+      if (callCount === 2) {
+        // Second call: backfill query
+        return { select: vi.fn().mockReturnValue(backfillQueryChain) } as never;
+      }
+      // Remaining calls: upserts from deepScoreAndPersist
+      return upsertOnlyMock as never;
+    });
+
+    const result = await syncArticles();
+
+    // Backfill processed 1 article
+    expect(result.synced).toBe(1);
+    expect(result.failed).toBe(0);
+  });
+
+  it("records failure when backfill article has null published_at", async () => {
+    const nullPublishedArticle = makeArticle({ id: 951, published_at: null });
+
+    vi.mocked(ForemClient.getLatestArticles).mockResolvedValue([]);
+    vi.mocked(ForemClient.getArticle).mockResolvedValue(
+      nullPublishedArticle as never,
+    );
+    vi.mocked(ForemClient.getUserByUsername).mockResolvedValue(mockUser);
+    vi.mocked(ForemClient.getComments).mockResolvedValue([]);
+
+    const purgeChain = {
+      lt: vi.fn().mockReturnValue({
+        select: vi.fn().mockResolvedValue({ data: [], error: null }),
+      }),
+    };
+    const backfillQueryChain = {
+      eq: vi.fn().mockReturnThis(),
+      gte: vi.fn().mockResolvedValue({ data: [{ id: 951 }], error: null }),
+    };
+
+    let callCount = 0;
+    vi.mocked(supabase.from).mockImplementation(() => {
+      callCount++;
+      if (callCount === 1) {
+        return { delete: vi.fn().mockReturnValue(purgeChain) } as never;
+      }
+      if (callCount === 2) {
+        return { select: vi.fn().mockReturnValue(backfillQueryChain) } as never;
+      }
+      return {
+        upsert: vi.fn().mockResolvedValue({ error: null }),
+      } as never;
+    });
+
+    const result = await syncArticles();
+
+    expect(result.failed).toBe(1);
+    expect(result.errors).toContainEqual(
+      expect.stringContaining("Backfill article 951: published_at is null"),
+    );
+  });
+
+  it("records failure when backfill getArticle throws", async () => {
+    vi.mocked(ForemClient.getLatestArticles).mockResolvedValue([]);
+    vi.mocked(ForemClient.getArticle).mockRejectedValue(
+      new Error("API timeout"),
+    );
+    vi.mocked(ForemClient.getUserByUsername).mockResolvedValue(mockUser);
+    vi.mocked(ForemClient.getComments).mockResolvedValue([]);
+
+    const purgeChain = {
+      lt: vi.fn().mockReturnValue({
+        select: vi.fn().mockResolvedValue({ data: [], error: null }),
+      }),
+    };
+    const backfillQueryChain = {
+      eq: vi.fn().mockReturnThis(),
+      gte: vi.fn().mockResolvedValue({ data: [{ id: 952 }], error: null }),
+    };
+
+    let callCount = 0;
+    vi.mocked(supabase.from).mockImplementation(() => {
+      callCount++;
+      if (callCount === 1) {
+        return { delete: vi.fn().mockReturnValue(purgeChain) } as never;
+      }
+      if (callCount === 2) {
+        return { select: vi.fn().mockReturnValue(backfillQueryChain) } as never;
+      }
+      return {
+        upsert: vi.fn().mockResolvedValue({ error: null }),
+      } as never;
+    });
+
+    const result = await syncArticles();
+
+    expect(result.failed).toBe(1);
+    expect(result.errors).toContainEqual(
+      expect.stringContaining("Backfill article 952: API timeout"),
+    );
+  });
+
+  it("returns empty result when backfill query returns no rows", async () => {
+    vi.mocked(ForemClient.getLatestArticles).mockResolvedValue([]);
+    vi.mocked(ForemClient.getUserByUsername).mockResolvedValue(mockUser);
+    vi.mocked(ForemClient.getComments).mockResolvedValue([]);
+
+    const purgeChain = {
+      lt: vi.fn().mockReturnValue({
+        select: vi.fn().mockResolvedValue({ data: [], error: null }),
+      }),
+    };
+    const backfillQueryChain = {
+      eq: vi.fn().mockReturnThis(),
+      gte: vi.fn().mockResolvedValue({ data: [], error: null }),
+    };
+
+    let callCount = 0;
+    vi.mocked(supabase.from).mockImplementation(() => {
+      callCount++;
+      if (callCount === 1) {
+        return { delete: vi.fn().mockReturnValue(purgeChain) } as never;
+      }
+      return { select: vi.fn().mockReturnValue(backfillQueryChain) } as never;
+    });
+
+    const result = await syncArticles();
+
+    expect(result.synced).toBe(0);
+    expect(result.failed).toBe(0);
+  });
+
+  it("returns empty result when backfill query errors", async () => {
+    vi.mocked(ForemClient.getLatestArticles).mockResolvedValue([]);
+    vi.mocked(ForemClient.getUserByUsername).mockResolvedValue(mockUser);
+    vi.mocked(ForemClient.getComments).mockResolvedValue([]);
+
+    const purgeChain = {
+      lt: vi.fn().mockReturnValue({
+        select: vi.fn().mockResolvedValue({ data: [], error: null }),
+      }),
+    };
+    const backfillQueryChain = {
+      eq: vi.fn().mockReturnThis(),
+      gte: vi
+        .fn()
+        .mockResolvedValue({ data: null, error: { message: "query failed" } }),
+    };
+
+    let callCount = 0;
+    vi.mocked(supabase.from).mockImplementation(() => {
+      callCount++;
+      if (callCount === 1) {
+        return { delete: vi.fn().mockReturnValue(purgeChain) } as never;
+      }
+      return { select: vi.fn().mockReturnValue(backfillQueryChain) } as never;
+    });
+
+    const result = await syncArticles();
+
+    expect(result.synced).toBe(0);
+    expect(result.failed).toBe(0);
   });
 });
 

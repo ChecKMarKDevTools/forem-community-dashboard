@@ -1,14 +1,23 @@
 import type { Post } from "@/types/dashboard";
+import { HELP_WORDS } from "@/lib/sentiment-keywords";
 
 /** Attention-level metadata: badge variant and human-readable label.
  *  No traffic-light grading — each category has a distinct semantic color.
  *  neutral = slate (routine), info = steel-blue (active), teal = teal (waiting),
- *  attention = indigo/blue (high activity), critical = slate/gray (policy risk).
+ *  attention = indigo/blue (high activity), critical = slate/gray (policy risk),
+ *  violet = violet (noticed but quiet — reactions without conversation).
  */
 export const ATTENTION_META: Record<
   string,
   {
-    variant: "neutral" | "info" | "teal" | "attention" | "critical" | "outline";
+    variant:
+      | "neutral"
+      | "info"
+      | "teal"
+      | "attention"
+      | "critical"
+      | "violet"
+      | "outline";
     label: string;
   }
 > = {
@@ -17,6 +26,7 @@ export const ATTENTION_META: Record<
   NEEDS_RESPONSE: { variant: "teal", label: "Awaiting Collaboration" },
   NEEDS_REVIEW: { variant: "attention", label: "Rapid Discussion" },
   SIGNAL_AT_RISK: { variant: "critical", label: "Anomalous Signal" },
+  SILENT_SIGNAL: { variant: "violet", label: "Silent Signal" },
 };
 
 const DEFAULT_ATTENTION = {
@@ -26,7 +36,7 @@ const DEFAULT_ATTENTION = {
 
 export function getAttentionVariant(
   level: string,
-): "neutral" | "info" | "teal" | "attention" | "critical" {
+): "neutral" | "info" | "teal" | "attention" | "critical" | "violet" {
   const v = (ATTENTION_META[level] ?? DEFAULT_ATTENTION).variant;
   // "outline" only applies in the recent-posts context; main badges fall back to neutral
   return v === "outline" ? "neutral" : v;
@@ -36,9 +46,28 @@ export function getCategoryLabel(level: string): string {
   return (ATTENTION_META[level] ?? DEFAULT_ATTENTION).label;
 }
 
+/**
+ * Returns a tooltip string explaining how the given attention category is
+ * determined, surfacing the exact signals the pipeline looks for.
+ * Returns undefined for categories that don't need additional explanation.
+ */
+export function getCategoryTooltip(level: string): string | undefined {
+  if (level === "NEEDS_RESPONSE") {
+    return `Awaiting Collaboration: post hasn't received meaningful engagement yet. Help-seeking phrases detected in comments trigger this category: ${HELP_WORDS.join(", ")}.`;
+  }
+  return undefined;
+}
+
 export function getRecentPostBadgeVariant(
   level: string,
-): "neutral" | "info" | "teal" | "attention" | "critical" | "outline" {
+):
+  | "neutral"
+  | "info"
+  | "teal"
+  | "attention"
+  | "critical"
+  | "violet"
+  | "outline" {
   const v = (ATTENTION_META[level] ?? DEFAULT_ATTENTION).variant;
   // neutral (routine) maps to outline for recent-posts context
   return v === "neutral" ? "outline" : v;
@@ -125,11 +154,11 @@ function getHeatNarrative(value: number): string {
 
 function getRiskNarrative(value: number): string {
   if (value >= 6)
-    return "Multiple risk signals detected: possible spam or self-promotion.";
+    return "Significant divergence from typical community patterns; human review recommended.";
   if (value >= 4)
-    return "Some risk flags raised — short content or promotional language.";
-  if (value >= 1) return "Minor flags present but likely not concerning.";
-  return "No rule-risk patterns detected.";
+    return "Noticeable deviation from normal discussion behavior.";
+  if (value >= 1) return "Minor divergence from baseline patterns.";
+  return "No meaningful divergence detected.";
 }
 
 function getSupportNarrative(value: number): string {
@@ -178,7 +207,7 @@ export function getWhatsHappening(explanations?: string[]): string {
   if (heat >= 5)
     return "Participants are reacting to each other more than the topic.";
   if (support >= 3) return "People are waiting on feedback.";
-  return "Tone is becoming sharper between participants.";
+  return "It's pretty quiet—just routine discussion so far.";
 }
 
 /** Hover-text descriptions for each signal in the Conversation Pattern Signals card. */
@@ -241,21 +270,22 @@ export function computeAgeHours(published_at: string): number {
 }
 
 /** Priority order for attention levels in the queue list.
- *  Awaiting Collaboration > Anomalous Signal > Trending Signal > Rapid Discussion > Steady Signal */
+ *  Awaiting Collaboration > Anomalous Signal > Trending Signal > Rapid Discussion > Silent Signal > Steady Signal */
 export const ATTENTION_PRIORITY: Record<string, number> = {
   NEEDS_RESPONSE: 0,
   SIGNAL_AT_RISK: 1,
   BOOST_VISIBILITY: 2,
   NEEDS_REVIEW: 3,
-  NORMAL: 4,
+  SILENT_SIGNAL: 4,
+  NORMAL: 5,
 };
 
 /** Sort posts by attention level priority, then by score descending within each group */
 export function sortByAttentionPriority(posts: Post[]): Post[] {
   return posts.toSorted((a, b) => {
     const priorityDiff =
-      (ATTENTION_PRIORITY[a.attention_level] ?? 4) -
-      (ATTENTION_PRIORITY[b.attention_level] ?? 4);
+      (ATTENTION_PRIORITY[a.attention_level] ?? 5) -
+      (ATTENTION_PRIORITY[b.attention_level] ?? 5);
     if (priorityDiff !== 0) return priorityDiff;
     return b.score - a.score;
   });

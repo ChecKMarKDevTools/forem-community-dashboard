@@ -5,7 +5,11 @@ import {
   ForemClient,
 } from "@/lib/forem";
 import { supabase } from "@/lib/supabase";
-import { POSITIVE_WORDS, NEGATIVE_WORDS } from "@/lib/sentiment-keywords";
+import {
+  POSITIVE_WORDS,
+  NEGATIVE_WORDS,
+  HELP_WORDS,
+} from "@/lib/sentiment-keywords";
 import type { AttentionCategory } from "@/types/dashboard";
 import type { ArticleMetrics } from "@/types/metrics";
 
@@ -17,12 +21,12 @@ export interface SyncResult {
 
 /**
  * Maximum age of articles to consider for scoring.
- * 5 days matches the purge horizon — anything older is deleted after sync.
+ * 5 days — articles older than this are outside the scoring window.
  */
 export const SYNC_WINDOW_HOURS = 120; // 5 days
 
-/** Articles older than this are purged after each sync run. */
-export const PURGE_AGE_HOURS = 120; // 5 days
+/** Articles older than this are purged at the start of each sync run. */
+export const PURGE_AGE_HOURS = 240; // 10 days
 
 /**
  * Forem API hard limit: 30 requests per 30 seconds.
@@ -44,7 +48,11 @@ async function resolveUser(
 }
 
 // Math Helpers for Pipeline
-function getAgeHours(published_at: string): number {
+
+/** Returns Infinity for null/empty published_at so the article is naturally
+ * excluded from all window and frequency checks without needing extra guards. */
+function getAgeHours(published_at: string | null): number {
+  if (!published_at) return Infinity;
   return (Date.now() - new Date(published_at).getTime()) / (1000 * 60 * 60);
 }
 
@@ -74,11 +82,14 @@ function countWords(textHtml?: string): number {
     .filter((w) => w.length > 0).length;
 }
 
-// Sentiment keyword lists — exported so the UI can surface them as helper text
+// Keyword lists — exported so the UI can surface them as helper text
 // (Metric Transparency: every signal must be visible in the UI).
-// Sets for O(1) lookups (S7776).
 // Re-export for backward compatibility with tests and other server modules.
-export { POSITIVE_WORDS, NEGATIVE_WORDS } from "@/lib/sentiment-keywords";
+export {
+  POSITIVE_WORDS,
+  NEGATIVE_WORDS,
+  HELP_WORDS,
+} from "@/lib/sentiment-keywords";
 
 const PROMO_WORDS = [
   "subscribe",
@@ -87,15 +98,6 @@ const PROMO_WORDS = [
   "buy",
   "sale",
   "link in bio",
-];
-const HELP_WORDS = [
-  "stuck",
-  "confused",
-  "need help",
-  "why doesn't",
-  "how do i",
-  "what am i missing",
-  "beginner question",
 ];
 
 /** Accumulated metrics from comment tree traversal */
@@ -304,6 +306,11 @@ function classifyArticle(
     input.attention_delta >= 3
   ) {
     return "BOOST_VISIBILITY";
+  }
+  // Post is getting noticed (reactions) but nobody is talking (≤1 comment).
+  // Surfaces content worth nudging the community to engage with.
+  if (input.reaction_count >= 5 && input.comment_count <= 1) {
+    return "SILENT_SIGNAL";
   }
   return "NORMAL";
 }
@@ -523,7 +530,9 @@ export function buildArticleMetrics(
 
 /** Bundled inputs for the deep-scoring function (S107: max 7 params) */
 interface DeepScoreInput {
-  readonly article: ForemArticle;
+  // published_at narrowed to string: callers must pass articles that have
+  // already been validated by isPublishedArticle (or backfilled from DB).
+  readonly article: ForemArticle & { published_at: string };
   readonly username: string;
   readonly word_count: number;
   readonly age_hours: number;
@@ -687,7 +696,7 @@ async function deepScoreAndPersist(
  */
 async function fetchAndFilterArticles(): Promise<{
   allArticles: ForemArticle[];
-  validArticles: ForemArticle[];
+  validArticles: Array<ForemArticle & { published_at: string }>;
 }> {
   const allArticles: ForemArticle[] = [];
   let page = 1;
@@ -708,7 +717,19 @@ async function fetchAndFilterArticles(): Promise<{
     page++;
   }
 
-  const validArticles = allArticles.filter((a) => {
+  /** Type predicate: narrows published_at to string so downstream callers
+   * don't need null assertions when processing validArticles. */
+  function isPublishedArticle(
+    a: ForemArticle,
+  ): a is ForemArticle & { published_at: string } {
+    // GET /api/articles (the only endpoint we call) only returns published
+    // articles and does not include a `published` boolean field — that field
+    // is exclusive to GET /api/articles/me. published_at being non-null is
+    // the reliable signal: draft/scheduled articles have a null published_at.
+    return !!a.published_at;
+  }
+
+  const validArticles = allArticles.filter(isPublishedArticle).filter((a) => {
     const ageHours = getAgeHours(a.published_at);
     // Lower bound: skip articles published in the last 2 hours — they're too
     // fresh for meaningful scoring (low comment/reaction signal).
@@ -740,7 +761,7 @@ function buildAuthorFrequencies(
  * limit (top 50, non-NORMAL first) is enforced at query time by the API route.
  */
 function lightScoreAndRank(
-  validArticles: ForemArticle[],
+  validArticles: Array<ForemArticle & { published_at: string }>,
   postsByAuthor24h: Map<string, number>,
 ) {
   return validArticles
@@ -843,13 +864,26 @@ async function backfillEmptyMetrics(
   for (const row of emptyRows) {
     try {
       const article = await ForemClient.getArticle(row.id, false);
-      const username = article.user.username;
-      const age_hours = getAgeHours(article.published_at);
-      const word_count = article.reading_time_minutes * 200;
+      // Guard: articles stored during a prior sync should always have
+      // published_at, but the API may return null for deleted/unlisted posts.
+      if (!article.published_at) {
+        failed++;
+        errors.push(
+          `Backfill article ${row.id}: published_at is null, skipping`,
+        );
+        continue;
+      }
+      // Cast to the narrowed type after the runtime null guard above.
+      const publishedArticle = article as ForemArticle & {
+        published_at: string;
+      };
+      const username = publishedArticle.user.username;
+      const age_hours = getAgeHours(publishedArticle.published_at);
+      const word_count = publishedArticle.reading_time_minutes * 200;
       const author_post_frequency = postsByAuthor24h.get(username) || 1;
       const preliminary_score =
-        article.public_reactions_count +
-        article.comments_count * 2 +
+        publishedArticle.public_reactions_count +
+        publishedArticle.comments_count * 2 +
         word_count / 100 -
         age_hours -
         author_post_frequency;
@@ -860,7 +894,7 @@ async function backfillEmptyMetrics(
       }
 
       await deepScoreAndPersist({
-        article,
+        article: publishedArticle,
         username,
         word_count,
         age_hours,
@@ -881,7 +915,7 @@ async function backfillEmptyMetrics(
   return { synced, failed, errors };
 }
 
-/** Post-sync maintenance: backfill empty metrics and purge stale articles. */
+/** Post-sync backfill: re-process articles with empty metrics. */
 async function runPostSyncMaintenance(
   allArticles: ForemArticle[],
   userCache: Map<string, ForemUser | null>,
@@ -899,44 +933,54 @@ async function runPostSyncMaintenance(
   result.synced += backfillResult.synced;
   result.failed += backfillResult.failed;
   result.errors.push(...backfillResult.errors);
-
-  // Purge: remove articles older than PURGE_AGE_HOURS. The commenters
-  // table cascades on article delete, so no separate cleanup is needed.
-  const purged = await purgeStaleArticles();
-  if (purged > 0) {
-    result.errors.push(
-      `Purged ${purged} stale articles (> ${PURGE_AGE_HOURS}h old)`,
-    );
-  }
 }
 
 /**
  * Main sync entry point.
  *
- * Fetches all articles published within the last SYNC_WINDOW_HOURS (5 days),
- * deep-scores every one of them, upserts results to Supabase, backfills any
- * articles with empty metrics, and purges articles older than PURGE_AGE_HOURS.
- * No article cap is applied — the display limit is handled at query time.
+ * Pipeline order (production only — `maxToProcess` undefined):
+ *   1. Purge articles older than PURGE_AGE_HOURS (10 days) so the DB is clean
+ *      before new data is scored. The commenters table cascades on delete.
+ *   2. Fetch all articles published within SYNC_WINDOW_HOURS (5 days).
+ *   3. Deep-score every valid article and upsert results to Supabase.
+ *   4. Backfill any articles that were persisted with empty metrics.
+ *
+ * No article cap is applied in production — the display limit is handled at
+ * query time by the API route.
  *
  * The optional `maxToProcess` parameter exists solely for unit tests so they
- * can keep test suites fast without fetching a full week of data.
+ * can keep test suites fast without fetching a full week of data. Passing it
+ * also skips the purge and backfill steps.
  */
 export async function syncArticles(maxToProcess?: number): Promise<SyncResult> {
   const userCache = new Map<string, ForemUser | null>();
   const upsertedAuthors = new Set<string>();
 
   try {
+    const result: SyncResult = { synced: 0, failed: 0, errors: [] };
+
+    // Step 1 (production only): purge stale articles before fetching new ones.
+    // Running purge first keeps the DB lean and avoids re-scoring rows that are
+    // about to be deleted in the same cycle.
+    if (maxToProcess === undefined) {
+      const purged = await purgeStaleArticles();
+      if (purged > 0) {
+        result.errors.push(
+          `Purged ${purged} stale articles (> ${PURGE_AGE_HOURS}h old)`,
+        );
+      }
+    }
+
+    // Step 2: fetch and filter articles within the sync window.
     const { allArticles, validArticles } = await fetchAndFilterArticles();
     const postsByAuthor24h = buildAuthorFrequencies(allArticles);
     const shortlist = lightScoreAndRank(validArticles, postsByAuthor24h);
 
-    // In production maxToProcess is undefined → process all valid articles.
+    // In production maxToProcess is undefined → slice(0, undefined) returns all.
     // In tests it is set to a small number to keep suites fast.
-    const toProcess =
-      maxToProcess === undefined ? shortlist : shortlist.slice(0, maxToProcess);
+    const toProcess = shortlist.slice(0, maxToProcess);
 
-    const result: SyncResult = { synced: 0, failed: 0, errors: [] };
-
+    // Step 3: deep-score and persist.
     for (const candidate of toProcess) {
       try {
         const {
@@ -973,7 +1017,7 @@ export async function syncArticles(maxToProcess?: number): Promise<SyncResult> {
       }
     }
 
-    // Production-only maintenance: backfill + purge
+    // Step 4 (production only): backfill articles with empty metrics.
     if (maxToProcess === undefined) {
       await runPostSyncMaintenance(
         allArticles,
