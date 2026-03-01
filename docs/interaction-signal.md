@@ -122,17 +122,17 @@ The spread is stored as three percentage fields: `signal_strong_pct`, `signal_mo
 
 ---
 
-## Actionable Framing
+## Threshold-Based Guidance
 
-The `getSignalSummary()` function translates the numeric interaction signal into actionable guidance — telling the user **how** to contribute most constructively, not whether the thread is "worth their time."
+The `getSignalSummary()` function translates the numeric interaction signal into terse guidance:
 
-| Signal Range   | Summary                                                                                                                 |
-| -------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| >= 0.7         | "Discussion is substantive and on-topic. A balanced, thoughtful contribution would fit naturally here."                 |
-| 0.4 - 0.69     | "Some comments go deep while others stay surface-level. A focused, on-topic reply could help steer the conversation..." |
-| 0.01 - 0.39    | "Comments are mostly brief or tangential. A detailed, thoughtful response could set the tone and encourage deeper..."   |
-| 0              | "No comments yet. An early, welcoming reply can shape how the conversation develops."                                   |
-| method=unknown | "No interaction data available yet."                                                                                    |
+| Signal Range   | Summary                                   |
+| -------------- | ----------------------------------------- |
+| >= 0.7         | "Discussion substantive and on-topic."    |
+| 0.4 - 0.69     | "Mixed depth. Focused reply can help."    |
+| 0.01 - 0.39    | "Mostly surface-level. Add depth."        |
+| 0              | "No comments. Early shaping opportunity." |
+| method=unknown | "No interaction data."                    |
 
 These summaries are displayed directly below the SignalBar chart in the detail panel.
 

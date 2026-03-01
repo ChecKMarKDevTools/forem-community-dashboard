@@ -292,27 +292,17 @@ export const ATTENTION_PRIORITY: Record<string, number> = {
   NORMAL: 5,
 };
 
-/**
- * Translate an interaction signal score (0.0–1.0) into actionable guidance
- * suggesting how the user can contribute most constructively.
- */
+/** Threshold-based guidance text for the interaction signal score. */
 export function getSignalSummary(
   signal: number,
   method: "llm" | "heuristic" | "unknown",
 ): string {
-  if (method === "unknown")
-    return "Interaction scoring hasn't run on this post yet. Check back after the next sync.";
+  if (method === "unknown") return "No interaction data.";
 
-  if (signal >= 0.7) {
-    return "Discussion is substantive and on-topic. A balanced, thoughtful contribution would fit naturally here.";
-  }
-  if (signal >= 0.4) {
-    return "Some comments go deep while others stay surface-level. A focused, on-topic reply could help steer the conversation toward substance.";
-  }
-  if (signal > 0) {
-    return "Comments are mostly brief or tangential. A detailed, thoughtful response could set the tone and encourage deeper engagement.";
-  }
-  return "No comments yet. An early, welcoming reply can shape how the conversation develops.";
+  if (signal >= 0.7) return "Discussion substantive and on-topic.";
+  if (signal >= 0.4) return "Mixed depth. Focused reply can help.";
+  if (signal > 0) return "Mostly surface-level. Add depth.";
+  return "No comments. Early shaping opportunity.";
 }
 
 /** Sort posts by attention level priority, then by score descending within each group */

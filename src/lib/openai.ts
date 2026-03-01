@@ -53,6 +53,7 @@ RULES:
   - depth: 0.0 (surface-level reaction like "great post!") to 1.0 (substantive technical or thoughtful content).
   - constructiveness: 0.0 (adds nothing to the conversation) to 1.0 (meaningfully advances the discussion).
 - Compute overall volatility: 0.0 (all comments have similar tone) to 1.0 (extreme variation in tone across comments).
+- Never infer beyond available text. Score only what is present.
 - Do not explain. Output only valid JSON.`;
 
 const RESPONSE_SCHEMA = {

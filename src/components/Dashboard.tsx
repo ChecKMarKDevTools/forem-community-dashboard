@@ -306,7 +306,7 @@ function DetailPanel({
           {/* Interaction Signal */}
           <ChartContainer
             title="Interaction Signal"
-            tooltip="Depth and substance of comments so far. Use this to decide how you can contribute most constructively — match your tone and depth to what the conversation needs."
+            tooltip="Depth and substance of comments so far. Guides how you can contribute most constructively to the conversation."
           >
             {getInteractionMethod(postDetails.metrics) !== "unknown" && (
               <SignalBar {...getSignalSpreadData(postDetails.metrics)} />

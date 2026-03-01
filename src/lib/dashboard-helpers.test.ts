@@ -518,39 +518,44 @@ describe("sortByAttentionPriority", () => {
 });
 
 describe("getSignalSummary", () => {
-  it("returns pending-sync message for unknown method", () => {
-    expect(getSignalSummary(0.5, "unknown")).toContain("hasn't run");
+  it("returns no-data message for unknown method", () => {
+    expect(getSignalSummary(0.5, "unknown")).toBe("No interaction data.");
   });
 
-  it("suggests balanced contribution for signal >= 0.7", () => {
-    const summary = getSignalSummary(0.8, "llm");
-    expect(summary).toContain("substantive");
-    expect(summary).toContain("thoughtful contribution");
+  it("returns substantive summary for signal >= 0.7", () => {
+    expect(getSignalSummary(0.8, "llm")).toBe(
+      "Discussion substantive and on-topic.",
+    );
   });
 
-  it("suggests steering toward substance for signal 0.4-0.7", () => {
-    const summary = getSignalSummary(0.5, "heuristic");
-    expect(summary).toContain("steer the conversation");
+  it("returns mixed-depth summary for signal 0.4-0.7", () => {
+    expect(getSignalSummary(0.5, "heuristic")).toBe(
+      "Mixed depth. Focused reply can help.",
+    );
   });
 
-  it("suggests setting the tone for signal > 0 and < 0.4", () => {
-    const summary = getSignalSummary(0.2, "llm");
-    expect(summary).toContain("set the tone");
+  it("returns surface-level summary for signal > 0 and < 0.4", () => {
+    expect(getSignalSummary(0.2, "llm")).toBe(
+      "Mostly surface-level. Add depth.",
+    );
   });
 
-  it("suggests welcoming reply for signal 0", () => {
-    const summary = getSignalSummary(0, "heuristic");
-    expect(summary).toContain("welcoming reply");
+  it("returns early-shaping summary for signal 0", () => {
+    expect(getSignalSummary(0, "heuristic")).toBe(
+      "No comments. Early shaping opportunity.",
+    );
   });
 
   it("handles boundary at 0.7 exactly", () => {
-    const summary = getSignalSummary(0.7, "llm");
-    expect(summary).toContain("substantive");
+    expect(getSignalSummary(0.7, "llm")).toBe(
+      "Discussion substantive and on-topic.",
+    );
   });
 
   it("handles boundary at 0.4 exactly", () => {
-    const summary = getSignalSummary(0.4, "llm");
-    expect(summary).toContain("steer the conversation");
+    expect(getSignalSummary(0.4, "llm")).toBe(
+      "Mixed depth. Focused reply can help.",
+    );
   });
 });
 

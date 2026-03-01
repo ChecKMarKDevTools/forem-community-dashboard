@@ -1135,9 +1135,9 @@ describe("Dashboard Component", () => {
     // Signal tooltip text should be present — describes what the signal measures
     const tooltips = screen.getAllByRole("tooltip");
     const tooltipTexts = tooltips.map((el) => el.textContent);
-    expect(
-      tooltipTexts.some((t) => t?.includes("contribute most constructively")),
-    ).toBe(true);
+    expect(tooltipTexts.some((t) => t?.includes("substance of comments"))).toBe(
+      true,
+    );
 
     // Signal, Method, and Volatility sub-line should be visible
     // The text is split across nested <span> elements inside a single <p>,
@@ -1217,9 +1217,9 @@ describe("Dashboard Component", () => {
     // Signal tooltip should be present (describes what signal measures)
     const tooltips = screen.getAllByRole("tooltip");
     const tooltipTexts = tooltips.map((el) => el.textContent);
-    expect(
-      tooltipTexts.some((t) => t?.includes("contribute most constructively")),
-    ).toBe(true);
+    expect(tooltipTexts.some((t) => t?.includes("substance of comments"))).toBe(
+      true,
+    );
 
     // Signal and Method should be shown, but Volatility should NOT for heuristic method.
     // The text is split across nested <span> elements inside a single <p>,

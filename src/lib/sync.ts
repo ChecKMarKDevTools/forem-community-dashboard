@@ -841,7 +841,10 @@ async function deepScoreAndPersist(
     .eq("id", article.id)
     .single();
 
-  // Build cache, collect new comments, call LLM only for those, merge results.
+  // Extract existing metrics for cache building and topic_tags preservation.
+  const existingMetrics = (existingRow as Record<string, unknown> | null)
+    ?.metrics as Record<string, unknown> | undefined;
+
   const scoreCache = buildScoreCache(
     existingRow as Record<string, unknown> | null,
   );
@@ -879,7 +882,12 @@ async function deepScoreAndPersist(
             }),
           ),
           volatility: computedVolatility,
-          topic_tags: rawLlmResult?.topic_tags ?? [],
+          // Preserve topic_tags from the prior sync when all comments are cached
+          // and no LLM call was made (rawLlmResult is null).
+          topic_tags:
+            rawLlmResult?.topic_tags ??
+            (existingMetrics?.topic_tags as string[] | undefined) ??
+            [],
         }
       : null;
 
