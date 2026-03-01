@@ -1,4 +1,4 @@
-# AI Rules for dev-community-dashboard
+# AI Rules for forem-community-dashboard
 
 - **Inline Overrides**: All inline overrides MUST require a comment explaining why the override exists.
 - **Preference**: Prefer proper configuration files (e.g., `.hadolint.yaml`, `.stylelintrc`) to inline overrides when feasible.
@@ -12,7 +12,7 @@
 - **Short-term fixes**: Strictly prohibited at all times in this repo. Your goal is always a long-term maintainable, secure, reliable solution that passes all automated checks and tests.
 - **PR Review Responses**: All responses to PR review comments MUST be posted as inline replies to the specific comment thread. Never post a standalone top-level PR comment as a substitute for inline replies.
 - **Next.js Dev Server**: When shutting down Next.js, only kill the specific `next dev` / `next-server` processes (e.g., `ps aux | grep '[n]ext'`). NEVER use broad port-range kills (`kill` by port) as they destroy unrelated processes (Spotify, Discord, etc.).
-- **SonarQube Analysis**: Run Sonar checks on ALL source files before committing, not just changed files. Use the `mcp__sonarqube-checkmark__analyze_code_snippet` tool with projectKey `ChecKMarKDevTools_dev-community-dashboard`. Fix all issues before proceeding.
+- **SonarQube Analysis**: Run Sonar checks on ALL source files before committing, not just changed files. Use the `mcp__sonarqube-checkmark__analyze_code_snippet` tool with projectKey `ChecKMarKDevTools_forem-community-dashboard`. Fix all issues before proceeding.
 - **Commits**: Make small, atomic commits with clear Conventional Commit messages. Each commit should address a single concern (e.g., one for scoring fixes, one for tests, one for docs). Always include the `Signed-off-by` flag (`-s`), the `Co-Authored-By` attribution line, and always use GPG signing (`-S`).
 - **Pre-commit Workflow**: Before committing, always: (1) run Sonar on all code, (2) ensure test coverage follows AGENTS.md testing rules, (3) update relevant documentation, (4) run all CI checks (`pnpm format:check`, `pnpm lint`, `pnpm test`, `pnpm build`).
 - **UI Verification**: When working on UI changes, you MUST use browser automation tools to navigate to the page and visually verify results from the user's perspective before returning a response. Never assume UI changes are correct without seeing them rendered.
