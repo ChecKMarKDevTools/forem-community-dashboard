@@ -68,6 +68,32 @@ export function getConstructivenessData(
   }));
 }
 
+/** Return which sentiment analysis method produced the data. */
+export function getSentimentMethod(
+  metrics?: ArticleMetrics | null,
+): "llm" | "keyword" | "unknown" {
+  return metrics?.sentiment_method ?? "unknown";
+}
+
+/** Return the average sentiment score (-1.0 to 1.0), defaulting to 0. */
+export function getSentimentMean(metrics?: ArticleMetrics | null): number {
+  return metrics?.sentiment_mean ?? 0;
+}
+
+/** Return the sentiment volatility (0.0 to 1.0), defaulting to 0. */
+export function getSentimentVolatility(
+  metrics?: ArticleMetrics | null,
+): number {
+  return metrics?.sentiment_volatility ?? 0;
+}
+
+/** Return per-comment sentiment scores from LLM analysis. */
+export function getSentimentScores(
+  metrics?: ArticleMetrics | null,
+): ReadonlyArray<{ index: number; score: number }> {
+  return metrics?.sentiment_scores ?? [];
+}
+
 type RiskMarker = Readonly<{ label: string; active: boolean }>;
 
 /** Build risk signal markers for MarkerTimeline. */

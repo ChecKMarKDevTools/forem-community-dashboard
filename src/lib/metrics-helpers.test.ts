@@ -7,6 +7,10 @@ import {
   getSentimentData,
   getConstructivenessData,
   getRiskMarkers,
+  getSentimentMethod,
+  getSentimentMean,
+  getSentimentVolatility,
+  getSentimentScores,
 } from "./metrics-helpers";
 
 const EMPTY_RISK_COMPONENTS = {
@@ -264,5 +268,105 @@ describe("getRiskMarkers", () => {
     const markers = getRiskMarkers(m);
     expect(markers[2].active).toBe(true);
     expect(markers[4].active).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// getSentimentMethod
+// ---------------------------------------------------------------------------
+
+describe("getSentimentMethod", () => {
+  it("returns 'unknown' for null metrics", () => {
+    expect(getSentimentMethod(null)).toBe("unknown");
+  });
+
+  it("returns 'unknown' for undefined metrics", () => {
+    expect(getSentimentMethod(undefined)).toBe("unknown");
+  });
+
+  it("returns 'unknown' for empty object (DB default '{}')", () => {
+    expect(getSentimentMethod({} as ArticleMetrics)).toBe("unknown");
+  });
+
+  it("returns 'llm' when sentiment_method is 'llm'", () => {
+    expect(getSentimentMethod(makeMetrics({ sentiment_method: "llm" }))).toBe(
+      "llm",
+    );
+  });
+
+  it("returns 'keyword' when sentiment_method is 'keyword'", () => {
+    expect(
+      getSentimentMethod(makeMetrics({ sentiment_method: "keyword" })),
+    ).toBe("keyword");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// getSentimentMean
+// ---------------------------------------------------------------------------
+
+describe("getSentimentMean", () => {
+  it("returns 0 for null metrics", () => {
+    expect(getSentimentMean(null)).toBe(0);
+  });
+
+  it("returns 0 for undefined metrics", () => {
+    expect(getSentimentMean(undefined)).toBe(0);
+  });
+
+  it("returns the stored mean value", () => {
+    expect(getSentimentMean(makeMetrics({ sentiment_mean: 0.42 }))).toBe(0.42);
+  });
+
+  it("returns 0 for empty object (DB default '{}')", () => {
+    expect(getSentimentMean({} as ArticleMetrics)).toBe(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// getSentimentVolatility
+// ---------------------------------------------------------------------------
+
+describe("getSentimentVolatility", () => {
+  it("returns 0 for null metrics", () => {
+    expect(getSentimentVolatility(null)).toBe(0);
+  });
+
+  it("returns 0 for undefined metrics", () => {
+    expect(getSentimentVolatility(undefined)).toBe(0);
+  });
+
+  it("returns the stored volatility value", () => {
+    expect(
+      getSentimentVolatility(makeMetrics({ sentiment_volatility: 0.75 })),
+    ).toBe(0.75);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// getSentimentScores
+// ---------------------------------------------------------------------------
+
+describe("getSentimentScores", () => {
+  it("returns empty array for null metrics", () => {
+    expect(getSentimentScores(null)).toEqual([]);
+  });
+
+  it("returns empty array for undefined metrics", () => {
+    expect(getSentimentScores(undefined)).toEqual([]);
+  });
+
+  it("returns the stored scores array", () => {
+    const scores = [
+      { index: 0, score: 0.5 },
+      { index: 1, score: -0.3 },
+    ];
+    expect(
+      getSentimentScores(makeMetrics({ sentiment_scores: scores })),
+    ).toEqual(scores);
+  });
+
+  it("returns empty array for empty object (DB default '{}')", () => {
+    expect(getSentimentScores({} as ArticleMetrics)).toEqual([]);
   });
 });
