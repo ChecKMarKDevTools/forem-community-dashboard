@@ -82,11 +82,13 @@ function stripHtmlTags(html: string): string {
 }
 
 /** djb2 polynomial hash of text — zero deps, deterministic cross-platform.
- * Used to detect comment edits without storing the full body. */
+ * Used to detect comment edits without storing the full body.
+ * Iterates Unicode code points (not UTF-16 code units) so surrogate pairs
+ * for non-BMP characters (emoji, some CJK) are counted exactly once. */
 function hashText(text: string): string {
   let hash = 0;
-  for (let i = 0; i < text.length; i++) {
-    hash = ((hash << 5) - hash + (text.codePointAt(i) ?? 0)) >>> 0;
+  for (const char of text) {
+    hash = ((hash << 5) - hash + (char.codePointAt(0) ?? 0)) >>> 0;
   }
   return hash.toString(16);
 }
@@ -464,21 +466,8 @@ function mergeCommentScores(
     const c = flatComments[i];
     const h = hashText(c.text);
     const cached = scoreCache.get(c.id_code);
-    if (cached?.body_hash !== h) {
-      const llmScore = llmByIdx.get(newIdx);
-      if (llmScore !== undefined) {
-        enriched.push({
-          index: i,
-          tone: llmScore.tone,
-          relevance: llmScore.relevance,
-          depth: llmScore.depth,
-          constructiveness: llmScore.constructiveness,
-          id_code: c.id_code,
-          body_hash: h,
-        });
-      }
-      newIdx++;
-    } else {
+    if (cached?.body_hash === h) {
+      // Cache hit: body unchanged, reuse stored scores.
       enriched.push({
         index: i,
         tone: cached.tone,
@@ -488,6 +477,21 @@ function mergeCommentScores(
         id_code: c.id_code,
         body_hash: h,
       });
+    } else {
+      // Cache miss: body changed or first-seen — use LLM score when available,
+      // otherwise fall back to neutral heuristic values so the comment is never
+      // silently dropped (which would skew signal_strong_pct / spread counts).
+      const llmScore = llmByIdx.get(newIdx);
+      enriched.push({
+        index: i,
+        tone: llmScore?.tone ?? 0,
+        relevance: llmScore?.relevance ?? 0.5,
+        depth: llmScore?.depth ?? 0.5,
+        constructiveness: llmScore?.constructiveness ?? 0.5,
+        id_code: c.id_code,
+        body_hash: h,
+      });
+      newIdx++;
     }
   }
   return enriched;
@@ -508,7 +512,7 @@ function computeDerivedMetrics(
   reaction_count: number,
   time_since_post: number,
   word_count: number,
-  sentimentVolatility?: number,
+  toneVolatility?: number,
 ): DerivedMetrics {
   const distinct_commenters = metrics.uniqueCommenters.size;
   const comments_per_hour = comment_count / Math.max(1, time_since_post / 60);
@@ -520,11 +524,11 @@ function computeDerivedMetrics(
   const exposure = Math.max(1, reaction_count + comment_count);
   const attention_delta = effort - Math.log2(exposure + 1);
 
-  // When LLM volatility is available, use it directly as the sentiment
+  // When LLM volatility is available, use it directly as the tone-volatility
   // contribution to heat_score. Otherwise fall back to the keyword-derived
   // ratio of |pos − neg| / comment_count.
-  const sentimentFraction =
-    sentimentVolatility ??
+  const volatilityComponent =
+    toneVolatility ??
     Math.abs(metrics.pos_comments - metrics.neg_comments) /
       Math.max(1, comment_count);
 
@@ -532,7 +536,7 @@ function computeDerivedMetrics(
     comments_per_hour +
     reply_ratio * 3 +
     metrics.alternating_pairs +
-    sentimentFraction;
+    volatilityComponent;
 
   return {
     distinct_commenters,
