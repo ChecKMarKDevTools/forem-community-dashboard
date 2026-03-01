@@ -1,6 +1,4 @@
-# DEV Community Dashboard
-
-![DEV Community Dashboard Banner](public/dev-weekend-challenge-banner-community-dashboard.png)
+![DEV Community Dashboard Banner](https://raw.githubusercontent.com/ChecKMarKDevTools/forem-community-dashboard/main/public/dev-weekend-challenge-banner-community-dashboard.png)
 
 <table>
 <tr>
@@ -60,6 +58,8 @@
 </td>
 </tr>
 </table>
+
+# DEV Community Dashboard
 
 A signal-surfacing tool for [Forem](https://forem.com/) communities (dev.to and self-hosted instances). It ingests the latest posts via the public Forem API, classifies each one into attention categories (Awaiting Collaboration, Anomalous Signal, Trending Signal, Rapid Discussion, Steady Signal), and persists the results in Supabase so community helpers can see where conversations need a human eye.
 
@@ -353,7 +353,7 @@ Three workflows live in `.github/workflows/`. All CI checks run in `ci.yml`; do 
 
 ### Lighthouse CI
 
-Lighthouse runs as the last step in `ci.yml` (`pnpm lhci:desktop`). Results are written to `.lighthouseci/` (filesystem target — no external upload service or status-check callback). Minimum thresholds: performance ≥ 0.90 (desktop), accessibility = 1.0 (100%), best-practices = 1.0 (100%), SEO ≥ 0.90. The `.lighthouseci/` directory is git-ignored.
+Lighthouse runs as the last step in `ci.yml` (`pnpm lhci:desktop`). Results are written to `.lighthouseci/` (filesystem target — no external upload service or status-check callback). Minimum thresholds: performance ≥ 0.90 (desktop), accessibility = 1.0 (100%), best-practices ≥ 0.95, SEO = 1.0 (100%). The `.lighthouseci/` directory is git-ignored.
 
 ---
 

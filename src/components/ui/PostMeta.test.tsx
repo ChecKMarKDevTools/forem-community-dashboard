@@ -48,7 +48,7 @@ describe("PostMeta", () => {
       expect(pillSpan?.className).toContain("rounded-full");
     });
 
-    it("renders date using toLocaleString (includes time)", () => {
+    it("renders date using toLocaleDateString with month/day/year format", () => {
       render(
         <PostMeta
           author="testuser"
@@ -56,7 +56,10 @@ describe("PostMeta", () => {
           variant="full"
         />,
       );
-      const dateStr = new Date("2023-10-27T10:00:00Z").toLocaleString();
+      const dateStr = new Date("2023-10-27T10:00:00Z").toLocaleDateString(
+        undefined,
+        { year: "numeric", month: "short", day: "numeric" },
+      );
       expect(screen.getByText(dateStr)).toBeInTheDocument();
     });
 

@@ -12,7 +12,9 @@ type MarkerTimelineProps = Readonly<{
 }>;
 
 const WIDTH = 600;
-const HEIGHT = 56;
+// Reduced height: labels are now in HTML, not SVG, so we only need space
+// for the track line and circles.
+const HEIGHT = 40;
 const PADDING = { left: 50, right: 50 };
 const CIRCLE_R = 8;
 const ACTIVE_R = 10;
@@ -34,8 +36,8 @@ export function MarkerTimeline({ markers, className }: MarkerTimelineProps) {
           <line
             x1={PADDING.left}
             x2={WIDTH - PADDING.right}
-            y1={HEIGHT / 2 - 4}
-            y2={HEIGHT / 2 - 4}
+            y1={HEIGHT / 2}
+            y2={HEIGHT / 2}
             className="stroke-chart-grid"
             strokeWidth={2}
             strokeDasharray="6 4"
@@ -50,14 +52,10 @@ export function MarkerTimeline({ markers, className }: MarkerTimelineProps) {
   const step =
     markers.length > 1 ? trackWidth / (markers.length - 1) : trackWidth / 2;
 
-  // All markers inactive: show full timeline (with labels) in muted style
   return (
-    <div
-      className={cn(
-        "flex flex-col items-center gap-2 py-2",
-        noneActive && "opacity-40",
-      )}
-    >
+    <div className={cn("flex flex-col gap-1 py-2", noneActive && "opacity-40")}>
+      {/* SVG: track line + circles only — no SVG text so labels scale with
+          CSS rather than shrinking with the viewBox at narrow widths. */}
       <svg
         viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
         className={cn("w-full", className)}
@@ -70,18 +68,18 @@ export function MarkerTimeline({ markers, className }: MarkerTimelineProps) {
         <line
           x1={PADDING.left}
           x2={WIDTH - PADDING.right}
-          y1={HEIGHT / 2 - 4}
-          y2={HEIGHT / 2 - 4}
+          y1={HEIGHT / 2}
+          y2={HEIGHT / 2}
           className="stroke-chart-grid"
           strokeWidth={2}
           strokeDasharray={noneActive ? "6 4" : undefined}
           strokeLinecap="round"
         />
 
-        {/* Markers */}
+        {/* Markers — circles only, labels rendered in HTML below */}
         {markers.map((marker, i) => {
           const cx = markers.length === 1 ? WIDTH / 2 : PADDING.left + i * step;
-          const cy = HEIGHT / 2 - 4;
+          const cy = HEIGHT / 2;
           const r = marker.active ? ACTIVE_R : CIRCLE_R;
 
           return (
@@ -109,23 +107,31 @@ export function MarkerTimeline({ markers, className }: MarkerTimelineProps) {
                   opacity={0.3}
                 />
               )}
-              <text
-                x={cx}
-                y={HEIGHT - 2}
-                textAnchor="middle"
-                className={cn(
-                  "text-[8px]",
-                  marker.active
-                    ? "fill-state-warning font-medium"
-                    : "fill-text-muted",
-                )}
-              >
-                {marker.label}
-              </text>
             </g>
           );
         })}
       </svg>
+
+      {/* HTML labels grid — uses CSS font sizing so text stays readable at
+          any viewport width, unlike SVG text which shrinks with the viewBox. */}
+      <div
+        className="grid w-full gap-0.5"
+        style={{ gridTemplateColumns: `repeat(${markers.length}, 1fr)` }}
+      >
+        {markers.map((marker) => (
+          <span
+            key={marker.label}
+            className={cn(
+              "text-center text-[10px] leading-tight break-words",
+              marker.active
+                ? "text-state-warning font-medium"
+                : "text-text-muted",
+            )}
+          >
+            {marker.label}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }
