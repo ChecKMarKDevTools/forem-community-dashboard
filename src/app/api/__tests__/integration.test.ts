@@ -79,6 +79,30 @@ const DB_ARTICLE_DETAIL = {
   explanations: ["Risk Score: 8"],
   published_at: "2024-01-15T10:00:00Z",
   canonical_url: "https://external.example.com/post",
+  metrics: {
+    velocity_buckets: [{ hour: 0, count: 3 }],
+    comments_per_hour: 1.5,
+    commenter_shares: [{ username: "user1", share: 0.6 }],
+    positive_pct: 20,
+    neutral_pct: 60,
+    negative_pct: 20,
+    constructiveness_buckets: [{ hour: 0, depth_index: 1.0 }],
+    avg_comment_length: 25,
+    reply_ratio: 0.4,
+    alternating_pairs: 0,
+    risk_components: {
+      frequency_penalty: 0,
+      short_content: true,
+      no_engagement: false,
+      promo_keywords: 2,
+      repeated_links: 0,
+      engagement_credit: 0,
+    },
+    risk_score: 8,
+    sentiment_flips: 1,
+    is_first_post: false,
+    help_keywords: 0,
+  },
 };
 
 const DB_RECENT_POSTS = [
@@ -251,6 +275,24 @@ describe("Integration: GET /api/posts/[id]", () => {
     for (const field of requiredFields) {
       expect(json).toHaveProperty(field);
     }
+  });
+
+  it("returns metrics JSONB field in detail response", async () => {
+    buildSupabaseDetailChains(DB_ARTICLE_DETAIL, []);
+
+    const req = new NextRequest("http://localhost:3000/api/posts/1");
+    const res = await getPostById(req, {
+      params: Promise.resolve({ id: "1" }),
+    });
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.metrics).toBeDefined();
+    expect(json.metrics.velocity_buckets).toHaveLength(1);
+    expect(json.metrics.risk_score).toBe(8);
+    expect(json.metrics.commenter_shares[0].username).toBe("user1");
+    expect(json.metrics.risk_components.short_content).toBe(true);
+    expect(json.metrics.risk_components.promo_keywords).toBe(2);
   });
 
   it("recent_posts defaults to [] when Supabase returns null", async () => {
