@@ -258,20 +258,20 @@ Once deployed, set `APP_URL` as a **GitHub repository variable** (not a secret �
 
 Three workflows live in `.github/workflows/`. All CI checks run in `ci.yml`; do not create additional workflow files for individual checks.
 
-| Workflow              | File                  | Trigger                          | What it does                                                                                                                                                                                                           |
-| --------------------- | --------------------- | -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **CI**                | `ci.yml`              | Push to `main`, Pull Request     | Format (Prettier), ESLint, Stylelint, actionlint, Hadolint (Docker), Vitest with coverage (artifact uploaded for SonarCloud), SonarCloud scan, Lighthouse CI (desktop — results written to `.lighthouseci/` locally)  |
-| **2-Hour Sync**       | `cron.yml`            | Schedule (`0 */2 * * *`), manual | POSTs to `$APP_URL/api/cron` with `Authorization: Bearer $CRON_SECRET`; skips silently if either variable is unset; cancels in-progress runs to avoid overlap                                                          |
-| **Release Please**    | `release-please.yml`  | Push to `main`                   | Opens and updates automated release PRs (Conventional Commits → CHANGELOG + version bump); merging the release PR creates the GitHub Release                                                                           |
+| Workflow           | File                 | Trigger                          | What it does                                                                                                                                                                                                         |
+| ------------------ | -------------------- | -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **CI**             | `ci.yml`             | Push to `main`, Pull Request     | Format (Prettier), ESLint, Stylelint, actionlint, Hadolint (Docker), Vitest with coverage (artifact uploaded for SonarCloud), SonarCloud scan, Lighthouse CI (desktop — results written to `.lighthouseci/` locally) |
+| **2-Hour Sync**    | `cron.yml`           | Schedule (`0 */2 * * *`), manual | POSTs to `$APP_URL/api/cron` with `Authorization: Bearer $CRON_SECRET`; skips silently if either variable is unset; cancels in-progress runs to avoid overlap                                                        |
+| **Release Please** | `release-please.yml` | Push to `main`                   | Opens and updates automated release PRs (Conventional Commits → CHANGELOG + version bump); merging the release PR creates the GitHub Release                                                                         |
 
 ### Required repository configuration
 
-| Name           | Type     | Used by            | Notes                                                                      |
-| -------------- | -------- | ------------------ | -------------------------------------------------------------------------- |
-| `APP_URL`      | Variable | `cron.yml`         | Public Cloud Run URL — not a secret, safe to log                           |
-| `CRON_SECRET`  | Secret   | `cron.yml`         | Bearer token; must match the `CRON_SECRET` env var on the deployed service |
-| `SONAR_TOKEN`  | Secret   | `ci.yml`           | SonarCloud token for the `ChecKMarKDevTools_forem-community-dashboard` project |
-| `GITHUB_TOKEN` | Built-in | `ci.yml`, release  | Provided automatically; `release-please.yml` needs `contents: write` and `pull-requests: write` |
+| Name           | Type     | Used by           | Notes                                                                                           |
+| -------------- | -------- | ----------------- | ----------------------------------------------------------------------------------------------- |
+| `APP_URL`      | Variable | `cron.yml`        | Public Cloud Run URL — not a secret, safe to log                                                |
+| `CRON_SECRET`  | Secret   | `cron.yml`        | Bearer token; must match the `CRON_SECRET` env var on the deployed service                      |
+| `SONAR_TOKEN`  | Secret   | `ci.yml`          | SonarCloud token for the `ChecKMarKDevTools_forem-community-dashboard` project                  |
+| `GITHUB_TOKEN` | Built-in | `ci.yml`, release | Provided automatically; `release-please.yml` needs `contents: write` and `pull-requests: write` |
 
 ### Lighthouse CI
 
