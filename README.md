@@ -2,7 +2,7 @@
 
 ![DEV Community Dashboard Banner](public/dev-weekend-challenge-banner-community-dashboard.png)
 
-A signal-surfacing tool for [Forem](https://forem.com/) communities (dev.to and self-hosted instances). It ingests the latest posts via the public Forem API, classifies each one into attention categories (High Activity, Active Conversation, Community Waiting, Potential Rule Issue, Routine Discussion), and persists the results in Supabase so community helpers can see where conversations need a human eye.
+A signal-surfacing tool for [Forem](https://forem.com/) communities (dev.to and self-hosted instances). It ingests the latest posts via the public Forem API, classifies each one into attention categories (Awaiting Collaboration, Anomalous Signal, Trending Signal, Rapid Discussion, Steady Signal), and persists the results in Supabase so community helpers can see where conversations need a human eye.
 
 This is **not** a moderation tool or a scorecard. It is designed to help helpers know where to look.
 
@@ -22,7 +22,7 @@ graph TB
   end
 
   subgraph CloudRun["Cloud Run"]
-    APP["Next.js App\nforem-signal.checkmarkdevtools.dev"]
+    APP["Next.js App\ndev-signal.checkmarkdevtools.dev"]
   end
 
   subgraph Supabase
@@ -31,8 +31,8 @@ graph TB
 
   Browser((Browser)) -->|"GET /api/posts\nGET /api/posts/:id"| APP
   GHA -->|"POST /api/cron\n(Bearer token)"| APP
-  APP -->|"getLatestArticles · getUserByUsername · getComments\n(exponential-backoff retry on 429)"| FOREM
-  APP -->|"upsert / SELECT"| DB
+  APP -->|"getLatestArticles · getUserByUsername · getComments · getArticle\n(exponential-backoff retry on 429)"| FOREM
+  APP -->|"upsert / SELECT / DELETE"| DB
 ```
 
 ### Background Sync Flow
@@ -51,18 +51,33 @@ sequenceDiagram
   Cron->>Sync: syncArticles()
   Sync->>FC: getLatestArticles(page N, 100) [loop until age > 120h]
   FC-->>Sync: ForemArticle[] (all valid articles in 5-day window)
-  Note over Sync: Filter 2h–120h window, light-score all, deep-process all
+  Note over Sync: Filter 2h–120h window, deep-process all
 
-  loop For each shortlisted article
+  loop For each article in window
     Sync->>FC: getUserByUsername(author) [cached]
     FC-->>Sync: ForemUser | null
     Sync->>FC: getComments(articleId)
     FC-->>Sync: ForemComment[]
     Note over Sync: Compute metrics → classify category
     Sync->>SB: upsert users row (once per unique author)
-    Sync->>SB: upsert articles row (score, category, explanations)
+    Sync->>SB: upsert articles row (score, category, metrics, explanations)
     Sync->>SB: upsert commenters rows
   end
+
+  Note over Sync,SB: Backfill — find articles with empty metrics
+  Sync->>SB: SELECT articles WHERE metrics = '{}'
+  SB-->>Sync: stale article IDs
+
+  loop For each stale article
+    Sync->>FC: getArticle(id) [fetch by ID]
+    FC-->>Sync: ForemArticle
+    Note over Sync: Re-run deep scoring pipeline
+    Sync->>SB: upsert article with computed metrics
+  end
+
+  Note over Sync,SB: Purge — remove articles older than 5 days
+  Sync->>SB: DELETE articles WHERE published_at < now - 120h
+  SB-->>Sync: purged count
 
   Sync-->>Cron: {synced, failed, errors[]}
   Cron-->>GHA: {success, synced, failed, errors[]}
@@ -86,7 +101,7 @@ sequenceDiagram
   Posts->>SB: SELECT articles WHERE published_at >= now-120h ORDER BY (non-NORMAL first, score DESC) LIMIT 50
   SB-->>Posts: scored article rows
   Posts-->>D: article list
-  D-->>U: Ranked list — actionable categories first (Community Waiting, Potential Rule Issue, etc.), then Routine Discussion
+  D-->>U: Ranked list — actionable categories first (Awaiting Collaboration, Anomalous Signal, etc.), then Steady Signal
 
   U->>D: Click a post
   D->>Detail: fetch(/api/posts/42)
@@ -94,7 +109,7 @@ sequenceDiagram
   Detail->>SB: SELECT 5 most recent posts by same author
   SB-->>Detail: article + recent_posts[]
   Detail-->>D: PostDetails
-  D-->>U: Detail panel (signals, discussion state, thread momentum, recent posts by author)
+  D-->>U: Detail panel (signals, discussion state, thread momentum, post analytics, recent posts by author)
 
   U->>F: Click post title to open on dev.to / Forem
   Note over U,F: Helper reads the thread and decides how to engage
@@ -121,13 +136,13 @@ Each article is classified at sync time (not at read time) into one of four atte
 
 ### Categories
 
-| Category                 | Dashboard Label      | Key Conditions                                                                                                                  |
-| ------------------------ | -------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| **NEEDS_RESPONSE**       | Community Waiting    | `time_since_post >= 30 min` AND `support_score >= 3` (first post, no reactions, no comments, help words)                        |
-| **POSSIBLY_LOW_QUALITY** | Potential Rule Issue | `risk_score >= 4` (high post freq, short body, no engagement, author promo keywords, repeated links, minus engagement credit)   |
-| **NEEDS_REVIEW**         | High Activity        | `comments >= 6` AND `heat_score >= 5` AND `reactions / comments < 1.2`                                                          |
-| **BOOST_VISIBILITY**     | Active Conversation  | `word_count >= 600` AND `unique_commenters >= 2` AND `avg_comment_length >= 18` AND `reactions <= 5` AND `attention_delta >= 3` |
-| **NORMAL**               | Routine Discussion   | Default when no category thresholds are met; also forced for `devteam` org posts (weekly threads, challenges)                   |
+| Category                 | Dashboard Label         | Key Conditions                                                                                                                  |
+| ------------------------ | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| **NEEDS_RESPONSE**       | Awaiting Collaboration  | `time_since_post >= 30 min` AND `support_score >= 3` (first post, no reactions, no comments, help words)                        |
+| **POSSIBLY_LOW_QUALITY** | Anomalous Signal        | `risk_score >= 4` (high post freq, short body, no engagement, author promo keywords, repeated links, minus engagement credit)   |
+| **NEEDS_REVIEW**         | Rapid Discussion        | `comments >= 6` AND `heat_score >= 5` AND `reactions / comments < 1.2`                                                          |
+| **BOOST_VISIBILITY**     | Trending Signal         | `word_count >= 600` AND `unique_commenters >= 2` AND `avg_comment_length >= 18` AND `reactions <= 5` AND `attention_delta >= 3` |
+| **NORMAL**               | Steady Signal           | Default when no category thresholds are met; also forced for `devteam` org posts (weekly threads, challenges)                   |
 
 ### Sub-Scores
 
