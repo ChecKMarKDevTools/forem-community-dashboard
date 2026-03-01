@@ -189,7 +189,7 @@ Create a `.env` file in the project root with the following:
 | `NEXT_PUBLIC_SUPABASE_URL` | Yes      | Supabase project URL                               |
 | `SUPABASE_SECRET_KEY`      | Yes      | Server-only key; bypasses RLS for sync writes      |
 | `CRON_SECRET`              | Yes      | Bearer token for `/api/cron` and `/api/admin/seed` |
-| `FOREM_API_KEY`            | No       | Optional; raises Forem API rate limits             |
+| `DEV_API_KEY`              | No       | Optional; raises Forem API rate limits             |
 
 > `SUPABASE_SECRET_KEY` is intentionally **not** prefixed with `NEXT_PUBLIC_` — it is never sent to the browser.
 
@@ -232,7 +232,7 @@ The app is deployed to Google Cloud Run via `deploy.sh`. Set the environment var
 ```bash
 gcloud run deploy forem-community-dashboard \
   --set-secrets SUPABASE_SECRET_KEY=...,CRON_SECRET=... \
-  --set-env-vars NEXT_PUBLIC_SUPABASE_URL=...,FOREM_API_KEY=...
+  --set-env-vars NEXT_PUBLIC_SUPABASE_URL=...,DEV_API_KEY=...
 ```
 
 Once deployed, set `APP_URL` as a **GitHub repository variable** (not a secret — it is a public URL) and `CRON_SECRET` as a **GitHub secret** so the cron workflow (`.github/workflows/cron.yml`) can reach the live endpoint. By default, this workflow uses a `schedule` trigger to run every 2 hours; to change or disable this cadence, edit or remove the `schedule` block in that file.

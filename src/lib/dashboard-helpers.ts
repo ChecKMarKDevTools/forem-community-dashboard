@@ -177,7 +177,7 @@ export function getWhatsHappening(explanations?: string[]): string {
   if (heat >= 10) return "Replies are arriving faster than typical.";
   if (heat >= 5)
     return "Participants are reacting to each other more than the topic.";
-  if (support >= 3) return "People are waiting for guidance or clarification.";
+  if (support >= 3) return "People are waiting on feedback.";
   return "Tone is becoming sharper between participants.";
 }
 

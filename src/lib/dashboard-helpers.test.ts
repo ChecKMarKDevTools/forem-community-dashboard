@@ -328,7 +328,7 @@ describe("getWhatsHappening", () => {
 
   it("returns waiting observation for support >= 3", () => {
     expect(getWhatsHappening(["Support Score: 4"])).toBe(
-      "People are waiting for guidance or clarification.",
+      "People are waiting on feedback.",
     );
   });
 
