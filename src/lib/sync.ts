@@ -305,7 +305,7 @@ function classifyArticle(
 
   if (input.time_since_post >= 30 && input.support_score >= 3)
     return "NEEDS_RESPONSE";
-  if (input.risk_score >= 4) return "POSSIBLY_LOW_QUALITY";
+  if (input.risk_score >= 4) return "SIGNAL_AT_RISK";
   if (
     input.comment_count >= 6 &&
     input.heat_score >= 5 &&

@@ -123,26 +123,27 @@ Each article is classified at sync time (not at read time) into one of four atte
 
 ### Common Metrics
 
-| Metric               | Formula                                                                |
-| -------------------- | ---------------------------------------------------------------------- |
-| `word_count`         | Exact word count of the article body                                   |
-| `comments_per_hour`  | `comment_count / max(1, time_since_post / 60)`                         |
-| `avg_comment_length` | `total_comment_words / max(1, comment_count)`                          |
-| `reply_ratio`        | `replies_with_parent / max(1, comment_count)`                          |
-| `author_post_freq`   | Posts by the same author in the last 24 h                              |
-| `effort`             | `log2(word_count + 1) + unique_commenters + (avg_comment_length / 40)` |
-| `exposure`           | `max(1, reactions + comments)`                                         |
-| `attention_delta`    | `effort - log2(exposure + 1)`                                          |
+| Metric               | Formula                                                                | Importance/Explanation                                                                                  |
+| -------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `word_count`         | count of words in the article body                                     | Indicates content length; longer posts may need summarizing or more attention                           |
+| `comments_per_hour`  | `comment_count / max(1, time_since_post / 60)`                         | Measures the pace of discussion; higher rates show active conversations                                 |
+| `avg_comment_length` | `total_comment_words / max(1, comment_count)`                          | Reflects depth of responses; longer comments often mean more thoughtful engagement                      |
+| `reply_ratio`        | `replies_with_parent / max(1, comment_count)`                          | Shows how conversational the thread is, highlighting back-and-forth replies                             |
+| `author_post_freq`   | number of posts by the same author in the last 24 h                    | Helps spot potential spam or overly frequent posts by the same user                                     |
+| `effort`             | `log2(word_count + 1) + unique_commenters + (avg_comment_length / 40)` | Captures combined effort by author and commenters; higher effort signals more invested discussions      |
+| `exposure`           | `max(1, reactions + comments)`                                         | Shows overall visibility; higher exposure means more attention from the community                       |
+| `attention_delta`    | `effort – log2(exposure + 1)`                                          | Measures balance between effort and exposure; positive values suggest undervalued posts needing a boost |
+
 
 ### Categories
 
-| Category                 | Dashboard Label         | Key Conditions                                                                                                                  |
-| ------------------------ | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| **NEEDS_RESPONSE**       | Awaiting Collaboration  | `time_since_post >= 30 min` AND `support_score >= 3` (first post, no reactions, no comments, help words)                        |
-| **POSSIBLY_LOW_QUALITY** | Anomalous Signal        | `risk_score >= 4` (high post freq, short body, no engagement, author promo keywords, repeated links, minus engagement credit)   |
-| **NEEDS_REVIEW**         | Rapid Discussion        | `comments >= 6` AND `heat_score >= 5` AND `reactions / comments < 1.2`                                                          |
-| **BOOST_VISIBILITY**     | Trending Signal         | `word_count >= 600` AND `unique_commenters >= 2` AND `avg_comment_length >= 18` AND `reactions <= 5` AND `attention_delta >= 3` |
-| **NORMAL**               | Steady Signal           | Default when no category thresholds are met; also forced for `devteam` org posts (weekly threads, challenges)                   |
+| Category                 | Dashboard Label        | Key Conditions                                                                                                                  |
+| ------------------------ | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| **NEEDS_RESPONSE**       | Awaiting Collaboration | `time_since_post >= 30 min` AND `support_score >= 3` (first post, no reactions, no comments, help words)                        |
+| **SIGNAL_AT_RISK** | Anomalous Signal       | `risk_score >= 4` (high post freq, short body, no engagement, author promo keywords, repeated links, minus engagement credit)   |
+| **NEEDS_REVIEW**         | Rapid Discussion       | `comments >= 6` AND `heat_score >= 5` AND `reactions / comments < 1.2`                                                          |
+| **BOOST_VISIBILITY**     | Trending Signal        | `word_count >= 600` AND `unique_commenters >= 2` AND `avg_comment_length >= 18` AND `reactions <= 5` AND `attention_delta >= 3` |
+| **NORMAL**               | Steady Signal          | Default when no category thresholds are met; also forced for `devteam` org posts (weekly threads, challenges)                   |
 
 ### Sub-Scores
 

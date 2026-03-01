@@ -28,7 +28,7 @@ describe("getAttentionVariant", () => {
     expect(getAttentionVariant("BOOST_VISIBILITY")).toBe("info");
     expect(getAttentionVariant("NEEDS_RESPONSE")).toBe("teal");
     expect(getAttentionVariant("NEEDS_REVIEW")).toBe("attention");
-    expect(getAttentionVariant("POSSIBLY_LOW_QUALITY")).toBe("critical");
+    expect(getAttentionVariant("SIGNAL_AT_RISK")).toBe("critical");
   });
 
   it("returns neutral for unknown levels", () => {
@@ -43,7 +43,7 @@ describe("getCategoryLabel", () => {
     expect(getCategoryLabel("BOOST_VISIBILITY")).toBe("Trending Signal");
     expect(getCategoryLabel("NEEDS_RESPONSE")).toBe("Awaiting Collaboration");
     expect(getCategoryLabel("NEEDS_REVIEW")).toBe("Rapid Discussion");
-    expect(getCategoryLabel("POSSIBLY_LOW_QUALITY")).toBe("Anomalous Signal");
+    expect(getCategoryLabel("SIGNAL_AT_RISK")).toBe("Anomalous Signal");
   });
 
   it("returns default label for unknown levels", () => {
@@ -61,7 +61,7 @@ describe("getRecentPostBadgeVariant", () => {
     expect(getRecentPostBadgeVariant("BOOST_VISIBILITY")).toBe("info");
     expect(getRecentPostBadgeVariant("NEEDS_RESPONSE")).toBe("teal");
     expect(getRecentPostBadgeVariant("NEEDS_REVIEW")).toBe("attention");
-    expect(getRecentPostBadgeVariant("POSSIBLY_LOW_QUALITY")).toBe("critical");
+    expect(getRecentPostBadgeVariant("SIGNAL_AT_RISK")).toBe("critical");
   });
 
   it("returns outline for unknown levels (defaults to neutral → outline)", () => {
@@ -442,7 +442,7 @@ describe("sortByAttentionPriority", () => {
       makePost(1, "NORMAL", 100),
       makePost(2, "NEEDS_RESPONSE", 10),
       makePost(3, "BOOST_VISIBILITY", 30),
-      makePost(4, "POSSIBLY_LOW_QUALITY", 20),
+      makePost(4, "SIGNAL_AT_RISK", 20),
       makePost(5, "NEEDS_REVIEW", 40),
     ];
     const sorted = sortByAttentionPriority(posts);
@@ -491,7 +491,7 @@ describe("constants", () => {
       "BOOST_VISIBILITY",
       "NEEDS_RESPONSE",
       "NEEDS_REVIEW",
-      "POSSIBLY_LOW_QUALITY",
+      "SIGNAL_AT_RISK",
     ]);
   });
 
@@ -515,9 +515,9 @@ describe("constants", () => {
 
   it("ATTENTION_PRIORITY has ascending values for decreasing urgency", () => {
     expect(ATTENTION_PRIORITY.NEEDS_RESPONSE).toBeLessThan(
-      ATTENTION_PRIORITY.POSSIBLY_LOW_QUALITY,
+      ATTENTION_PRIORITY.SIGNAL_AT_RISK,
     );
-    expect(ATTENTION_PRIORITY.POSSIBLY_LOW_QUALITY).toBeLessThan(
+    expect(ATTENTION_PRIORITY.SIGNAL_AT_RISK).toBeLessThan(
       ATTENTION_PRIORITY.BOOST_VISIBILITY,
     );
     expect(ATTENTION_PRIORITY.BOOST_VISIBILITY).toBeLessThan(

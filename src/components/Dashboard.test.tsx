@@ -181,14 +181,14 @@ describe("Dashboard Component", () => {
     });
   });
 
-  it("displays POSSIBLY_LOW_QUALITY category correctly", async () => {
+  it("displays SIGNAL_AT_RISK category correctly", async () => {
     const lowQPosts = [
       {
         id: 6,
         title: "Buy crypto now",
         canonical_url: "https://dev.to/test/post-6",
         score: 5,
-        attention_level: "POSSIBLY_LOW_QUALITY",
+        attention_level: "SIGNAL_AT_RISK",
         explanations: ["Risk Score: 8"],
         published_at: "2023-10-27T10:00:00Z",
         author: "spammer",
@@ -202,7 +202,7 @@ describe("Dashboard Component", () => {
     render(<Dashboard />);
 
     await waitFor(() => {
-      // POSSIBLY_LOW_QUALITY triggers "Anomalous Signal"
+      // SIGNAL_AT_RISK triggers "Anomalous Signal"
       expect(screen.getByText("Anomalous Signal")).toBeInTheDocument();
     });
   });
@@ -255,7 +255,7 @@ describe("Dashboard Component", () => {
         ...mockPosts[0],
         id: 14,
         title: "Low quality",
-        attention_level: "POSSIBLY_LOW_QUALITY",
+        attention_level: "SIGNAL_AT_RISK",
         score: 5,
       },
     ];

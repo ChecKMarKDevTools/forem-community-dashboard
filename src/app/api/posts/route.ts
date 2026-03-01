@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabase";
  *
  * Returns the top 50 articles from the 7-day sync window, ordered so that
  * actionable categories surface first:
- *   1. Non-NORMAL articles (NEEDS_RESPONSE, POSSIBLY_LOW_QUALITY,
+ *   1. Non-NORMAL articles (NEEDS_RESPONSE, SIGNAL_AT_RISK,
  *      NEEDS_REVIEW, BOOST_VISIBILITY) — highest-score first within group
  *   2. NORMAL articles — highest-score first, filling up to the 50 limit
  *
