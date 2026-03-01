@@ -6,6 +6,7 @@ import {
 } from "@/lib/forem";
 import { supabase } from "@/lib/supabase";
 import type { AttentionCategory } from "@/types/dashboard";
+import type { ArticleMetrics } from "@/types/metrics";
 
 export interface SyncResult {
   synced: number;
@@ -122,6 +123,9 @@ interface CommentMetrics {
   promo_keywords: number;
   help_keywords: number;
   externalDomainCounts: Map<string, number>;
+  comment_timestamps: Date[];
+  commenter_comment_counts: Map<string, number>;
+  comment_depths: Array<{ timestamp: Date; depth: number }>;
 }
 
 function createEmptyMetrics(): CommentMetrics {
@@ -135,6 +139,9 @@ function createEmptyMetrics(): CommentMetrics {
     promo_keywords: 0,
     help_keywords: 0,
     externalDomainCounts: new Map<string, number>(),
+    comment_timestamps: [],
+    commenter_comment_counts: new Map<string, number>(),
+    comment_depths: [],
   };
 }
 
@@ -181,12 +188,24 @@ function processOneComment(
   articleAuthor: string,
   metrics: CommentMetrics,
   parentAuthor?: string,
+  depth: number = 0,
 ): void {
   const commenter = c.user.username;
   metrics.uniqueCommenters.add(commenter);
 
   const txt = c.body_html.toLowerCase();
   metrics.totalCommentWords += countWords(c.body_html);
+
+  // Track timestamp and depth for velocity/constructiveness buckets
+  const commentDate = new Date(c.created_at);
+  metrics.comment_timestamps.push(commentDate);
+  metrics.comment_depths.push({ timestamp: commentDate, depth });
+
+  // Track per-commenter comment counts for participation distribution
+  metrics.commenter_comment_counts.set(
+    commenter,
+    (metrics.commenter_comment_counts.get(commenter) ?? 0) + 1,
+  );
 
   if (parentAuthor) {
     metrics.replies_with_parent++;
@@ -207,11 +226,18 @@ function processCommentTree(
   articleAuthor: string,
   metrics: CommentMetrics,
   parentAuthor?: string,
+  depth: number = 0,
 ): void {
   for (const c of thread) {
-    processOneComment(c, articleAuthor, metrics, parentAuthor);
+    processOneComment(c, articleAuthor, metrics, parentAuthor, depth);
     if (c.children && c.children.length > 0) {
-      processCommentTree(c.children, articleAuthor, metrics, c.user.username);
+      processCommentTree(
+        c.children,
+        articleAuthor,
+        metrics,
+        c.user.username,
+        depth + 1,
+      );
     }
   }
 }
@@ -343,6 +369,158 @@ function computeDerivedMetrics(
   };
 }
 
+// ---------------------------------------------------------------------------
+// ArticleMetrics builder helpers
+// ---------------------------------------------------------------------------
+
+const MAX_VELOCITY_BUCKETS = 48;
+
+/** Bucket comment timestamps into hourly bins relative to article publication. */
+export function buildVelocityBuckets(
+  timestamps: ReadonlyArray<Date>,
+  publishedAt: string,
+): Array<{ hour: number; count: number }> {
+  const pubTime = new Date(publishedAt).getTime();
+  const bucketMap = new Map<number, number>();
+  for (const ts of timestamps) {
+    const hoursSincePost = Math.floor(
+      (ts.getTime() - pubTime) / (1000 * 60 * 60),
+    );
+    const hour = Math.max(0, hoursSincePost);
+    bucketMap.set(hour, (bucketMap.get(hour) ?? 0) + 1);
+  }
+  return Array.from(bucketMap.entries())
+    .toSorted(([a], [b]) => a - b)
+    .slice(0, MAX_VELOCITY_BUCKETS)
+    .map(([hour, count]) => ({ hour, count }));
+}
+
+/** Build constructiveness buckets: average reply depth per hour. */
+export function buildConstructivenessBuckets(
+  commentDepths: ReadonlyArray<{ timestamp: Date; depth: number }>,
+  publishedAt: string,
+): Array<{ hour: number; depth_index: number }> {
+  const pubTime = new Date(publishedAt).getTime();
+  const bucketMap = new Map<number, { totalDepth: number; count: number }>();
+  for (const { timestamp, depth } of commentDepths) {
+    const hour = Math.max(
+      0,
+      Math.floor((timestamp.getTime() - pubTime) / (1000 * 60 * 60)),
+    );
+    const existing = bucketMap.get(hour) ?? { totalDepth: 0, count: 0 };
+    existing.totalDepth += depth;
+    existing.count += 1;
+    bucketMap.set(hour, existing);
+  }
+  return Array.from(bucketMap.entries())
+    .toSorted(([a], [b]) => a - b)
+    .slice(0, MAX_VELOCITY_BUCKETS)
+    .map(([hour, { totalDepth, count }]) => ({
+      hour,
+      depth_index: count > 0 ? totalDepth / count : 0,
+    }));
+}
+
+/** Build top-5 commenter share distribution. */
+export function buildCommenterShares(
+  commenterCounts: ReadonlyMap<string, number>,
+  totalComments: number,
+): Array<{ username: string; share: number }> {
+  if (totalComments === 0) return [];
+  return Array.from(commenterCounts.entries())
+    .toSorted(([, a], [, b]) => b - a)
+    .slice(0, 5)
+    .map(([username, count]) => ({
+      username,
+      share: count / totalComments,
+    }));
+}
+
+/** Compute sentiment percentages from pos/neg counts and total comments. */
+export function buildSentimentSpread(
+  posComments: number,
+  negComments: number,
+  totalComments: number,
+): { positive_pct: number; neutral_pct: number; negative_pct: number } {
+  if (totalComments === 0) {
+    return { positive_pct: 0, neutral_pct: 100, negative_pct: 0 };
+  }
+  const positive_pct = (posComments / totalComments) * 100;
+  const negative_pct = (negComments / totalComments) * 100;
+  const neutral_pct = Math.max(0, 100 - positive_pct - negative_pct);
+  return { positive_pct, neutral_pct, negative_pct };
+}
+
+/** Assemble the full ArticleMetrics object from comment tree data. */
+interface BuildMetricsInput {
+  readonly metrics: CommentMetrics;
+  readonly publishedAt: string;
+  readonly commentCount: number;
+  readonly ageHours: number;
+  readonly riskScore: number;
+  readonly frequencyPenalty: number;
+  readonly engagementCredit: number;
+  readonly wordCount: number;
+  readonly reactionCount: number;
+  readonly repeatedLinks: number;
+  readonly isFirstPost: boolean;
+}
+
+export function buildArticleMetrics(
+  input: Readonly<BuildMetricsInput>,
+): ArticleMetrics {
+  const { metrics, publishedAt, commentCount, ageHours } = input;
+
+  const velocityBuckets = buildVelocityBuckets(
+    metrics.comment_timestamps,
+    publishedAt,
+  );
+  const constructivenessBuckets = buildConstructivenessBuckets(
+    metrics.comment_depths,
+    publishedAt,
+  );
+  const commenterShares = buildCommenterShares(
+    metrics.commenter_comment_counts,
+    commentCount,
+  );
+  const sentiment = buildSentimentSpread(
+    metrics.pos_comments,
+    metrics.neg_comments,
+    commentCount,
+  );
+
+  const commentsPerHour = commentCount / Math.max(1, ageHours);
+  const avgCommentLength =
+    commentCount > 0 ? metrics.totalCommentWords / commentCount : 0;
+  const replyRatio = metrics.replies_with_parent / Math.max(1, commentCount);
+  const sentimentFlips = Math.abs(metrics.pos_comments - metrics.neg_comments);
+
+  return {
+    velocity_buckets: velocityBuckets,
+    comments_per_hour: commentsPerHour,
+    commenter_shares: commenterShares,
+    positive_pct: sentiment.positive_pct,
+    neutral_pct: sentiment.neutral_pct,
+    negative_pct: sentiment.negative_pct,
+    constructiveness_buckets: constructivenessBuckets,
+    avg_comment_length: avgCommentLength,
+    reply_ratio: replyRatio,
+    alternating_pairs: metrics.alternating_pairs,
+    risk_components: {
+      frequency_penalty: input.frequencyPenalty,
+      short_content: input.wordCount < 120,
+      no_engagement: input.reactionCount === 0 && commentCount === 0,
+      promo_keywords: metrics.promo_keywords,
+      repeated_links: input.repeatedLinks,
+      engagement_credit: input.engagementCredit,
+    },
+    risk_score: input.riskScore,
+    sentiment_flips: sentimentFlips,
+    is_first_post: input.isFirstPost,
+    help_keywords: metrics.help_keywords,
+  };
+}
+
 /** Bundled inputs for the deep-scoring function (S107: max 7 params) */
 interface DeepScoreInput {
   readonly article: ForemArticle;
@@ -447,6 +625,20 @@ async function deepScoreAndPersist(
     `Support Score: ${support_score}`,
   ];
 
+  const articleMetrics = buildArticleMetrics({
+    metrics,
+    publishedAt: article.published_at,
+    commentCount: comment_count,
+    ageHours: age_hours,
+    riskScore: risk_score,
+    frequencyPenalty: frequency_penalty,
+    engagementCredit: engagement_credit,
+    wordCount: word_count,
+    reactionCount: reaction_count,
+    repeatedLinks: repeated_links,
+    isFirstPost: is_first_post,
+  });
+
   const { error: articleError } = await supabase.from("articles").upsert({
     id: article.id,
     author: username,
@@ -461,6 +653,7 @@ async function deepScoreAndPersist(
     explanations: explanations,
     title: article.title,
     updated_at: new Date().toISOString(),
+    metrics: articleMetrics,
   });
 
   if (articleError) throw new Error(articleError.message);
