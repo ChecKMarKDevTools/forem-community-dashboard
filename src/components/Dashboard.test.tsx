@@ -655,7 +655,7 @@ describe("Dashboard Component", () => {
     });
 
     expect(
-      screen.getByText("Tone is becoming sharper between participants."),
+      screen.getByText("It's pretty quiet—just routine discussion so far."),
     ).toBeInTheDocument();
   });
 

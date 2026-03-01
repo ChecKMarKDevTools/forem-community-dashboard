@@ -178,7 +178,7 @@ export function getWhatsHappening(explanations?: string[]): string {
   if (heat >= 5)
     return "Participants are reacting to each other more than the topic.";
   if (support >= 3) return "People are waiting on feedback.";
-  return "Tone is becoming sharper between participants.";
+  return "It's pretty quiet—just routine discussion so far.";
 }
 
 /** Hover-text descriptions for each signal in the Conversation Pattern Signals card. */

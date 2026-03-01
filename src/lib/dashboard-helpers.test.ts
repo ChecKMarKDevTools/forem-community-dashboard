@@ -339,12 +339,12 @@ describe("getWhatsHappening", () => {
         "Risk Score: 0",
         "Support Score: 1",
       ]),
-    ).toBe("Tone is becoming sharper between participants.");
+    ).toBe("It's pretty quiet—just routine discussion so far.");
   });
 
   it("returns default observation for undefined explanations", () => {
     expect(getWhatsHappening(undefined)).toBe(
-      "Tone is becoming sharper between participants.",
+      "It's pretty quiet—just routine discussion so far.",
     );
   });
 });
