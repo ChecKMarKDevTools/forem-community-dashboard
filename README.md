@@ -7,9 +7,7 @@
 <td><b>Community</b></td>
 <td>
 
-[![GitHub Stars](https://img.shields.io/github/stars/ChecKMarKDevTools/dev-community-dashboard?style=flat&logo=github&logoColor=white)](https://github.com/ChecKMarKDevTools/dev-community-dashboard/stargazers)
-[![License](https://img.shields.io/badge/License-PolyForm_Shield_1.0.0-blue?style=flat)](./LICENSE)
-[![DEV.to](https://img.shields.io/badge/DEV.to-anchildress1-0A0A0A?style=flat&logo=devdotto&logoColor=white)](https://dev.to/anchildress1)
+[![GitHub Stars](https://img.shields.io/github/stars/ChecKMarKDevTools/dev-community-dashboard?style=flat&logo=github&logoColor=white)](https://github.com/ChecKMarKDevTools/dev-community-dashboard/stargazers) [![License](https://img.shields.io/badge/License-PolyForm_Shield_1.0.0-blue?style=flat)](./LICENSE) [![DEV.to](https://img.shields.io/badge/DEV.to-anchildress1-0A0A0A?style=flat&logo=devdotto&logoColor=white)](https://dev.to/anchildress1)
 
 </td>
 </tr>
@@ -17,10 +15,7 @@
 <td><b>Pipeline</b></td>
 <td>
 
-[![CI](https://img.shields.io/github/actions/workflow/status/ChecKMarKDevTools/dev-community-dashboard/ci.yml?branch=main&style=flat&logo=githubactions&logoColor=white&label=CI)](https://github.com/ChecKMarKDevTools/dev-community-dashboard/actions/workflows/ci.yml)
-[![Cron Sync](https://img.shields.io/github/actions/workflow/status/ChecKMarKDevTools/dev-community-dashboard/cron.yml?branch=main&style=flat&logo=githubactions&logoColor=white&label=Cron%20Sync)](https://github.com/ChecKMarKDevTools/dev-community-dashboard/actions/workflows/cron.yml)
-[![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=ChecKMarKDevTools_forem-community-dashboard&metric=alert_status)](https://sonarcloud.io/summary/overall?id=ChecKMarKDevTools_forem-community-dashboard)
-[![SonarCloud Coverage](https://sonarcloud.io/api/project_badges/measure?project=ChecKMarKDevTools_forem-community-dashboard&metric=coverage)](https://sonarcloud.io/summary/overall?id=ChecKMarKDevTools_forem-community-dashboard)
+[![CI Build & Test](https://img.shields.io/github/actions/workflow/status/ChecKMarKDevTools/dev-community-dashboard/ci.yml?branch=main&style=flat&logo=githubactions&logoColor=white&label=CI)](https://github.com/ChecKMarKDevTools/dev-community-dashboard/actions/workflows/ci.yml) [![DEV Post Sync](https://img.shields.io/github/actions/workflow/status/ChecKMarKDevTools/dev-community-dashboard/cron.yml?branch=main&style=flat&logo=githubactions&logoColor=white&label=Cron%20Sync)](https://github.com/ChecKMarKDevTools/dev-community-dashboard/actions/workflows/cron.yml) [![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=ChecKMarKDevTools_forem-community-dashboard&metric=alert_status)](https://sonarcloud.io/summary/overall?id=ChecKMarKDevTools_forem-community-dashboard) [![SonarCloud Coverage](https://sonarcloud.io/api/project_badges/measure?project=ChecKMarKDevTools_forem-community-dashboard&metric=coverage)](https://sonarcloud.io/summary/overall?id=ChecKMarKDevTools_forem-community-dashboard)
 
 </td>
 </tr>
@@ -28,12 +23,7 @@
 <td><b>Scans</b></td>
 <td>
 
-[![TruffleHog](https://img.shields.io/badge/TruffleHog-Secret_Scan-000000?style=flat&logo=trufflehog&logoColor=white)](https://trufflesecurity.com/trufflehog)
-[![Semgrep](https://img.shields.io/badge/Semgrep-SAST-4B11A8?style=flat&logo=semgrep&logoColor=white)](https://semgrep.dev)
-[![Hadolint](https://img.shields.io/badge/Hadolint-Dockerfile_Lint-2496ED?style=flat&logo=docker&logoColor=white)](https://github.com/hadolint/hadolint)
-[![actionlint](https://img.shields.io/badge/actionlint-GHA_Lint-2088FF?style=flat&logo=githubactions&logoColor=white)](https://github.com/rhysd/actionlint)
-[![Stylelint](https://img.shields.io/badge/Stylelint-CSS_Lint-263238?style=flat&logo=stylelint&logoColor=white)](https://stylelint.io)
-[![Lighthouse](https://img.shields.io/badge/Lighthouse-A11y_≥90-F44B21?style=flat&logo=lighthouse&logoColor=white)](https://developer.chrome.com/docs/lighthouse)
+[![TruffleHog](https://img.shields.io/badge/TruffleHog-Secret_Scan-000000?style=flat&logo=trufflehog&logoColor=white)](https://trufflesecurity.com/trufflehog) [![Semgrep](https://img.shields.io/badge/Semgrep-SAST-4B11A8?style=flat&logo=semgrep&logoColor=white)](https://semgrep.dev) [![Hadolint](https://img.shields.io/badge/Hadolint-Dockerfile_Lint-2496ED?style=flat&logo=docker&logoColor=white)](https://github.com/hadolint/hadolint) [![actionlint](https://img.shields.io/badge/actionlint-GHA_Lint-2088FF?style=flat&logo=githubactions&logoColor=white)](https://github.com/rhysd/actionlint) [![Stylelint](https://img.shields.io/badge/Stylelint-CSS_Lint-263238?style=flat&logo=stylelint&logoColor=white)](https://stylelint.io) [![Lighthouse](https://img.shields.io/badge/Lighthouse-A11y_100%25-F44B21?style=flat&logo=lighthouse&logoColor=white)](https://developer.chrome.com/docs/lighthouse)
 
 </td>
 </tr>
@@ -41,14 +31,7 @@
 <td><b>Stack</b></td>
 <td>
 
-[![Next.js](https://img.shields.io/badge/Next.js-16-000000?style=flat&logo=nextdotjs&logoColor=white)](https://nextjs.org)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?style=flat&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
-[![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3FCF8E?style=flat&logo=supabase&logoColor=white)](https://supabase.com)
-[![Vitest](https://img.shields.io/badge/Vitest-Testing-6E9F18?style=flat&logo=vitest&logoColor=white)](https://vitest.dev)
-[![pnpm](https://img.shields.io/badge/pnpm-Package_Manager-F69220?style=flat&logo=pnpm&logoColor=white)](https://pnpm.io)
-[![Docker](https://img.shields.io/badge/Docker-Container-2496ED?style=flat&logo=docker&logoColor=white)](https://www.docker.com)
-[![Google Cloud Run](https://img.shields.io/badge/Cloud_Run-Deployment-4285F4?style=flat&logo=googlecloud&logoColor=white)](https://cloud.google.com/run)
+[![Next.js](https://img.shields.io/badge/Next.js-16-000000?style=flat&logo=nextdotjs&logoColor=white)](https://nextjs.org) [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org) [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?style=flat&logo=tailwindcss&logoColor=white)](https://tailwindcss.com) [![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3FCF8E?style=flat&logo=supabase&logoColor=white)](https://supabase.com) [![Vitest](https://img.shields.io/badge/Vitest-Testing-6E9F18?style=flat&logo=vitest&logoColor=white)](https://vitest.dev) [![pnpm](https://img.shields.io/badge/pnpm-Package_Manager-F69220?style=flat&logo=pnpm&logoColor=white)](https://pnpm.io) [![Docker](https://img.shields.io/badge/Docker-Container-2496ED?style=flat&logo=docker&logoColor=white)](https://www.docker.com) [![Google Cloud Run](https://img.shields.io/badge/Cloud_Run-Deployment-4285F4?style=flat&logo=googlecloud&logoColor=white)](https://cloud.google.com/run)
 
 </td>
 </tr>
@@ -56,11 +39,7 @@
 <td><b>Code Quality</b></td>
 <td>
 
-[![ESLint](https://img.shields.io/badge/ESLint-Linting-4B32C3?style=flat&logo=eslint&logoColor=white)](https://eslint.org)
-[![Prettier](https://img.shields.io/badge/Prettier-Formatting-F7B93E?style=flat&logo=prettier&logoColor=black)](https://prettier.io)
-[![Conventional Commits](https://img.shields.io/badge/Conventional_Commits-1.0.0-FE5196?style=flat&logo=conventionalcommits&logoColor=white)](https://www.conventionalcommits.org)
-[![Lefthook](https://img.shields.io/badge/Lefthook-Git_Hooks-FF1E1E?style=flat&logo=git&logoColor=white)](https://github.com/evilmartians/lefthook)
-[![Makefile](https://img.shields.io/badge/Makefile-Build-427819?style=flat&logo=gnu&logoColor=white)](https://www.gnu.org/software/make/)
+[![ESLint](https://img.shields.io/badge/ESLint-Linting-4B32C3?style=flat&logo=eslint&logoColor=white)](https://eslint.org) [![Prettier](https://img.shields.io/badge/Prettier-Formatting-F7B93E?style=flat&logo=prettier&logoColor=black)](https://prettier.io) [![Conventional Commits](https://img.shields.io/badge/Conventional_Commits-1.0.0-FE5196?style=flat&logo=conventionalcommits&logoColor=white)](https://www.conventionalcommits.org) [![Lefthook](https://img.shields.io/badge/Lefthook-Git_Hooks-FF1E1E?style=flat&logo=git&logoColor=white)](https://github.com/evilmartians/lefthook) [![Makefile](https://img.shields.io/badge/Makefile-Build-427819?style=flat&logo=gnu&logoColor=white)](https://www.gnu.org/software/make/)
 
 </td>
 </tr>
@@ -68,10 +47,7 @@
 <td><b>AI</b></td>
 <td>
 
-[![Claude](https://img.shields.io/badge/Claude-Anthropic-D97757?style=flat&logo=anthropic&logoColor=white)](https://claude.ai)
-[![ChatGPT](https://img.shields.io/badge/ChatGPT-OpenAI-74AA9C?style=flat&logo=openai&logoColor=white)](https://chat.openai.com)
-[![Google Gemini](https://img.shields.io/badge/Gemini-Google-8E75B2?style=flat&logo=googlegemini&logoColor=white)](https://gemini.google.com)
-[![Leonardo.ai](https://img.shields.io/badge/Leonardo.ai-Seedream_4.5-7C3AED?style=flat&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiPjxjaXJjbGUgY3g9IjEyIiBjeT0iMTIiIHI9IjEwIi8+PC9zdmc+&logoColor=white)](https://leonardo.ai)
+[![Claude](https://img.shields.io/badge/Claude-Anthropic-D97757?style=flat&logo=anthropic&logoColor=white)](https://claude.ai) [![ChatGPT](https://img.shields.io/badge/ChatGPT-OpenAI-74AA9C?style=flat&logo=openai&logoColor=white)](https://chat.openai.com) [![Google Gemini](https://img.shields.io/badge/Gemini-Google-8E75B2?style=flat&logo=googlegemini&logoColor=white)](https://gemini.google.com) [![Leonardo.ai](https://img.shields.io/badge/Leonardo.ai-Seedream_4.5-7C3AED?style=flat&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiPjxjaXJjbGUgY3g9IjEyIiBjeT0iMTIiIHI9IjEwIi8+PC9zdmc+&logoColor=white)](https://leonardo.ai)
 
 </td>
 </tr>
@@ -79,8 +55,7 @@
 <td><b>Support</b></td>
 <td>
 
-[![Sponsor](https://img.shields.io/badge/Sponsor-GitHub_Sponsors-EA4AAA?style=flat&logo=githubsponsors&logoColor=white)](https://github.com/sponsors/anchildress1)
-[![Buy Me a Coffee](https://img.shields.io/badge/Buy_Me_a_Coffee-Support-FFDD00?style=flat&logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/anchildress1)
+[![Sponsor](https://img.shields.io/badge/Sponsor-GitHub_Sponsors-EA4AAA?style=flat&logo=githubsponsors&logoColor=white)](https://github.com/sponsors/anchildress1) [![Buy Me a Coffee](https://img.shields.io/badge/Buy_Me_a_Coffee-Support-FFDD00?style=flat&logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/anchildress1)
 
 </td>
 </tr>
@@ -222,13 +197,13 @@ Each article is classified at sync time (not at read time) into one of four atte
 
 ### Categories
 
-| Category             | Dashboard Label        | Key Conditions                                                                                                                  |
-| -------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| **NEEDS_RESPONSE**   | Awaiting Collaboration | `time_since_post >= 30 min` AND `support_score >= 3` (first post, no reactions, no comments, help words)                        |
-| **SIGNAL_AT_RISK**   | Anomalous Signal       | `risk_score >= 4` (high post freq, short body, no engagement, author promo keywords, repeated links, minus engagement credit)   |
-| **NEEDS_REVIEW**     | Rapid Discussion       | `comments >= 6` AND `heat_score >= 5` AND `reactions / comments < 1.2`                                                          |
-| **BOOST_VISIBILITY** | Trending Signal        | `word_count >= 600` AND `unique_commenters >= 2` AND `avg_comment_length >= 18` AND `reactions <= 5` AND `attention_delta >= 3` |
-| **NORMAL**           | Steady Signal          | Default when no category thresholds are met; also forced for `devteam` org posts (weekly threads, challenges)                   |
+| Dashboard Label            | Category         | Key Conditions                                                                                                                  | Interpretation                                                                                                                     |
+| -------------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| **Awaiting Collaboration** | NEEDS_RESPONSE   | `time_since_post >= 30 min` AND `support_score >= 3` (first post, no reactions, no comments, help words)                        | The post hasn’t received meaningful replies yet. It likely needs someone to step in and start the conversation.                    |
+| **Anomalous Signal**       | SIGNAL_AT_RISK   | `risk_score >= 4` (high post freq, short body, no engagement, author promo keywords, repeated links, minus engagement credit)   | Something looks off compared to normal behavior. It may be harmless, but a human should double-check.                              |
+| **Rapid Discussion**       | NEEDS_REVIEW     | `comments >= 6` AND `heat_score >= 5` AND `reactions / comments < 1.2`                                                          | The thread is active but unclear. People are talking, just not necessarily about the same thing yet.                               |
+| **Trending Signal**        | BOOST_VISIBILITY | `word_count >= 600` AND `unique_commenters >= 2` AND `avg_comment_length >= 18` AND `reactions <= 5` AND `attention_delta >= 3` | The content is useful but under-seen. A little amplification could help the right people find it.                                  |
+| **Steady Signal**          | NORMAL           | Default when no category thresholds are met; also forced for `devteam` org posts (weekly threads, challenges)                   | Routine community activity. Nothing unusual happening, including regular community threads like weekly discussions and challenges. |
 
 ### Sub-Scores
 
@@ -264,6 +239,21 @@ The detail panel renders five chart types for each post. These show motion and t
 | **Contributing Signals**       | `MarkerTimeline`     | `risk_components`               | The specific risk factors detected; each marker shows a signal that raised the risk score |
 
 All charts are custom SVG components with zero external chart dependencies. They use the CSS custom property theme (`--chart-grid`, `--chart-axis`, `--chart-series-primary/secondary/tertiary`) for automatic light/dark mode support.
+
+### Contributing Signals
+
+The **Contributing Signals** timeline shows which of the six signals actually triggered for a given post. Each signal is either active (raised the risk score) or inactive (checked but not triggered). Hovering over a signal marker in the UI surfaces the matched value so you can understand _why_ a post received the score it did.
+
+| Signal                   | Field               | Active When                                                                                  | Score Contribution                                           |
+| ------------------------ | ------------------- | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| **Frequency Penalty**    | `frequency_penalty` | Author published > 2 posts in the last 24 h                                                  | `max(0, post_count − 2) × 2` added to risk score             |
+| **Short Content**        | `short_content`     | Article body is fewer than 120 words                                                         | +2 to risk score                                             |
+| **No Engagement**        | `no_engagement`     | Zero reactions _and_ zero comments at sync time                                              | +2 to risk score                                             |
+| **Promotional Keywords** | `promo_keywords`    | Article author's own comments contain words like "subscribe", "buy", "follow", "link in bio" | +1 per matched keyword added to risk score                   |
+| **Repeated Links**       | `repeated_links`    | Any external domain appears in comments more than twice                                      | +2 to risk score (capped; triggers once per post)            |
+| **Engagement Credit**    | `engagement_credit` | Post has ≥ 10 reactions _or_ ≥ 5 unique commenters                                           | −2 (reactions) or −1 (commenters) subtracted from risk score |
+
+A post reaches **Anomalous Signal** (`SIGNAL_AT_RISK`) when its total risk score is ≥ 4 after summing all active signals and subtracting any engagement credit. The `engagement_credit` signal works in reverse — it is the only signal that _lowers_ the score, preventing high-engagement posts from being flagged.
 
 ---
 
@@ -361,7 +351,7 @@ Three workflows live in `.github/workflows/`. All CI checks run in `ci.yml`; do 
 
 ### Lighthouse CI
 
-Lighthouse runs as the last step in `ci.yml` (`pnpm lhci:desktop`). Results are written to `.lighthouseci/` (filesystem target — no external upload service or status-check callback). Minimum thresholds: performance ≥ 0.90 (desktop), accessibility ≥ 0.90, best-practices ≥ 0.90, SEO ≥ 0.90. The `.lighthouseci/` directory is git-ignored.
+Lighthouse runs as the last step in `ci.yml` (`pnpm lhci:desktop`). Results are written to `.lighthouseci/` (filesystem target — no external upload service or status-check callback). Minimum thresholds: performance ≥ 0.90 (desktop), accessibility = 1.0 (100%), best-practices = 1.0 (100%), SEO ≥ 0.90. The `.lighthouseci/` directory is git-ignored.
 
 ---
 
