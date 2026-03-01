@@ -4,7 +4,8 @@
 
 | Version  | Supported |
 | -------- | --------- |
-| v1.0.0   | Yes       |
+| v2.0.0   | Yes       |
+| v1.0.0   | No        |
 | < v1.0.0 | No        |
 
 `main` tracks the latest release. Older releases are not patched retroactively.

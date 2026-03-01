@@ -21,7 +21,7 @@
 <td><b>Scans</b></td>
 <td>
 
-[![TruffleHog](https://img.shields.io/badge/TruffleHog-Secret_Scan-000000?style=flat&logo=trufflehog&logoColor=white)](https://trufflesecurity.com/trufflehog) [![Semgrep](https://img.shields.io/badge/Semgrep-SAST-4B11A8?style=flat&logo=semgrep&logoColor=white)](https://semgrep.dev) [![Hadolint](https://img.shields.io/badge/Hadolint-Dockerfile_Lint-2496ED?style=flat&logo=docker&logoColor=white)](https://github.com/hadolint/hadolint) [![actionlint](https://img.shields.io/badge/actionlint-GHA_Lint-2088FF?style=flat&logo=githubactions&logoColor=white)](https://github.com/rhysd/actionlint) [![Stylelint](https://img.shields.io/badge/Stylelint-CSS_Lint-263238?style=flat&logo=stylelint&logoColor=white)](https://stylelint.io) [![Lighthouse](https://img.shields.io/badge/Lighthouse-A11y_100%25-F44B21?style=flat&logo=lighthouse&logoColor=white)](https://developer.chrome.com/docs/lighthouse)
+[![TruffleHog](https://img.shields.io/badge/TruffleHog-Secret_Scan-000000?style=flat&logo=trufflehog&logoColor=white)](https://trufflesecurity.com/trufflehog) [![Semgrep](https://img.shields.io/badge/Semgrep-SAST-4B11A8?style=flat&logo=semgrep&logoColor=white)](https://semgrep.dev) [![CodeQL](https://img.shields.io/badge/CodeQL-Security_Analysis-222222?style=flat&logo=github&logoColor=white)](https://github.com/ChecKMarKDevTools/dev-community-dashboard/security/code-scanning) [![Hadolint](https://img.shields.io/badge/Hadolint-Dockerfile_Lint-2496ED?style=flat&logo=docker&logoColor=white)](https://github.com/hadolint/hadolint) [![actionlint](https://img.shields.io/badge/actionlint-GHA_Lint-2088FF?style=flat&logo=githubactions&logoColor=white)](https://github.com/rhysd/actionlint) [![Stylelint](https://img.shields.io/badge/Stylelint-CSS_Lint-263238?style=flat&logo=stylelint&logoColor=white)](https://stylelint.io) [![Lighthouse](https://img.shields.io/badge/Lighthouse-A11y_100%25-F44B21?style=flat&logo=lighthouse&logoColor=white)](https://developer.chrome.com/docs/lighthouse)
 
 </td>
 </tr>
@@ -45,7 +45,7 @@
 <td><b>AI</b></td>
 <td>
 
-[![Claude](https://img.shields.io/badge/Claude-Anthropic-D97757?style=flat&logo=anthropic&logoColor=white)](https://claude.ai) [![ChatGPT](https://img.shields.io/badge/ChatGPT-OpenAI-74AA9C?style=flat&logo=openai&logoColor=white)](https://chat.openai.com) [![gpt-5-nano](https://img.shields.io/badge/gpt--5--nano-Interaction_Signal-74AA9C?style=flat&logo=openai&logoColor=white)](https://platform.openai.com/docs/models) [![Google Gemini](https://img.shields.io/badge/Gemini-Google-8E75B2?style=flat&logo=googlegemini&logoColor=white)](https://gemini.google.com) [![Leonardo.ai](https://img.shields.io/badge/Leonardo.ai-Seedream_4.5-7C3AED?style=flat&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiPjxjaXJjbGUgY3g9IjEyIiBjeT0iMTIiIHI9IjEwIi8+PC9zdmc+&logoColor=white)](https://leonardo.ai)
+[![Claude](https://img.shields.io/badge/Claude-Anthropic-D97757?style=flat&logo=anthropic&logoColor=white)](https://claude.ai) [![ChatGPT](https://img.shields.io/badge/ChatGPT-OpenAI-74AA9C?style=flat&logo=openai&logoColor=white)](https://chat.openai.com) [![gpt-5-nano](https://img.shields.io/badge/gpt--5--nano-Interaction_Signal-74AA9C?style=flat&logo=openai&logoColor=white)](https://platform.openai.com/docs/models) [![Google Gemini](https://img.shields.io/badge/Gemini-Antigravity-8E75B2?style=flat&logo=googlegemini&logoColor=white)](https://deepmind.google/models/gemini/) [![Leonardo.ai](https://img.shields.io/badge/Leonardo.ai-Seedream_4.5-7C3AED?style=flat&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiPjxjaXJjbGUgY3g9IjEyIiBjeT0iMTIiIHI9IjEwIi8+PC9zdmc+&logoColor=white)](https://leonardo.ai)
 
 </td>
 </tr>
@@ -67,7 +67,7 @@ This is **not** a moderation tool or a scorecard. It is designed to help helpers
 
 **Production:** [https://dev-signal.checkmarkdevtools.dev](https://dev-signal.checkmarkdevtools.dev) _(Cloud Run -- deployed post-initial-release)_
 
-v1.0.0 was created for the [DEV Weekend Challenge](https://dev.to/devteam/happening-now-dev-weekend-challenge-submissions-due-march-2-at-759am-utc-5fg8).
+v2.0.0 adds LLM interaction scoring, NEEDS_SUPPORT detection, and incremental caching. v1.0.0 was created for the [DEV Weekend Challenge](https://dev.to/devteam/happening-now-dev-weekend-challenge-submissions-due-march-2-at-759am-utc-5fg8).
 
 ---
 
