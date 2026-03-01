@@ -81,7 +81,7 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
       - name: Lighthouse CI (desktop)
+        # No Supabase env vars: isConfigured() returns false, API routes return
+        # 200+[] instead of connecting to a dummy host and returning 500.
+        # A 500 would log a browser network error that fails errors-in-console.
         run: pnpm lhci:desktop
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: https://dummy.supabase.co
-          SUPABASE_SECRET_KEY: dummy-ci-placeholder
