@@ -55,6 +55,9 @@
   --color-critical-100: var(--badge-critical-bg);
   --color-critical-200: var(--badge-critical-hover);
   --color-critical-700: var(--badge-critical-text);
+  --color-violet-100: var(--badge-violet-bg);
+  --color-violet-200: var(--badge-violet-hover);
+  --color-violet-700: var(--badge-violet-text);
 
   /* ── Fonts ─────────────────────────────────────────────────── */
   --font-heading: var(--font-marcellus), georgia, serif;
@@ -128,6 +131,11 @@
     --badge-critical-bg: #e2e8f0;
     --badge-critical-hover: #cbd5e1;
     --badge-critical-text: #334155;
+
+    /* #5b21b6 on #ede9fe: 7.6:1 — WCAG AA */
+    --badge-violet-bg: #ede9fe;
+    --badge-violet-hover: #ddd6fe;
+    --badge-violet-text: #5b21b6;
 
     /* Gradient */
     --gradient-from: #f6f7fb;
@@ -212,6 +220,11 @@
     --badge-critical-bg: #1e293b;
     --badge-critical-hover: #334155;
     --badge-critical-text: #94a3b8;
+
+    /* #d8b4fe on #2e1065: 9.1:1 — WCAG AA */
+    --badge-violet-bg: #2e1065;
+    --badge-violet-hover: #3b0764;
+    --badge-violet-text: #d8b4fe;
 
     /* Gradient helpers */
     --gradient-from: #0b0f1a;
