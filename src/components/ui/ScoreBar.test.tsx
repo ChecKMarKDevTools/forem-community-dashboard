@@ -11,11 +11,14 @@ describe("ScoreBar", () => {
     colorClass: "bg-state-warning",
   };
 
-  it("renders label, sublabel, and description", () => {
+  it("renders label, sublabel, and description as tooltip", () => {
     render(<ScoreBar {...defaultProps} />);
     expect(screen.getByText("Activity Level")).toBeInTheDocument();
     expect(screen.getByText("High")).toBeInTheDocument();
-    expect(screen.getByText("Very active discussion.")).toBeInTheDocument();
+    // Description lives in the tooltip span (role="tooltip"), still in the DOM
+    expect(screen.getByRole("tooltip")).toHaveTextContent(
+      "Very active discussion.",
+    );
   });
 
   it("computes correct width percentage", () => {
