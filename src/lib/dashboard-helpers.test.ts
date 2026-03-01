@@ -29,6 +29,7 @@ describe("getAttentionVariant", () => {
     expect(getAttentionVariant("NEEDS_RESPONSE")).toBe("teal");
     expect(getAttentionVariant("NEEDS_REVIEW")).toBe("attention");
     expect(getAttentionVariant("SIGNAL_AT_RISK")).toBe("critical");
+    expect(getAttentionVariant("SILENT_SIGNAL")).toBe("violet");
   });
 
   it("returns neutral for unknown levels", () => {
@@ -44,6 +45,7 @@ describe("getCategoryLabel", () => {
     expect(getCategoryLabel("NEEDS_RESPONSE")).toBe("Awaiting Collaboration");
     expect(getCategoryLabel("NEEDS_REVIEW")).toBe("Rapid Discussion");
     expect(getCategoryLabel("SIGNAL_AT_RISK")).toBe("Anomalous Signal");
+    expect(getCategoryLabel("SILENT_SIGNAL")).toBe("Silent Signal");
   });
 
   it("returns default label for unknown levels", () => {
@@ -62,6 +64,7 @@ describe("getRecentPostBadgeVariant", () => {
     expect(getRecentPostBadgeVariant("NEEDS_RESPONSE")).toBe("teal");
     expect(getRecentPostBadgeVariant("NEEDS_REVIEW")).toBe("attention");
     expect(getRecentPostBadgeVariant("SIGNAL_AT_RISK")).toBe("critical");
+    expect(getRecentPostBadgeVariant("SILENT_SIGNAL")).toBe("violet");
   });
 
   it("returns outline for unknown levels (defaults to neutral → outline)", () => {
@@ -444,10 +447,11 @@ describe("sortByAttentionPriority", () => {
       makePost(3, "BOOST_VISIBILITY", 30),
       makePost(4, "SIGNAL_AT_RISK", 20),
       makePost(5, "NEEDS_REVIEW", 40),
+      makePost(6, "SILENT_SIGNAL", 25),
     ];
     const sorted = sortByAttentionPriority(posts);
-    // Awaiting Collaboration > Anomalous Signal > Trending Signal > Rapid Discussion > Steady
-    expect(sorted.map((p) => p.id)).toEqual([2, 4, 3, 5, 1]);
+    // Awaiting Collaboration > Anomalous Signal > Trending Signal > Rapid Discussion > Silent Signal > Steady
+    expect(sorted.map((p) => p.id)).toEqual([2, 4, 3, 5, 6, 1]);
   });
 
   it("sorts by score descending within same priority", () => {
@@ -474,7 +478,7 @@ describe("sortByAttentionPriority", () => {
     expect(sortByAttentionPriority([])).toEqual([]);
   });
 
-  it("uses default priority 4 for unknown attention levels", () => {
+  it("uses default priority (same as NORMAL) for unknown attention levels", () => {
     const posts = [
       makePost(1, "UNKNOWN_LEVEL", 50),
       makePost(2, "NEEDS_RESPONSE", 10),
@@ -485,13 +489,14 @@ describe("sortByAttentionPriority", () => {
 });
 
 describe("constants", () => {
-  it("ATTENTION_META has entries for all 5 known levels", () => {
+  it("ATTENTION_META has entries for all 6 known levels", () => {
     expect(Object.keys(ATTENTION_META)).toEqual([
       "NORMAL",
       "BOOST_VISIBILITY",
       "NEEDS_RESPONSE",
       "NEEDS_REVIEW",
       "SIGNAL_AT_RISK",
+      "SILENT_SIGNAL",
     ]);
   });
 
@@ -524,6 +529,9 @@ describe("constants", () => {
       ATTENTION_PRIORITY.NEEDS_REVIEW,
     );
     expect(ATTENTION_PRIORITY.NEEDS_REVIEW).toBeLessThan(
+      ATTENTION_PRIORITY.SILENT_SIGNAL,
+    );
+    expect(ATTENTION_PRIORITY.SILENT_SIGNAL).toBeLessThan(
       ATTENTION_PRIORITY.NORMAL,
     );
   });

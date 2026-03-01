@@ -310,6 +310,61 @@ describe("syncArticles scoring pipeline", () => {
     expect(result.failed).toBe(0);
   });
 
+  // ── Category: SILENT_SIGNAL ────────────────────────────────────────────
+
+  it("classifies SILENT_SIGNAL when reaction_count >= 5 and comment_count <= 1", async () => {
+    // 10 reactions but 0 comments → noticed but nobody talking.
+    // risk_score = 0 (engagement_credit=2 for reactions>=10), support_score = 2 (no comments)
+    // < 3 threshold so NEEDS_RESPONSE is not triggered. Not BOOST_VISIBILITY (word_count < 600).
+    const article = makeArticle({
+      id: 6,
+      public_reactions_count: 10,
+      comments_count: 0,
+      reading_time_minutes: 2,
+    });
+
+    setupBasicMocks([article]);
+
+    const result = await syncArticles(1);
+
+    expect(result.synced).toBe(1);
+    expect(result.failed).toBe(0);
+  });
+
+  it("does not classify SILENT_SIGNAL when comment_count > 1", async () => {
+    // Same reactions but 2 comments → falls through to NORMAL
+    const article = makeArticle({
+      id: 7,
+      public_reactions_count: 10,
+      comments_count: 2,
+      reading_time_minutes: 2,
+    });
+
+    setupBasicMocks([article]);
+
+    const result = await syncArticles(1);
+
+    expect(result.synced).toBe(1);
+    expect(result.failed).toBe(0);
+  });
+
+  it("does not classify SILENT_SIGNAL when reaction_count < 5", async () => {
+    // 4 reactions and 0 comments → below the noticed threshold, falls to NORMAL
+    const article = makeArticle({
+      id: 8,
+      public_reactions_count: 4,
+      comments_count: 0,
+      reading_time_minutes: 2,
+    });
+
+    setupBasicMocks([article]);
+
+    const result = await syncArticles(1);
+
+    expect(result.synced).toBe(1);
+    expect(result.failed).toBe(0);
+  });
+
   // ── Category: NORMAL ───────────────────────────────────────────────────
 
   it("classifies NORMAL when no category thresholds are met", async () => {
@@ -328,9 +383,9 @@ describe("syncArticles scoring pipeline", () => {
     expect(result.failed).toBe(0);
   });
 
-  // ── All 5 categories in a single run ───────────────────────────────────
+  // ── All 6 categories in a single run ───────────────────────────────────
 
-  it("covers all 5 category branches in a single sync run", async () => {
+  it("covers all 6 category branches in a single sync run", async () => {
     const articles = [
       // NEEDS_RESPONSE: old post, fresh user, no engagement
       makeArticle({
@@ -361,6 +416,13 @@ describe("syncArticles scoring pipeline", () => {
         public_reactions_count: 1,
         comments_count: 2,
         reading_time_minutes: 5,
+      }),
+      // SILENT_SIGNAL: noticed (10 reactions) but nobody talking (0 comments)
+      makeArticle({
+        id: 45,
+        public_reactions_count: 10,
+        comments_count: 0,
+        reading_time_minutes: 2,
       }),
       // NORMAL: average post
       makeArticle({
@@ -439,9 +501,9 @@ describe("syncArticles scoring pipeline", () => {
       },
     );
 
-    const result = await syncArticles(5);
+    const result = await syncArticles(6);
 
-    expect(result.synced).toBe(5);
+    expect(result.synced).toBe(6);
     expect(result.failed).toBe(0);
     expect(supabase.from).toHaveBeenCalledWith("articles");
     expect(supabase.from).toHaveBeenCalledWith("users");
