@@ -889,6 +889,35 @@ async function backfillEmptyMetrics(
   return { synced, failed, errors };
 }
 
+/** Post-sync maintenance: backfill empty metrics and purge stale articles. */
+async function runPostSyncMaintenance(
+  allArticles: ForemArticle[],
+  userCache: Map<string, ForemUser | null>,
+  upsertedAuthors: Set<string>,
+  result: SyncResult,
+): Promise<void> {
+  // Backfill: re-process articles that have empty metrics (PostgREST schema
+  // cache miss during initial sync, or articles the paginated API didn't
+  // return). Fetch each individually by ID and deep-score them.
+  const backfillResult = await backfillEmptyMetrics(
+    allArticles,
+    userCache,
+    upsertedAuthors,
+  );
+  result.synced += backfillResult.synced;
+  result.failed += backfillResult.failed;
+  result.errors.push(...backfillResult.errors);
+
+  // Purge: remove articles older than PURGE_AGE_HOURS. The commenters
+  // table cascades on article delete, so no separate cleanup is needed.
+  const purged = await purgeStaleArticles();
+  if (purged > 0) {
+    result.errors.push(
+      `Purged ${purged} stale articles (> ${PURGE_AGE_HOURS}h old)`,
+    );
+  }
+}
+
 /**
  * Main sync entry point.
  *
@@ -901,7 +930,6 @@ async function backfillEmptyMetrics(
  * can keep test suites fast without fetching a full week of data.
  */
 export async function syncArticles(maxToProcess?: number): Promise<SyncResult> {
-  const errors: string[] = [];
   const userCache = new Map<string, ForemUser | null>();
   const upsertedAuthors = new Set<string>();
 
@@ -915,8 +943,7 @@ export async function syncArticles(maxToProcess?: number): Promise<SyncResult> {
     const toProcess =
       maxToProcess === undefined ? shortlist : shortlist.slice(0, maxToProcess);
 
-    let synced = 0;
-    let failed = 0;
+    const result: SyncResult = { synced: 0, failed: 0, errors: [] };
 
     for (const candidate of toProcess) {
       try {
@@ -945,41 +972,26 @@ export async function syncArticles(maxToProcess?: number): Promise<SyncResult> {
           postsByAuthor24h,
         });
 
-        synced++;
+        result.synced++;
       } catch (err: unknown) {
-        failed++;
+        result.failed++;
         console.log("SYNC ERROR DETECTED:", err);
         const message = err instanceof Error ? err.message : "Unknown error";
-        errors.push(`Article ${candidate.article.id}: ${message}`);
+        result.errors.push(`Article ${candidate.article.id}: ${message}`);
       }
     }
 
-    // Backfill: re-process articles that have empty metrics (PostgREST schema
-    // cache miss during initial sync, or articles the paginated API didn't
-    // return). Fetch each individually by ID and deep-score them.
+    // Production-only maintenance: backfill + purge
     if (maxToProcess === undefined) {
-      const backfillResult = await backfillEmptyMetrics(
+      await runPostSyncMaintenance(
         allArticles,
         userCache,
         upsertedAuthors,
+        result,
       );
-      synced += backfillResult.synced;
-      failed += backfillResult.failed;
-      errors.push(...backfillResult.errors);
     }
 
-    // Purge: remove articles older than PURGE_AGE_HOURS. The commenters
-    // table cascades on article delete, so no separate cleanup is needed.
-    if (maxToProcess === undefined) {
-      const purged = await purgeStaleArticles();
-      if (purged > 0) {
-        errors.push(
-          `Purged ${purged} stale articles (> ${PURGE_AGE_HOURS}h old)`,
-        );
-      }
-    }
-
-    return { synced, failed, errors };
+    return result;
   } catch (err: unknown) {
     throw err instanceof Error ? err : new Error("Fatal Sync Pipeline Error");
   }
