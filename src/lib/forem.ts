@@ -23,7 +23,8 @@ export interface ForemArticle {
   created_at: string;
   edited_at: string | null;
   crossposted_at: string | null;
-  published_at: string;
+  published: boolean;
+  published_at: string | null;
   last_comment_at: string;
   reading_time_minutes: number;
   tag_list: string[];

@@ -44,7 +44,11 @@ async function resolveUser(
 }
 
 // Math Helpers for Pipeline
-function getAgeHours(published_at: string): number {
+
+/** Returns Infinity for null/empty published_at so the article is naturally
+ * excluded from all window and frequency checks without needing extra guards. */
+function getAgeHours(published_at: string | null): number {
+  if (!published_at) return Infinity;
   return (Date.now() - new Date(published_at).getTime()) / (1000 * 60 * 60);
 }
 
@@ -630,7 +634,9 @@ async function deepScoreAndPersist(
 
   const articleMetrics = buildArticleMetrics({
     metrics,
-    publishedAt: article.published_at,
+    // deepScoreAndPersist is only called for articles that passed the
+    // isPublishedArticle predicate filter, so published_at is non-null.
+    publishedAt: article.published_at!,
     commentCount: comment_count,
     ageHours: age_hours,
     riskScore: risk_score,
@@ -687,7 +693,9 @@ async function deepScoreAndPersist(
  */
 async function fetchAndFilterArticles(): Promise<{
   allArticles: ForemArticle[];
-  validArticles: ForemArticle[];
+  validArticles: Array<
+    ForemArticle & { published: true; published_at: string }
+  >;
 }> {
   const allArticles: ForemArticle[] = [];
   let page = 1;
@@ -708,11 +716,20 @@ async function fetchAndFilterArticles(): Promise<{
     page++;
   }
 
-  const validArticles = allArticles.filter((a) => {
+  /** Type predicate: narrows published_at to string so downstream callers
+   * don't need null assertions when processing validArticles. */
+  function isPublishedArticle(
+    a: ForemArticle,
+  ): a is ForemArticle & { published: true; published_at: string } {
     // Guard: when DEV_API_KEY is a personal token, Forem may include draft or
-    // scheduled articles whose published_at is null/empty. Skip them to avoid
-    // ingesting private content into the dashboard.
-    if (!a.published_at) return false;
+    // scheduled articles. Both published===true AND a non-empty published_at
+    // must hold — either alone is insufficient (scheduled posts have a future
+    // published_at but published===false; deleted drafts may have published===true
+    // with a null date).
+    return a.published === true && !!a.published_at;
+  }
+
+  const validArticles = allArticles.filter(isPublishedArticle).filter((a) => {
     const ageHours = getAgeHours(a.published_at);
     // Lower bound: skip articles published in the last 2 hours — they're too
     // fresh for meaningful scoring (low comment/reaction signal).
@@ -744,7 +761,9 @@ function buildAuthorFrequencies(
  * limit (top 50, non-NORMAL first) is enforced at query time by the API route.
  */
 function lightScoreAndRank(
-  validArticles: ForemArticle[],
+  validArticles: Array<
+    ForemArticle & { published: true; published_at: string }
+  >,
   postsByAuthor24h: Map<string, number>,
 ) {
   return validArticles
@@ -848,7 +867,9 @@ async function backfillEmptyMetrics(
     try {
       const article = await ForemClient.getArticle(row.id, false);
       const username = article.user.username;
-      const age_hours = getAgeHours(article.published_at);
+      // Articles in the backfill set were already stored during a prior sync,
+      // so published_at is guaranteed non-null here.
+      const age_hours = getAgeHours(article.published_at!);
       const word_count = article.reading_time_minutes * 200;
       const author_post_frequency = postsByAuthor24h.get(username) || 1;
       const preliminary_score =
