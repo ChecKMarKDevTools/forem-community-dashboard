@@ -1,10 +1,12 @@
 # Forem Community Observability Dashboard
 
+![DEV Community Dashboard Banner](public/dev-weekend-challenge-banner-community-dashboard.png)
+
 A signal-surfacing tool for [Forem](https://forem.com/) communities (dev.to and self-hosted instances). It ingests the latest posts via the public Forem API, classifies each one into attention categories (High Activity, Active Conversation, Community Waiting, Potential Rule Issue, Routine Discussion), and persists the results in Supabase so community helpers can see where conversations need a human eye.
 
 This is **not** a moderation tool or a scorecard. It is designed to help helpers know where to look.
 
-**Production:** https://forem-signal.checkmarkdevtools.dev _(Cloud Run — deployed post-initial-release)_
+**Production:** [https://dev-signal.checkmarkdevtools.dev](https://dev-signal.checkmarkdevtools.dev) _(Cloud Run — deployed post-initial-release)_
 
 ---
 
