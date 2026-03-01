@@ -252,9 +252,29 @@ describe("MarkerTimeline", () => {
     expect(screen.getByText("Promotional Keywords")).toBeInTheDocument();
   });
 
-  it("returns null for empty markers", () => {
-    const { container } = render(<MarkerTimeline markers={[]} />);
-    expect(container.innerHTML).toBe("");
+  it("shows disabled state for empty markers", () => {
+    render(<MarkerTimeline markers={[]} />);
+    expect(
+      screen.getByRole("img", { name: "No risk signals detected" }),
+    ).toBeInTheDocument();
+  });
+
+  it("shows disabled state when all markers are inactive, still rendering labels", () => {
+    const markers = [
+      { label: "Frequency Penalty", active: false },
+      { label: "Short Content", active: false },
+    ];
+    render(<MarkerTimeline markers={markers} />);
+    expect(
+      screen.getByRole("img", { name: "No risk signals detected" }),
+    ).toBeInTheDocument();
+    // Labels must still be visible so users can see which signals were checked
+    expect(screen.getByText("Frequency Penalty")).toBeInTheDocument();
+    expect(screen.getByText("Short Content")).toBeInTheDocument();
+    // No status text — dimmed markers are sufficient
+    expect(
+      screen.queryByText("No risk signals detected"),
+    ).not.toBeInTheDocument();
   });
 
   it("renders active markers with larger radius and glow", () => {
@@ -269,8 +289,8 @@ describe("MarkerTimeline", () => {
     expect(circles.length).toBe(3);
   });
 
-  it("has correct aria-label", () => {
-    const markers = [{ label: "Test", active: false }];
+  it("has correct aria-label when markers are active", () => {
+    const markers = [{ label: "Test", active: true }];
     render(<MarkerTimeline markers={markers} />);
     expect(
       screen.getByRole("img", { name: "Risk signal timeline" }),
