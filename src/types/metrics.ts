@@ -39,6 +39,14 @@ export interface ArticleMetrics {
   risk_score: number;
   /** Absolute difference between positive and negative comment counts (sentiment imbalance). */
   sentiment_flips: number;
+  /** Per-comment sentiment float scores from LLM analysis (-1.0 to 1.0). */
+  sentiment_scores?: ReadonlyArray<{ index: number; score: number }>;
+  /** LLM-computed volatility across all comments (0.0 = uniform tone, 1.0 = extreme variation). */
+  sentiment_volatility?: number;
+  /** Which analysis method produced the sentiment data. */
+  sentiment_method?: "llm" | "keyword";
+  /** Average sentiment score across all comments (-1.0 to 1.0). */
+  sentiment_mean?: number;
   /** Whether this is the author's first post (joined < 30 days, 1 post in 24h). */
   is_first_post: boolean;
   /** Count of help-seeking keywords detected in comments. */
