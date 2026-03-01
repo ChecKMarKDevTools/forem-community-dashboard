@@ -557,20 +557,23 @@ async function deepScoreAndPersist(
   } = input;
 
   let word_count = fallback_word_count;
+  // Use fresh counts from the individual article fetch when available —
+  // the list API snapshot can be stale by the time we deep-score.
+  let comment_count = article.comments_count;
+  let reaction_count = article.public_reactions_count;
   try {
     const fullArticle = await ForemClient.getArticle(article.id);
     word_count = countWords(
       fullArticle.body_markdown || fullArticle.body_html || "",
     );
+    comment_count = fullArticle.comments_count;
+    reaction_count = fullArticle.public_reactions_count;
   } catch {
-    // Fallback: use the estimate passed from lightScoreAndRank if article fetch fails
+    // Fallback: use the estimates passed from lightScoreAndRank if article fetch fails
     word_count = fallback_word_count;
   }
 
   const comments = await ForemClient.getComments(article.id);
-
-  const comment_count = article.comments_count;
-  const reaction_count = article.public_reactions_count;
   const time_since_post = age_hours * 60; // in minutes
 
   const metrics = createEmptyMetrics();

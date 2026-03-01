@@ -732,6 +732,94 @@ describe("syncArticles scoring pipeline", () => {
     expect(result.failed).toBe(0);
   });
 
+  // ── Fresh counts from individual article fetch ──────────────────────
+
+  it("uses fresh counts from getArticle instead of stale list API counts", async () => {
+    // List API returns stale counts (2 reactions, 0 comments)
+    const article = makeArticle({
+      id: 95,
+      public_reactions_count: 2,
+      comments_count: 0,
+    });
+
+    // Individual article fetch returns updated counts (15 reactions, 5 comments)
+    vi.mocked(ForemClient.getLatestArticles).mockImplementation(
+      async (page) => {
+        if (page === 1) return [article] as never;
+        return [];
+      },
+    );
+    vi.mocked(ForemClient.getArticle).mockResolvedValue(
+      makeArticle({
+        id: 95,
+        public_reactions_count: 15,
+        comments_count: 5,
+        body_markdown: "word ".repeat(100),
+      }) as never,
+    );
+    vi.mocked(ForemClient.getUserByUsername).mockResolvedValue(mockUser);
+    vi.mocked(ForemClient.getComments).mockResolvedValue([]);
+
+    // Track upserted article data to verify fresh counts are used
+    const upsertedArticles: Array<{ reactions: number; comments: number }> = [];
+    const selectChain = {
+      eq: vi.fn().mockReturnThis(),
+      gte: vi.fn().mockResolvedValue({ data: [], error: null }),
+    };
+    const deleteChain = {
+      lt: vi.fn().mockReturnValue({
+        select: vi.fn().mockResolvedValue({ data: [], error: null }),
+      }),
+    };
+    vi.mocked(supabase.from).mockReturnValue({
+      upsert: vi.fn().mockImplementation((data: Record<string, unknown>) => {
+        if ("reactions" in data) {
+          upsertedArticles.push(
+            data as { reactions: number; comments: number },
+          );
+        }
+        return { error: null };
+      }),
+      select: vi.fn().mockReturnValue(selectChain),
+      delete: vi.fn().mockReturnValue(deleteChain),
+    } as never);
+
+    const result = await syncArticles(1);
+
+    expect(result.synced).toBe(1);
+    // Verify fresh counts from getArticle were used, not stale list API counts
+    expect(upsertedArticles).toHaveLength(1);
+    expect(upsertedArticles[0].reactions).toBe(15);
+    expect(upsertedArticles[0].comments).toBe(5);
+  });
+
+  it("falls back to list API counts when getArticle fails", async () => {
+    const article = makeArticle({
+      id: 96,
+      public_reactions_count: 3,
+      comments_count: 1,
+    });
+
+    vi.mocked(ForemClient.getLatestArticles).mockImplementation(
+      async (page) => {
+        if (page === 1) return [article] as never;
+        return [];
+      },
+    );
+    vi.mocked(ForemClient.getArticle).mockRejectedValue(
+      new Error("Article fetch failed"),
+    );
+    vi.mocked(ForemClient.getUserByUsername).mockResolvedValue(mockUser);
+    vi.mocked(ForemClient.getComments).mockResolvedValue([]);
+    resetSupabaseMock();
+
+    const result = await syncArticles(1);
+
+    expect(result.synced).toBe(1);
+    // Should still succeed using fallback counts from list API
+    expect(result.failed).toBe(0);
+  });
+
   // ── Error handling ─────────────────────────────────────────────────────
 
   it("counts failed articles when user upsert fails", async () => {
