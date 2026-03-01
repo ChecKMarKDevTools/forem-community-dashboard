@@ -306,11 +306,15 @@ function DetailPanel({
           >
             {(() => {
               const spread = getSignalSpreadData(postDetails.metrics);
-              const hasSpreadData =
-                spread.strong + spread.moderate + spread.faint > 0;
+              const nonZeroTiers = [
+                spread.strong,
+                spread.moderate,
+                spread.faint,
+              ].filter((v) => v > 0).length;
+              // Need at least 2 non-zero tiers for the bar to be meaningful
               return (
                 getInteractionMethod(postDetails.metrics) !== "unknown" &&
-                hasSpreadData && <SignalBar {...spread} />
+                nonZeroTiers >= 2 && <SignalBar {...spread} />
               );
             })()}
             {getInteractionMethod(postDetails.metrics) !== "unknown" && (
