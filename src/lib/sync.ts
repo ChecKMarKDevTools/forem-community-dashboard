@@ -693,9 +693,7 @@ async function deepScoreAndPersist(
  */
 async function fetchAndFilterArticles(): Promise<{
   allArticles: ForemArticle[];
-  validArticles: Array<
-    ForemArticle & { published: true; published_at: string }
-  >;
+  validArticles: Array<ForemArticle & { published_at: string }>;
 }> {
   const allArticles: ForemArticle[] = [];
   let page = 1;
@@ -720,13 +718,17 @@ async function fetchAndFilterArticles(): Promise<{
    * don't need null assertions when processing validArticles. */
   function isPublishedArticle(
     a: ForemArticle,
-  ): a is ForemArticle & { published: true; published_at: string } {
+  ): a is ForemArticle & { published_at: string } {
     // Guard: when DEV_API_KEY is a personal token, Forem may include draft or
-    // scheduled articles. Both published===true AND a non-empty published_at
-    // must hold — either alone is insufficient (scheduled posts have a future
-    // published_at but published===false; deleted drafts may have published===true
-    // with a null date).
-    return a.published === true && !!a.published_at;
+    // scheduled articles via GET /api/articles/me.
+    //
+    // Use !== false (not === true) because GET /api/articles (the public feed)
+    // does NOT include the `published` field at all — it is only present on
+    // the /me endpoint. Checking === true would drop every article from the
+    // public feed (undefined === true → false). Checking !== false passes
+    // articles where the field is absent (public feed) while blocking any
+    // article explicitly marked published=false (drafts from /me).
+    return a.published !== false && !!a.published_at;
   }
 
   const validArticles = allArticles.filter(isPublishedArticle).filter((a) => {
@@ -761,9 +763,7 @@ function buildAuthorFrequencies(
  * limit (top 50, non-NORMAL first) is enforced at query time by the API route.
  */
 function lightScoreAndRank(
-  validArticles: Array<
-    ForemArticle & { published: true; published_at: string }
-  >,
+  validArticles: Array<ForemArticle & { published_at: string }>,
   postsByAuthor24h: Map<string, number>,
 ) {
   return validArticles

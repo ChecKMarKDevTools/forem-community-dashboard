@@ -23,7 +23,13 @@ export interface ForemArticle {
   created_at: string;
   edited_at: string | null;
   crossposted_at: string | null;
-  published: boolean;
+  /**
+   * Only present on GET /api/articles/me (user's own articles).
+   * Absent (undefined) on the public GET /api/articles feed, where all
+   * returned articles are implicitly published. Guard with !== false, not
+   * === true, so articles from the public feed are not incorrectly dropped.
+   */
+  published?: boolean;
   published_at: string | null;
   last_comment_at: string;
   reading_time_minutes: number;
