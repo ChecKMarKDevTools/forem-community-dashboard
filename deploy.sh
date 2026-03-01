@@ -30,7 +30,7 @@ SECRET_CRON="cron-secret-${ENVIRONMENT}"
 SECRET_DEV_API_KEY="dev-api-key-${ENVIRONMENT}"
 # The canonical custom domain for this service.  Used as a static CORS origin
 # and for optional Cloud Run domain mapping.  Set CUSTOM_DOMAIN="" to skip.
-CUSTOM_DOMAIN="${CUSTOM_DOMAIN:-dev-signal.checkmarkdevtools.dev}"
+CUSTOM_DOMAIN="${CUSTOM_DOMAIN:-}"
 if [[ -n "${CUSTOM_DOMAIN:-}" ]]; then
   STATIC_CORS_ORIGIN="https://$CUSTOM_DOMAIN"
 else
