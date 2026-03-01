@@ -181,6 +181,36 @@ describe("Dashboard Component", () => {
     });
   });
 
+  it("displays NEEDS_SUPPORT category with rose badge", async () => {
+    const supportPosts = [
+      {
+        id: 10,
+        title: "Struggling with burnout",
+        canonical_url: "https://dev.to/test/post-10",
+        score: 5,
+        attention_level: "NEEDS_SUPPORT",
+        explanations: ["Support Score: 2"],
+        published_at: "2023-10-27T10:00:00Z",
+        author: "burntout",
+        reactions: 0,
+        comments: 0,
+      },
+    ];
+    globalThis.fetch = vi
+      .fn()
+      .mockResolvedValue({ ok: true, json: async () => supportPosts });
+    render(<Dashboard />);
+
+    await waitFor(() => {
+      // NEEDS_SUPPORT triggers "Needs Support" badge
+      expect(screen.getByText("Needs Support")).toBeInTheDocument();
+    });
+
+    // Verify the badge has the rose variant class
+    const badge = screen.getByText("Needs Support");
+    expect(badge).toHaveClass("bg-rose-100");
+  });
+
   it("displays SIGNAL_AT_RISK category correctly", async () => {
     const lowQPosts = [
       {
@@ -313,8 +343,12 @@ describe("Dashboard Component", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText(/1200 words/)).toBeInTheDocument();
-      expect(screen.getByText(/3h old/)).toBeInTheDocument();
+      // Metrics rendered as emphasized numbers inside a labeled container
+      const metricsBar = screen.getByLabelText("Post engagement metrics");
+      expect(metricsBar).toHaveTextContent("1200");
+      expect(metricsBar).toHaveTextContent("words");
+      expect(metricsBar).toHaveTextContent("3h");
+      expect(metricsBar).toHaveTextContent("old");
     });
   });
 
@@ -871,9 +905,6 @@ describe("Dashboard Component", () => {
           { username: "alice", share: 0.5 },
           { username: "bob", share: 0.3 },
         ],
-        positive_pct: 40,
-        neutral_pct: 40,
-        negative_pct: 20,
         constructiveness_buckets: [
           { hour: 0, depth_index: 0.5 },
           { hour: 1, depth_index: 1.5 },
@@ -890,9 +921,31 @@ describe("Dashboard Component", () => {
           engagement_credit: 1,
         },
         risk_score: 0,
-        sentiment_flips: 1,
         is_first_post: false,
         help_keywords: 0,
+        interaction_signal: 0.65,
+        interaction_method: "llm",
+        topic_tags: ["testing", "react"],
+        interaction_scores: [
+          {
+            index: 0,
+            tone: 0.5,
+            relevance: 0.8,
+            depth: 0.7,
+            constructiveness: 0.6,
+          },
+          {
+            index: 1,
+            tone: 0.3,
+            relevance: 0.6,
+            depth: 0.4,
+            constructiveness: 0.5,
+          },
+        ],
+        interaction_volatility: 0.3,
+        signal_strong_pct: 40,
+        signal_moderate_pct: 40,
+        signal_faint_pct: 20,
       },
     };
 
@@ -923,7 +976,7 @@ describe("Dashboard Component", () => {
     // All chart sections should be visible (5 charts — Contributing Signals in Post Analytics)
     expect(screen.getByText("Reply Velocity")).toBeInTheDocument();
     expect(screen.getByText("Participation Distribution")).toBeInTheDocument();
-    expect(screen.getByText("Sentiment Spread")).toBeInTheDocument();
+    expect(screen.getByText("Interaction Signal")).toBeInTheDocument();
     expect(screen.getByText("Constructiveness Trend")).toBeInTheDocument();
     expect(screen.getByText("Contributing Signals")).toBeInTheDocument();
     expect(screen.queryByText("Risk Signal Timeline")).not.toBeInTheDocument();
@@ -977,9 +1030,6 @@ describe("Dashboard Component", () => {
         velocity_buckets: [{ hour: 0, count: 1 }],
         comments_per_hour: 0.5,
         commenter_shares: [{ username: "alice", share: 1 }],
-        positive_pct: 0,
-        neutral_pct: 100,
-        negative_pct: 0,
         constructiveness_buckets: [],
         avg_comment_length: 10,
         reply_ratio: 0,
@@ -993,9 +1043,13 @@ describe("Dashboard Component", () => {
           engagement_credit: 0,
         },
         risk_score: 5,
-        sentiment_flips: 0,
         is_first_post: false,
         help_keywords: 0,
+        interaction_signal: 0.2,
+        interaction_method: "heuristic",
+        signal_strong_pct: 0,
+        signal_moderate_pct: 0,
+        signal_faint_pct: 100,
       },
     };
 
@@ -1032,5 +1086,166 @@ describe("Dashboard Component", () => {
     expect(screen.queryByText("Risk Signal Timeline")).not.toBeInTheDocument();
     // Inline "Contributing signals:" label in Discussion State should not exist
     expect(screen.queryByText("Contributing signals:")).not.toBeInTheDocument();
+  });
+
+  it("shows signal score and volatility with hover helpers when interaction_method is 'llm'", async () => {
+    const detailWithLLM = {
+      ...mockPosts[0],
+      dev_url: "https://dev.to/testauthor/post-1",
+      recent_posts: [],
+      metrics: {
+        velocity_buckets: [],
+        comments_per_hour: 0,
+        commenter_shares: [],
+        constructiveness_buckets: [],
+        avg_comment_length: 20,
+        reply_ratio: 0,
+        alternating_pairs: 0,
+        risk_components: {
+          frequency_penalty: 0,
+          short_content: false,
+          no_engagement: false,
+          promo_keywords: 0,
+          repeated_links: 0,
+          engagement_credit: 0,
+        },
+        risk_score: 0,
+        is_first_post: false,
+        help_keywords: 0,
+        interaction_signal: 0.72,
+        interaction_method: "llm",
+        topic_tags: ["typescript", "testing"],
+        interaction_scores: [
+          {
+            index: 0,
+            tone: 0.8,
+            relevance: 0.9,
+            depth: 0.7,
+            constructiveness: 0.6,
+          },
+          {
+            index: 1,
+            tone: -0.1,
+            relevance: 0.5,
+            depth: 0.3,
+            constructiveness: 0.4,
+          },
+        ],
+        interaction_volatility: 0.6,
+        signal_strong_pct: 50,
+        signal_moderate_pct: 25,
+        signal_faint_pct: 25,
+      },
+    };
+
+    globalThis.fetch = vi.fn().mockImplementation((url) => {
+      if (url === "/api/posts")
+        return Promise.resolve({ ok: true, json: async () => mockPosts });
+      if (url === "/api/posts/1")
+        return Promise.resolve({
+          ok: true,
+          json: async () => detailWithLLM,
+        });
+      return Promise.reject(new Error("Not found"));
+    });
+
+    render(<Dashboard />);
+    await waitFor(() => {
+      expect(screen.getByText("Needs review post")).toBeInTheDocument();
+    });
+
+    fireEvent.click(
+      screen.getByText("Needs review post").closest("div.border")!,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Interaction Signal")).toBeInTheDocument();
+    });
+
+    // Signal score with hover helper
+    const signalSpan = screen.getByTitle(/Composite interaction quality/);
+    expect(signalSpan).toBeInTheDocument();
+    expect(signalSpan.textContent).toContain("0.72");
+
+    // Volatility with hover helper (LLM only)
+    const volSpan = screen.getByTitle(/How much scores vary/);
+    expect(volSpan).toBeInTheDocument();
+    expect(volSpan.textContent).toContain("60%");
+
+    // Topic tags ARE rendered (metric transparency — all computed values must be visible)
+    expect(screen.getByText("typescript")).toBeInTheDocument();
+    expect(screen.getByText("testing")).toBeInTheDocument();
+
+    // Method label IS rendered (users can see how scores were produced)
+    const methodSpan = screen.getByTitle(
+      /How interaction scores were produced/,
+    );
+    expect(methodSpan).toBeInTheDocument();
+    expect(methodSpan.textContent).toContain("llm");
+  });
+
+  it("shows signal score without volatility when interaction_method is 'heuristic'", async () => {
+    const detailWithHeuristic = {
+      ...mockPosts[0],
+      dev_url: "https://dev.to/testauthor/post-1",
+      recent_posts: [],
+      metrics: {
+        velocity_buckets: [],
+        comments_per_hour: 0,
+        commenter_shares: [],
+        constructiveness_buckets: [],
+        avg_comment_length: 20,
+        reply_ratio: 0,
+        alternating_pairs: 0,
+        risk_components: {
+          frequency_penalty: 0,
+          short_content: false,
+          no_engagement: false,
+          promo_keywords: 0,
+          repeated_links: 0,
+          engagement_credit: 0,
+        },
+        risk_score: 0,
+        is_first_post: false,
+        help_keywords: 0,
+        interaction_signal: 0.45,
+        interaction_method: "heuristic",
+        signal_strong_pct: 20,
+        signal_moderate_pct: 60,
+        signal_faint_pct: 20,
+      },
+    };
+
+    globalThis.fetch = vi.fn().mockImplementation((url) => {
+      if (url === "/api/posts")
+        return Promise.resolve({ ok: true, json: async () => mockPosts });
+      if (url === "/api/posts/1")
+        return Promise.resolve({
+          ok: true,
+          json: async () => detailWithHeuristic,
+        });
+      return Promise.reject(new Error("Not found"));
+    });
+
+    render(<Dashboard />);
+    await waitFor(() => {
+      expect(screen.getByText("Needs review post")).toBeInTheDocument();
+    });
+
+    fireEvent.click(
+      screen.getByText("Needs review post").closest("div.border")!,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Interaction Signal")).toBeInTheDocument();
+    });
+
+    // Signal score with hover helper
+    const signalSpan = screen.getByTitle(/Composite interaction quality/);
+    expect(signalSpan).toBeInTheDocument();
+    expect(signalSpan.textContent).toContain("0.45");
+
+    // Volatility should NOT be shown for heuristic method
+    expect(screen.queryByTitle(/How much scores vary/)).not.toBeInTheDocument();
   });
 });

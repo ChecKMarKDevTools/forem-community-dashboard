@@ -29,7 +29,7 @@ export function DivergingBar({
       <div
         className={cn("text-text-muted text-center text-sm italic", className)}
       >
-        No sentiment data
+        Not enough data yet
       </div>
     );
   }

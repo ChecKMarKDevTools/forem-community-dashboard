@@ -52,7 +52,7 @@ export function LineChart({
       <div
         className={cn("text-text-muted text-center text-sm italic", className)}
       >
-        No data available
+        Not enough data yet
       </div>
     );
   }

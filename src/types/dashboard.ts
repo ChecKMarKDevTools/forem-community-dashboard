@@ -1,5 +1,6 @@
 // Category strings stored in DB `articles.attention_level` by the classification pipeline.
 export type AttentionCategory =
+  | "NEEDS_SUPPORT"
   | "NEEDS_RESPONSE"
   | "SIGNAL_AT_RISK"
   | "NEEDS_REVIEW"

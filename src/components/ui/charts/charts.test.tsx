@@ -93,7 +93,7 @@ describe("LineChart", () => {
 
   it("renders empty state for no data", () => {
     render(<LineChart data={[]} />);
-    expect(screen.getByText("No data available")).toBeInTheDocument();
+    expect(screen.getByText("Not enough data yet")).toBeInTheDocument();
   });
 
   it("renders data points as circles", () => {
@@ -169,7 +169,7 @@ describe("HorizontalBarChart", () => {
 
   it("renders empty state for no data", () => {
     render(<HorizontalBarChart data={[]} />);
-    expect(screen.getByText("No data available")).toBeInTheDocument();
+    expect(screen.getByText("Not enough data yet")).toBeInTheDocument();
   });
 
   it("truncates long labels", () => {
@@ -229,7 +229,7 @@ describe("DivergingBar", () => {
 
   it("renders empty state for zero total", () => {
     render(<DivergingBar positive={0} neutral={0} negative={0} />);
-    expect(screen.getByText("No sentiment data")).toBeInTheDocument();
+    expect(screen.getByText("Not enough data yet")).toBeInTheDocument();
   });
 
   it("has accessible title with percentages", () => {
@@ -302,7 +302,7 @@ describe("MarkerTimeline", () => {
     const { container } = render(<MarkerTimeline markers={[]} />);
     const title = container.querySelector("svg title");
     expect(title).toBeInTheDocument();
-    expect(title?.textContent).toBe("No risk signals detected");
+    expect(title?.textContent).toBe("Not enough data yet");
   });
 
   it("shows disabled state when all markers are inactive, still rendering labels", () => {
@@ -313,7 +313,7 @@ describe("MarkerTimeline", () => {
     const { container } = render(<MarkerTimeline markers={markers} />);
     const title = container.querySelector("svg title");
     expect(title).toBeInTheDocument();
-    expect(title?.textContent).toBe("No risk signals detected");
+    expect(title?.textContent).toBe("No behavioral signals detected");
     // Labels must still be visible so users can see which signals were checked
     expect(screen.getByText("Frequency Penalty")).toBeInTheDocument();
     expect(screen.getByText("Short Content")).toBeInTheDocument();
@@ -336,7 +336,7 @@ describe("MarkerTimeline", () => {
     const { container } = render(<MarkerTimeline markers={markers} />);
     const title = container.querySelector("svg title");
     expect(title).toBeInTheDocument();
-    expect(title?.textContent).toBe("Risk signal timeline");
+    expect(title?.textContent).toBe("Behavioral signal timeline");
   });
 
   it("handles single marker centered", () => {

@@ -17,6 +17,7 @@ import {
   getSignalName,
   computeAgeHours,
   sortByAttentionPriority,
+  getSignalSummary,
   ATTENTION_META,
   SIGNAL_TOOLTIPS,
   DISCUSSION_STATE_SIGNALS,
@@ -25,6 +26,7 @@ import {
 
 describe("getAttentionVariant", () => {
   it("returns correct variant for each known attention level", () => {
+    expect(getAttentionVariant("NEEDS_SUPPORT")).toBe("rose");
     expect(getAttentionVariant("NORMAL")).toBe("neutral");
     expect(getAttentionVariant("BOOST_VISIBILITY")).toBe("info");
     expect(getAttentionVariant("NEEDS_RESPONSE")).toBe("teal");
@@ -41,6 +43,7 @@ describe("getAttentionVariant", () => {
 
 describe("getCategoryLabel", () => {
   it("returns correct label for each known attention level", () => {
+    expect(getCategoryLabel("NEEDS_SUPPORT")).toBe("Needs Support");
     expect(getCategoryLabel("NORMAL")).toBe("Steady Signal");
     expect(getCategoryLabel("BOOST_VISIBILITY")).toBe("Trending Signal");
     expect(getCategoryLabel("NEEDS_RESPONSE")).toBe("Awaiting Collaboration");
@@ -56,25 +59,33 @@ describe("getCategoryLabel", () => {
 });
 
 describe("getCategoryTooltip", () => {
-  it("returns a tooltip string for NEEDS_RESPONSE listing all help words", () => {
-    const tooltip = getCategoryTooltip("NEEDS_RESPONSE");
-    expect(tooltip).toBeDefined();
-    expect(tooltip).toContain("need help");
-    expect(tooltip).toContain("stuck");
-    expect(tooltip).toContain("beginner question");
-    expect(tooltip).toContain("confused");
-    expect(tooltip).toContain("how do i");
-    expect(tooltip).toContain("what am i missing");
-    expect(tooltip).toContain("why doesn't");
+  it("returns a tooltip for every known attention level", () => {
+    expect(getCategoryTooltip("NEEDS_SUPPORT")).toContain("Needs Support");
+    expect(getCategoryTooltip("NORMAL")).toContain("Steady Signal");
+    expect(getCategoryTooltip("BOOST_VISIBILITY")).toContain("Trending Signal");
+    expect(getCategoryTooltip("NEEDS_REVIEW")).toContain("Rapid Discussion");
+    expect(getCategoryTooltip("SIGNAL_AT_RISK")).toContain("Anomalous Signal");
+    expect(getCategoryTooltip("SILENT_SIGNAL")).toContain("Silent Signal");
   });
 
-  it("returns undefined for categories that need no tooltip", () => {
-    expect(getCategoryTooltip("NORMAL")).toBeUndefined();
-    expect(getCategoryTooltip("BOOST_VISIBILITY")).toBeUndefined();
-    expect(getCategoryTooltip("SIGNAL_AT_RISK")).toBeUndefined();
-    expect(getCategoryTooltip("NEEDS_REVIEW")).toBeUndefined();
-    expect(getCategoryTooltip("SILENT_SIGNAL")).toBeUndefined();
+  it("returns a tooltip for NEEDS_SUPPORT with empathetic helper text", () => {
+    const tooltip = getCategoryTooltip("NEEDS_SUPPORT");
+    expect(tooltip).toBeDefined();
+    expect(tooltip).toContain("emotional distress");
+    expect(tooltip).toContain("empathetic community response");
+  });
+
+  it("returns a tooltip for NEEDS_RESPONSE without help-word enumeration", () => {
+    const tooltip = getCategoryTooltip("NEEDS_RESPONSE");
+    expect(tooltip).toBeDefined();
+    expect(tooltip).toContain("Awaiting Collaboration");
+    expect(tooltip).not.toContain("need help");
+    expect(tooltip).not.toContain("stuck");
+  });
+
+  it("returns undefined only for unknown levels", () => {
     expect(getCategoryTooltip("UNKNOWN")).toBeUndefined();
+    expect(getCategoryTooltip("")).toBeUndefined();
   });
 });
 
@@ -84,6 +95,7 @@ describe("getRecentPostBadgeVariant", () => {
   });
 
   it("preserves non-neutral variants", () => {
+    expect(getRecentPostBadgeVariant("NEEDS_SUPPORT")).toBe("rose");
     expect(getRecentPostBadgeVariant("BOOST_VISIBILITY")).toBe("info");
     expect(getRecentPostBadgeVariant("NEEDS_RESPONSE")).toBe("teal");
     expect(getRecentPostBadgeVariant("NEEDS_REVIEW")).toBe("attention");
@@ -472,10 +484,11 @@ describe("sortByAttentionPriority", () => {
       makePost(4, "SIGNAL_AT_RISK", 20),
       makePost(5, "NEEDS_REVIEW", 40),
       makePost(6, "SILENT_SIGNAL", 25),
+      makePost(7, "NEEDS_SUPPORT", 5),
     ];
     const sorted = sortByAttentionPriority(posts);
-    // Awaiting Collaboration > Anomalous Signal > Trending Signal > Rapid Discussion > Silent Signal > Steady
-    expect(sorted.map((p) => p.id)).toEqual([2, 4, 3, 5, 6, 1]);
+    // Needs Support > Awaiting Collaboration > Anomalous Signal > Trending Signal > Rapid Discussion > Silent Signal > Steady
+    expect(sorted.map((p) => p.id)).toEqual([7, 2, 4, 3, 5, 6, 1]);
   });
 
   it("sorts by score descending within same priority", () => {
@@ -512,9 +525,52 @@ describe("sortByAttentionPriority", () => {
   });
 });
 
+describe("getSignalSummary", () => {
+  it("returns no-data message for unknown method", () => {
+    expect(getSignalSummary(0.5, "unknown")).toBe("No interaction data.");
+  });
+
+  it("returns substantive summary for signal >= 0.7", () => {
+    expect(getSignalSummary(0.8, "llm")).toBe(
+      "Discussion substantive and on-topic.",
+    );
+  });
+
+  it("returns mixed-depth summary for signal 0.4-0.7", () => {
+    expect(getSignalSummary(0.5, "heuristic")).toBe(
+      "Mixed depth. Focused reply can help.",
+    );
+  });
+
+  it("returns surface-level summary for signal > 0 and < 0.4", () => {
+    expect(getSignalSummary(0.2, "llm")).toBe(
+      "Mostly surface-level. Add depth.",
+    );
+  });
+
+  it("returns early-shaping summary for signal 0", () => {
+    expect(getSignalSummary(0, "heuristic")).toBe(
+      "No comments. Early shaping opportunity.",
+    );
+  });
+
+  it("handles boundary at 0.7 exactly", () => {
+    expect(getSignalSummary(0.7, "llm")).toBe(
+      "Discussion substantive and on-topic.",
+    );
+  });
+
+  it("handles boundary at 0.4 exactly", () => {
+    expect(getSignalSummary(0.4, "llm")).toBe(
+      "Mixed depth. Focused reply can help.",
+    );
+  });
+});
+
 describe("constants", () => {
-  it("ATTENTION_META has entries for all 6 known levels", () => {
+  it("ATTENTION_META has entries for all 7 known levels", () => {
     expect(Object.keys(ATTENTION_META)).toEqual([
+      "NEEDS_SUPPORT",
       "NORMAL",
       "BOOST_VISIBILITY",
       "NEEDS_RESPONSE",
@@ -543,6 +599,9 @@ describe("constants", () => {
   });
 
   it("ATTENTION_PRIORITY has ascending values for decreasing urgency", () => {
+    expect(ATTENTION_PRIORITY.NEEDS_SUPPORT).toBeLessThan(
+      ATTENTION_PRIORITY.NEEDS_RESPONSE,
+    );
     expect(ATTENTION_PRIORITY.NEEDS_RESPONSE).toBeLessThan(
       ATTENTION_PRIORITY.SIGNAL_AT_RISK,
     );

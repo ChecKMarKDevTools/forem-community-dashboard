@@ -51,6 +51,13 @@ describe("Badge", () => {
     expect(badge).toHaveClass("bg-violet-100");
   });
 
+  it("renders rose badge", () => {
+    render(<Badge variant="rose">Support</Badge>);
+    const badge = screen.getByText("Support");
+    expect(badge).toBeInTheDocument();
+    expect(badge).toHaveClass("bg-rose-100");
+  });
+
   it("renders secondary badge", () => {
     render(<Badge variant="secondary">Sec</Badge>);
     const badge = screen.getByText("Sec");

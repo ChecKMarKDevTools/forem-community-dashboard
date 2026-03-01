@@ -1,5 +1,4 @@
 import type { Post } from "@/types/dashboard";
-import { HELP_WORDS } from "@/lib/sentiment-keywords";
 
 /** Attention-level metadata: badge variant and human-readable label.
  *  No traffic-light grading — each category has a distinct semantic color.
@@ -17,10 +16,12 @@ export const ATTENTION_META: Record<
       | "attention"
       | "critical"
       | "violet"
+      | "rose"
       | "outline";
     label: string;
   }
 > = {
+  NEEDS_SUPPORT: { variant: "rose", label: "Needs Support" },
   NORMAL: { variant: "neutral", label: "Steady Signal" },
   BOOST_VISIBILITY: { variant: "info", label: "Trending Signal" },
   NEEDS_RESPONSE: { variant: "teal", label: "Awaiting Collaboration" },
@@ -36,7 +37,7 @@ const DEFAULT_ATTENTION = {
 
 export function getAttentionVariant(
   level: string,
-): "neutral" | "info" | "teal" | "attention" | "critical" | "violet" {
+): "neutral" | "info" | "teal" | "attention" | "critical" | "violet" | "rose" {
   const v = (ATTENTION_META[level] ?? DEFAULT_ATTENTION).variant;
   // "outline" only applies in the recent-posts context; main badges fall back to neutral
   return v === "outline" ? "neutral" : v;
@@ -52,10 +53,24 @@ export function getCategoryLabel(level: string): string {
  * Returns undefined for categories that don't need additional explanation.
  */
 export function getCategoryTooltip(level: string): string | undefined {
-  if (level === "NEEDS_RESPONSE") {
-    return `Awaiting Collaboration: post hasn't received meaningful engagement yet. Help-seeking phrases detected in comments trigger this category: ${HELP_WORDS.join(", ")}.`;
+  switch (level) {
+    case "NEEDS_SUPPORT":
+      return "Needs Support: post body contains signals of emotional distress, burnout, or active help-seeking; a thoughtful, empathetic community response may be beneficial.";
+    case "NORMAL":
+      return "Steady Signal: conversation is following typical community patterns. No special attention needed.";
+    case "BOOST_VISIBILITY":
+      return "Trending Signal: engagement is climbing faster than usual. The conversation could benefit from broader visibility.";
+    case "NEEDS_RESPONSE":
+      return "Awaiting Collaboration: post hasn't received meaningful engagement yet. Early replies can set the tone for a productive conversation.";
+    case "NEEDS_REVIEW":
+      return "Rapid Discussion: comments are arriving quickly and the thread is getting long. Check whether it's productive debate or noise.";
+    case "SIGNAL_AT_RISK":
+      return "Anomalous Signal: conversation patterns diverge significantly from community norms. Worth a human look to understand why.";
+    case "SILENT_SIGNAL":
+      return "Silent Signal: post received reactions but little or no conversation. Readers noticed it — a thoughtful comment could get things started.";
+    default:
+      return undefined;
   }
-  return undefined;
 }
 
 export function getRecentPostBadgeVariant(
@@ -67,6 +82,7 @@ export function getRecentPostBadgeVariant(
   | "attention"
   | "critical"
   | "violet"
+  | "rose"
   | "outline" {
   const v = (ATTENTION_META[level] ?? DEFAULT_ATTENTION).variant;
   // neutral (routine) maps to outline for recent-posts context
@@ -272,13 +288,27 @@ export function computeAgeHours(published_at: string): number {
 /** Priority order for attention levels in the queue list.
  *  Awaiting Collaboration > Anomalous Signal > Trending Signal > Rapid Discussion > Silent Signal > Steady Signal */
 export const ATTENTION_PRIORITY: Record<string, number> = {
-  NEEDS_RESPONSE: 0,
-  SIGNAL_AT_RISK: 1,
-  BOOST_VISIBILITY: 2,
-  NEEDS_REVIEW: 3,
-  SILENT_SIGNAL: 4,
-  NORMAL: 5,
+  NEEDS_SUPPORT: 0,
+  NEEDS_RESPONSE: 1,
+  SIGNAL_AT_RISK: 2,
+  BOOST_VISIBILITY: 3,
+  NEEDS_REVIEW: 4,
+  SILENT_SIGNAL: 5,
+  NORMAL: 6,
 };
+
+/** Threshold-based guidance text for the interaction signal score. */
+export function getSignalSummary(
+  signal: number,
+  method: "llm" | "heuristic" | "unknown",
+): string {
+  if (method === "unknown") return "No interaction data.";
+
+  if (signal >= 0.7) return "Discussion substantive and on-topic.";
+  if (signal >= 0.4) return "Mixed depth. Focused reply can help.";
+  if (signal > 0) return "Mostly surface-level. Add depth.";
+  return "No comments. Early shaping opportunity.";
+}
 
 /** Sort posts by attention level priority, then by score descending within each group */
 export function sortByAttentionPriority(posts: Post[]): Post[] {

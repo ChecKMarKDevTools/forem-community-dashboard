@@ -9,7 +9,13 @@ import {
   POSITIVE_WORDS,
   NEGATIVE_WORDS,
   HELP_WORDS,
+  countSupportPhrases,
 } from "@/lib/sentiment-keywords";
+import {
+  analyzeConversation,
+  type LLMConversationResponse,
+  type LLMCommentScore,
+} from "@/lib/openai";
 import type { AttentionCategory } from "@/types/dashboard";
 import type { ArticleMetrics } from "@/types/metrics";
 
@@ -73,6 +79,18 @@ function stripHtmlTags(html: string): string {
     }
   }
   return out;
+}
+
+/** djb2 polynomial hash of text — zero deps, deterministic cross-platform.
+ * Used to detect comment edits without storing the full body.
+ * Iterates Unicode code points (not UTF-16 code units) so surrogate pairs
+ * for non-BMP characters (emoji, some CJK) are counted exactly once. */
+function hashText(text: string): string {
+  let hash = 0;
+  for (const char of text) {
+    hash = ((hash << 5) - hash + (char.codePointAt(0) ?? 0)) >>> 0;
+  }
+  return hash.toString(16);
 }
 
 function countWords(textHtml?: string): number {
@@ -234,6 +252,22 @@ function processCommentTree(
   }
 }
 
+/** Flatten all comment texts from a thread (depth-first, matching processCommentTree order).
+ * Captures id_code alongside stripped text for incremental LLM cache keying. */
+function flattenCommentTexts(
+  thread: ReadonlyArray<ForemComment>,
+): Array<{ text: string; id_code: string }> {
+  const items: Array<{ text: string; id_code: string }> = [];
+  function walk(comments: ReadonlyArray<ForemComment>): void {
+    for (const c of comments) {
+      items.push({ text: stripHtmlTags(c.body_html), id_code: c.id_code });
+      if (c.children?.length) walk(c.children);
+    }
+  }
+  walk(thread);
+  return items;
+}
+
 /** Compute risk score with frequency penalty and engagement credit */
 function computeRiskScore(
   author_post_frequency: number,
@@ -278,6 +312,7 @@ interface ClassificationInput {
   readonly distinct_commenters: number;
   readonly avg_comment_length: number;
   readonly attention_delta: number;
+  readonly needs_support: boolean;
 }
 
 /** Classify an article into an attention category */
@@ -286,6 +321,8 @@ function classifyArticle(
 ): AttentionCategory {
   // Official devteam org posts (weekly threads, challenges) skip classification
   if (input.article.organization?.slug === "devteam") return "NORMAL";
+
+  if (input.needs_support) return "NEEDS_SUPPORT";
 
   if (input.time_since_post >= 30 && input.support_score >= 3)
     return "NEEDS_RESPONSE";
@@ -323,6 +360,143 @@ function detectRepeatedLinks(domainCounts: Map<string, number>): number {
   return 0;
 }
 
+/** Standard deviation of tone scores clamped to [0, 1].
+ * Used to compute local volatility from the full merged score set
+ * (including cached scores) when the LLM only re-scored a subset. */
+export function computeVolatilityFromScores(
+  scores: ReadonlyArray<number>,
+): number {
+  if (scores.length <= 1) return 0;
+  const mean = scores.reduce((s, v) => s + v, 0) / scores.length;
+  const variance =
+    scores.reduce((s, v) => s + (v - mean) ** 2, 0) / scores.length;
+  return Math.min(1, Math.sqrt(variance));
+}
+
+/** Enriched per-comment score: carries id_code + body_hash for JSONB persistence
+ * and incremental cache keying across sync runs. */
+interface EnrichedCommentScore {
+  readonly index: number;
+  readonly tone: number;
+  readonly relevance: number;
+  readonly depth: number;
+  readonly constructiveness: number;
+  readonly id_code: string;
+  readonly body_hash: string;
+}
+
+/** Per-comment entry cached from the prior sync's JSONB metrics. */
+type CachedEntry = {
+  tone: number;
+  relevance: number;
+  depth: number;
+  constructiveness: number;
+  body_hash: string;
+};
+
+/** Build the score cache from the last persisted JSONB metrics row.
+ * Returns a Map keyed by Forem comment id_code. */
+function buildScoreCache(
+  existingRow: Record<string, unknown> | null,
+): Map<string, CachedEntry> {
+  const cache = new Map<string, CachedEntry>();
+  const metricsRaw = existingRow?.metrics;
+  const scores =
+    (
+      metricsRaw as
+        | {
+            interaction_scores?: ReadonlyArray<{
+              id_code?: string;
+              body_hash?: string;
+              tone: number;
+              relevance: number;
+              depth: number;
+              constructiveness: number;
+            }>;
+          }
+        | undefined
+    )?.interaction_scores ?? [];
+  for (const s of scores) {
+    if (s.id_code !== undefined && s.body_hash !== undefined) {
+      cache.set(s.id_code, {
+        tone: s.tone,
+        relevance: s.relevance,
+        depth: s.depth,
+        constructiveness: s.constructiveness,
+        body_hash: s.body_hash,
+      });
+    }
+  }
+  return cache;
+}
+
+/** Identify comments that need LLM scoring (new or body-edited).
+ * Returns a slice of flatComments with their original flat-list index. */
+function collectNewComments(
+  flatComments: ReadonlyArray<{ text: string; id_code: string }>,
+  scoreCache: ReadonlyMap<string, CachedEntry>,
+): Array<{ text: string; id_code: string; flatIndex: number }> {
+  const toScore: Array<{ text: string; id_code: string; flatIndex: number }> =
+    [];
+  for (let i = 0; i < flatComments.length; i++) {
+    const c = flatComments[i];
+    const h = hashText(c.text);
+    if (scoreCache.get(c.id_code)?.body_hash === h) continue; // unchanged — skip
+    toScore.push({ text: c.text, id_code: c.id_code, flatIndex: i });
+  }
+  return toScore;
+}
+
+/** Merge cached and new LLM scores into a flat enriched list.
+ * rawLlmResult indices are 0-based relative to the toScore slice (new comments only). */
+function mergeCommentScores(
+  flatComments: ReadonlyArray<{ text: string; id_code: string }>,
+  scoreCache: ReadonlyMap<string, CachedEntry>,
+  rawLlmResult: LLMConversationResponse | null,
+): EnrichedCommentScore[] {
+  const llmByIdx = new Map<number, LLMCommentScore>();
+  if (rawLlmResult) {
+    for (const c of rawLlmResult.comments) {
+      llmByIdx.set(c.index, c);
+    }
+  }
+  const enriched: EnrichedCommentScore[] = [];
+  let newIdx = 0;
+  for (let i = 0; i < flatComments.length; i++) {
+    const c = flatComments[i];
+    const h = hashText(c.text);
+    const cached = scoreCache.get(c.id_code);
+    if (cached?.body_hash === h) {
+      // Cache hit: body unchanged, reuse stored scores.
+      enriched.push({
+        index: i,
+        tone: cached.tone,
+        relevance: cached.relevance,
+        depth: cached.depth,
+        constructiveness: cached.constructiveness,
+        id_code: c.id_code,
+        body_hash: h,
+      });
+    } else {
+      // Cache miss: body changed or first-seen — use LLM score when available,
+      // otherwise fall back to neutral heuristic values so the comment is never
+      // silently dropped (which would skew signal_strong_pct / spread counts).
+      const llmScore = llmByIdx.get(newIdx);
+      enriched.push({
+        index: i,
+        tone: llmScore?.tone ?? 0,
+        relevance: llmScore?.relevance ?? 0.5,
+        depth: llmScore?.depth ?? 0.5,
+        constructiveness: llmScore?.constructiveness ?? 0.5,
+        id_code: c.id_code,
+        body_hash: h,
+      });
+      newIdx++;
+    }
+  }
+  return enriched;
+}
+
 /** Compute derived metrics from raw comment data and article stats */
 interface DerivedMetrics {
   distinct_commenters: number;
@@ -338,6 +512,7 @@ function computeDerivedMetrics(
   reaction_count: number,
   time_since_post: number,
   word_count: number,
+  toneVolatility?: number,
 ): DerivedMetrics {
   const distinct_commenters = metrics.uniqueCommenters.size;
   const comments_per_hour = comment_count / Math.max(1, time_since_post / 60);
@@ -348,14 +523,20 @@ function computeDerivedMetrics(
     Math.log2(word_count + 1) + distinct_commenters + avg_comment_length / 40;
   const exposure = Math.max(1, reaction_count + comment_count);
   const attention_delta = effort - Math.log2(exposure + 1);
-  const sentiment_flips =
+
+  // When LLM volatility is available, use it directly as the tone-volatility
+  // contribution to heat_score. Otherwise fall back to the keyword-derived
+  // ratio of |pos − neg| / comment_count.
+  const volatilityComponent =
+    toneVolatility ??
     Math.abs(metrics.pos_comments - metrics.neg_comments) /
-    Math.max(1, comment_count);
+      Math.max(1, comment_count);
+
   const heat_score =
     comments_per_hour +
     reply_ratio * 3 +
     metrics.alternating_pairs +
-    sentiment_flips;
+    volatilityComponent;
 
   return {
     distinct_commenters,
@@ -433,29 +614,54 @@ export function buildCommenterShares(
     }));
 }
 
-/** Compute sentiment percentages from pos/neg counts and total comments.
- *
- * A comment that contains both positive and negative keywords is counted in
- * both buckets, so rawPos + rawNeg can exceed 100 %. When that happens both
- * values are scaled down proportionally so the three segments always sum to
- * exactly 100 and the DivergingBar proportions match the displayed labels.
- */
-export function buildSentimentSpread(
-  posComments: number,
-  negComments: number,
-  totalComments: number,
-): { positive_pct: number; neutral_pct: number; negative_pct: number } {
-  if (totalComments === 0) {
-    return { positive_pct: 0, neutral_pct: 100, negative_pct: 0 };
+/** Compute per-comment composite signal strength from multi-dimensional interaction scores.
+ * Tone is 10% weight (normalized from [-1,1] to [0,1]), substance signals are 90%. */
+export function computeCommentSignal(comment: {
+  tone: number;
+  relevance: number;
+  depth: number;
+  constructiveness: number;
+}): number {
+  const normalizedTone = (comment.tone + 1) / 2; // [-1,1] → [0,1]
+  return (
+    comment.relevance * 0.3 +
+    comment.depth * 0.3 +
+    comment.constructiveness * 0.3 +
+    normalizedTone * 0.1
+  );
+}
+
+/** Build signal spread percentages from per-comment composite scores.
+ * Strong: > 0.6, Moderate: 0.3-0.6, Faint: < 0.3. */
+export function buildSignalSpread(
+  scores: ReadonlyArray<EnrichedCommentScore>,
+): {
+  signal_strong_pct: number;
+  signal_moderate_pct: number;
+  signal_faint_pct: number;
+} {
+  if (scores.length === 0) {
+    return {
+      signal_strong_pct: 0,
+      signal_moderate_pct: 0,
+      signal_faint_pct: 0,
+    };
   }
-  const rawPos = (posComments / totalComments) * 100;
-  const rawNeg = (negComments / totalComments) * 100;
-  const rawTotal = rawPos + rawNeg;
-  const scale = rawTotal > 100 ? 100 / rawTotal : 1;
-  const positive_pct = rawPos * scale;
-  const negative_pct = rawNeg * scale;
-  const neutral_pct = Math.max(0, 100 - positive_pct - negative_pct);
-  return { positive_pct, neutral_pct, negative_pct };
+  let high = 0;
+  let low = 0;
+  for (const s of scores) {
+    const q = computeCommentSignal(s);
+    if (q > 0.6) high++;
+    else if (q < 0.3) low++;
+  }
+  const total = scores.length;
+  const signal_strong_pct = (high / total) * 100;
+  const signal_faint_pct = (low / total) * 100;
+  const signal_moderate_pct = Math.max(
+    0,
+    100 - signal_strong_pct - signal_faint_pct,
+  );
+  return { signal_strong_pct, signal_moderate_pct, signal_faint_pct };
 }
 
 /** Assemble the full ArticleMetrics object from comment tree data. */
@@ -471,12 +677,18 @@ interface BuildMetricsInput {
   readonly reactionCount: number;
   readonly repeatedLinks: number;
   readonly isFirstPost: boolean;
+  readonly llmResult: LLMConversationResponse | null;
+  /** Merged per-comment scores (cached + new LLM). When present, persisted in
+   * JSONB with id_code and body_hash for incremental scoring on future syncs. */
+  readonly enrichedScores?: ReadonlyArray<EnrichedCommentScore>;
+  /** True when the post body contains signals of distress or help-seeking. */
+  readonly needsSupport: boolean;
 }
 
 export function buildArticleMetrics(
   input: Readonly<BuildMetricsInput>,
 ): ArticleMetrics {
-  const { metrics, publishedAt, commentCount, ageHours } = input;
+  const { metrics, publishedAt, commentCount, ageHours, llmResult } = input;
 
   const velocityBuckets = buildVelocityBuckets(
     metrics.comment_timestamps,
@@ -490,25 +702,49 @@ export function buildArticleMetrics(
     metrics.commenter_comment_counts,
     commentCount,
   );
-  const sentiment = buildSentimentSpread(
-    metrics.pos_comments,
-    metrics.neg_comments,
-    commentCount,
-  );
 
   const commentsPerHour = commentCount / Math.max(1, ageHours);
   const avgCommentLength =
     commentCount > 0 ? metrics.totalCommentWords / commentCount : 0;
   const replyRatio = metrics.replies_with_parent / Math.max(1, commentCount);
-  const sentimentFlips = Math.abs(metrics.pos_comments - metrics.neg_comments);
+
+  // Interaction signal: prefer LLM scores, fall back to heuristic.
+  const useLLM = llmResult !== null;
+  const scoreArr = input.enrichedScores ?? [];
+
+  // Signal spread and composite score
+  const signalSpread =
+    scoreArr.length > 0
+      ? buildSignalSpread(scoreArr)
+      : { signal_strong_pct: 0, signal_moderate_pct: 0, signal_faint_pct: 0 };
+
+  // Interaction signal: LLM = mean of per-comment composites; heuristic = derived from metrics
+  const interactionSignal =
+    scoreArr.length > 0
+      ? scoreArr.reduce((sum, s) => sum + computeCommentSignal(s), 0) /
+        scoreArr.length
+      : computeHeuristicSignal(
+          replyRatio,
+          avgCommentLength,
+          metrics.alternating_pairs,
+          metrics.uniqueCommenters.size,
+          commentCount,
+        );
+
+  // LLM-specific fields
+  const llmFields = useLLM
+    ? {
+        interaction_scores: scoreArr,
+        interaction_volatility: llmResult.volatility,
+        interaction_method: "llm" as const,
+        topic_tags: llmResult.topic_tags,
+      }
+    : { interaction_method: "heuristic" as const };
 
   return {
     velocity_buckets: velocityBuckets,
     comments_per_hour: commentsPerHour,
     commenter_shares: commenterShares,
-    positive_pct: sentiment.positive_pct,
-    neutral_pct: sentiment.neutral_pct,
-    negative_pct: sentiment.negative_pct,
     constructiveness_buckets: constructivenessBuckets,
     avg_comment_length: avgCommentLength,
     reply_ratio: replyRatio,
@@ -522,10 +758,36 @@ export function buildArticleMetrics(
       engagement_credit: input.engagementCredit,
     },
     risk_score: input.riskScore,
-    sentiment_flips: sentimentFlips,
     is_first_post: input.isFirstPost,
     help_keywords: metrics.help_keywords,
+    needs_support: input.needsSupport,
+    interaction_signal: interactionSignal,
+    ...signalSpread,
+    ...llmFields,
   };
+}
+
+/** Deterministic heuristic fallback for interaction quality when LLM is unavailable.
+ * Combines structural conversation signals into a 0.0-1.0 score. */
+function computeHeuristicSignal(
+  replyRatio: number,
+  avgCommentLength: number,
+  alternatingPairs: number,
+  distinctCommenters: number,
+  commentCount: number,
+): number {
+  if (commentCount === 0) return 0;
+  // Normalize each dimension to roughly 0-1
+  const replySignal = Math.min(1, replyRatio);
+  const lengthSignal = Math.min(1, avgCommentLength / 100); // 100 words = max
+  const pairSignal = Math.min(1, alternatingPairs / 5); // 5 pairs = max
+  const diversitySignal = Math.min(1, distinctCommenters / 10); // 10 = max
+  return (
+    replySignal * 0.3 +
+    lengthSignal * 0.3 +
+    pairSignal * 0.2 +
+    diversitySignal * 0.2
+  );
 }
 
 /** Bundled inputs for the deep-scoring function (S107: max 7 params) */
@@ -540,6 +802,61 @@ interface DeepScoreInput {
   readonly preliminary_score: number;
   readonly detailedUser: ForemUser | null;
   readonly postsByAuthor24h: Map<string, number>;
+}
+
+/**
+ * Returns true when the LLM result for this sync cycle should be treated as
+ * authoritative: either the LLM ran successfully this sync, or every comment
+ * was already cached so no new scoring was needed and prior LLM data is valid.
+ * Returns false when the LLM was attempted but failed while new comments exist,
+ * indicating placeholder values are present and heuristic mode should be used.
+ */
+function isLlmActiveForSync(
+  rawLlmResult: LLMConversationResponse | null,
+  unscoredCount: number,
+): boolean {
+  return rawLlmResult !== null || unscoredCount === 0;
+}
+
+/**
+ * Compute the `is_first_post` flag and `support_score` for an article author.
+ * Extracted to keep `deepScoreAndPersist` within cognitive-complexity limits.
+ */
+function computeSupportSignals(
+  detailedUser: ForemUser | null,
+  username: string,
+  postsByAuthor24h: Map<string, number>,
+  reaction_count: number,
+  comment_count: number,
+  help_keywords: number,
+): { is_first_post: boolean; support_score: number } {
+  const is_first_post = detailedUser
+    ? (Date.now() - new Date(detailedUser.joined_at).getTime()) /
+        (1000 * 60 * 60 * 24) <
+        30 && postsByAuthor24h.get(username) === 1
+    : false;
+  const support_score =
+    (is_first_post ? 2 : 0) +
+    (reaction_count === 0 ? 1 : 0) +
+    (comment_count === 0 ? 2 : 0) +
+    help_keywords;
+  return { is_first_post, support_score };
+}
+
+/**
+ * Resolve `needs_support` with a three-tier priority so the keyword safety net
+ * only fires when no real LLM result is available (current sync or cached):
+ *  1. rawLlmResult.needs_support  — LLM scored comments this sync (authoritative)
+ *  2. storedNeedsSupport          — LLM ran in a prior sync; preserve the result
+ *  3. keyword scan                — heuristic last resort when LLM has never run
+ */
+function resolveNeedsSupport(
+  rawLlmResult: LLMConversationResponse | null,
+  storedNeedsSupport: boolean | undefined,
+  articleBodyText: string,
+): boolean {
+  if (rawLlmResult) return rawLlmResult.needs_support;
+  return storedNeedsSupport ?? countSupportPhrases(articleBodyText) >= 2;
 }
 
 /** Deep-score a single article: fetch comments, compute metrics, classify, persist */
@@ -558,15 +875,20 @@ async function deepScoreAndPersist(
   } = input;
 
   let word_count = fallback_word_count;
+  let articleBodyText = "";
   // Use fresh counts from the individual article fetch when available —
   // the list API snapshot can be stale by the time we deep-score.
   let comment_count = article.comments_count;
   let reaction_count = article.public_reactions_count;
   try {
     const fullArticle = await ForemClient.getArticle(article.id);
-    word_count = countWords(
-      fullArticle.body_markdown || fullArticle.body_html || "",
-    );
+    // Prefer plain-text body_markdown for phrase matching. When only HTML is
+    // available, strip tags first — HTML markup can split phrases across
+    // elements and produce false negatives for support-phrase detection.
+    articleBodyText =
+      fullArticle.body_markdown ||
+      (fullArticle.body_html ? stripHtmlTags(fullArticle.body_html) : "");
+    word_count = countWords(articleBodyText);
     comment_count = fullArticle.comments_count;
     reaction_count = fullArticle.public_reactions_count;
   } catch {
@@ -580,12 +902,85 @@ async function deepScoreAndPersist(
   const metrics = createEmptyMetrics();
   processCommentTree(comments, username, metrics);
 
+  // Flatten comment texts with id_codes for incremental cache keying.
+  const flatComments = flattenCommentTexts(comments);
+
+  // Fetch existing interaction scores so unchanged comments skip re-scoring.
+  // maybeSingle() avoids an error on the first-ever sync when no row exists yet.
+  const { data: existingRow } = await supabase
+    .from("articles")
+    .select("metrics")
+    .eq("id", article.id)
+    .maybeSingle();
+
+  // Extract existing metrics for cache building and topic_tags preservation.
+  const existingMetrics = (existingRow as Record<string, unknown> | null)
+    ?.metrics as Record<string, unknown> | undefined;
+
+  const scoreCache = buildScoreCache(
+    existingRow as Record<string, unknown> | null,
+  );
+  const toScore = collectNewComments(flatComments, scoreCache);
+  const rawLlmResult =
+    toScore.length > 0
+      ? await analyzeConversation(
+          articleBodyText,
+          toScore.map((c) => c.text),
+        )
+      : null;
+  const enrichedScores = mergeCommentScores(
+    flatComments,
+    scoreCache,
+    rawLlmResult,
+  );
+
+  // Compute volatility from the full merged tone scores (not just new LLM scores).
+  const computedVolatility = computeVolatilityFromScores(
+    enrichedScores.map((s) => s.tone),
+  );
+
+  // llmActive is true when the LLM genuinely ran this sync OR every comment was
+  // already cached. False when the LLM failed for new unscored comments —
+  // mergeCommentScores filled those slots with placeholder values that must NOT
+  // be cached or labelled as real LLM output.
+  const llmActive = isLlmActiveForSync(rawLlmResult, toScore.length);
+
+  // Reconstruct effectiveLlmResult: non-null iff we have scored comments AND
+  // llmActive is true. Null triggers heuristic fallback in buildArticleMetrics.
+  const effectiveLlmResult =
+    enrichedScores.length > 0 && llmActive
+      ? {
+          comments: enrichedScores.map(
+            ({ index, tone, relevance, depth, constructiveness }) => ({
+              index,
+              tone,
+              relevance,
+              depth,
+              constructiveness,
+            }),
+          ),
+          volatility: computedVolatility,
+          // Preserve topic_tags from the prior sync when all comments are cached
+          // and no LLM call was made (rawLlmResult is null).
+          topic_tags:
+            rawLlmResult?.topic_tags ??
+            (existingMetrics?.topic_tags as string[] | undefined) ??
+            [],
+          // Preserve needs_support from the prior sync when no LLM call was made.
+          needs_support:
+            rawLlmResult?.needs_support ??
+            (existingMetrics?.needs_support as boolean | undefined) ??
+            false,
+        }
+      : null;
+
   const derived = computeDerivedMetrics(
     metrics,
     comment_count,
     reaction_count,
     time_since_post,
     word_count,
+    effectiveLlmResult?.volatility,
   );
 
   const repeated_links = detectRepeatedLinks(metrics.externalDomainCounts);
@@ -600,16 +995,23 @@ async function deepScoreAndPersist(
     derived.distinct_commenters,
   );
 
-  const is_first_post = detailedUser
-    ? (Date.now() - new Date(detailedUser.joined_at).getTime()) /
-        (1000 * 60 * 60 * 24) <
-        30 && postsByAuthor24h.get(username) === 1
-    : false;
-  const support_score =
-    (is_first_post ? 2 : 0) +
-    (reaction_count === 0 ? 1 : 0) +
-    (comment_count === 0 ? 2 : 0) +
-    metrics.help_keywords;
+  const { is_first_post, support_score } = computeSupportSignals(
+    detailedUser,
+    username,
+    postsByAuthor24h,
+    reaction_count,
+    comment_count,
+    metrics.help_keywords,
+  );
+
+  const storedNeedsSupport = existingMetrics?.needs_support as
+    | boolean
+    | undefined;
+  const needs_support = resolveNeedsSupport(
+    rawLlmResult,
+    storedNeedsSupport,
+    articleBodyText,
+  );
 
   const category = classifyArticle({
     article,
@@ -623,6 +1025,7 @@ async function deepScoreAndPersist(
     distinct_commenters: derived.distinct_commenters,
     avg_comment_length: derived.avg_comment_length,
     attention_delta: derived.attention_delta,
+    needs_support,
   });
 
   const final_score = Math.max(0, preliminary_score);
@@ -649,6 +1052,10 @@ async function deepScoreAndPersist(
     reactionCount: reaction_count,
     repeatedLinks: repeated_links,
     isFirstPost: is_first_post,
+    llmResult: effectiveLlmResult,
+    enrichedScores:
+      llmActive && enrichedScores.length > 0 ? enrichedScores : undefined,
+    needsSupport: needs_support,
   });
 
   const { error: articleError } = await supabase.from("articles").upsert({
@@ -684,6 +1091,16 @@ async function deepScoreAndPersist(
   }
 }
 
+/** Type predicate: narrows published_at to string so downstream callers
+ * don't need null assertions when processing articles.
+ * GET /api/articles only returns published articles; published_at being non-null
+ * is the reliable signal (draft/scheduled articles have null published_at). */
+function isPublishedArticle(
+  a: ForemArticle,
+): a is ForemArticle & { published_at: string } {
+  return !!a.published_at;
+}
+
 /**
  * Fetch pages from Forem until we either run out of articles or the oldest
  * article on the page exceeds the sync window age. Articles are returned
@@ -715,18 +1132,6 @@ async function fetchAndFilterArticles(): Promise<{
     if (getAgeHours(oldestOnPage.published_at) > SYNC_WINDOW_HOURS) break;
 
     page++;
-  }
-
-  /** Type predicate: narrows published_at to string so downstream callers
-   * don't need null assertions when processing validArticles. */
-  function isPublishedArticle(
-    a: ForemArticle,
-  ): a is ForemArticle & { published_at: string } {
-    // GET /api/articles (the only endpoint we call) only returns published
-    // articles and does not include a `published` boolean field — that field
-    // is exclusive to GET /api/articles/me. published_at being non-null is
-    // the reliable signal: draft/scheduled articles have a null published_at.
-    return !!a.published_at;
   }
 
   const validArticles = allArticles.filter(isPublishedArticle).filter((a) => {
@@ -866,24 +1271,20 @@ async function backfillEmptyMetrics(
       const article = await ForemClient.getArticle(row.id, false);
       // Guard: articles stored during a prior sync should always have
       // published_at, but the API may return null for deleted/unlisted posts.
-      if (!article.published_at) {
+      if (!isPublishedArticle(article)) {
         failed++;
         errors.push(
           `Backfill article ${row.id}: published_at is null, skipping`,
         );
         continue;
       }
-      // Cast to the narrowed type after the runtime null guard above.
-      const publishedArticle = article as ForemArticle & {
-        published_at: string;
-      };
-      const username = publishedArticle.user.username;
-      const age_hours = getAgeHours(publishedArticle.published_at);
-      const word_count = publishedArticle.reading_time_minutes * 200;
+      const username = article.user.username;
+      const age_hours = getAgeHours(article.published_at);
+      const word_count = article.reading_time_minutes * 200;
       const author_post_frequency = postsByAuthor24h.get(username) || 1;
       const preliminary_score =
-        publishedArticle.public_reactions_count +
-        publishedArticle.comments_count * 2 +
+        article.public_reactions_count +
+        article.comments_count * 2 +
         word_count / 100 -
         age_hours -
         author_post_frequency;
@@ -894,7 +1295,7 @@ async function backfillEmptyMetrics(
       }
 
       await deepScoreAndPersist({
-        article: publishedArticle,
+        article,
         username,
         word_count,
         age_hours,

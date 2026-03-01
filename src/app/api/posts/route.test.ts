@@ -6,6 +6,7 @@ vi.mock("@/lib/supabase", () => ({
   supabase: {
     from: vi.fn(),
   },
+  isConfigured: vi.fn(() => true),
 }));
 
 /**

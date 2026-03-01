@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabase, isConfigured } from "@/lib/supabase";
 
 export async function GET(
   request: Request,
@@ -14,6 +14,11 @@ export async function GET(
   const id = trimmed ? Number(trimmed) : Number.NaN;
   if (!Number.isInteger(id)) {
     return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
+  }
+
+  // No credentials → post cannot exist; treat as 404 (no console error logged).
+  if (!isConfigured()) {
+    return NextResponse.json({ error: "Post not found" }, { status: 404 });
   }
 
   try {

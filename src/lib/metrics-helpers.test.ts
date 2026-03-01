@@ -4,7 +4,11 @@ import {
   getVelocityChartData,
   getVelocityBaseline,
   getParticipationData,
-  getSentimentData,
+  getSignalSpreadData,
+  getInteractionSignal,
+  getInteractionMethod,
+  getTopicTags,
+  getInteractionVolatility,
   getConstructivenessData,
   getRiskMarkers,
 } from "./metrics-helpers";
@@ -23,16 +27,12 @@ function makeMetrics(overrides: Partial<ArticleMetrics> = {}): ArticleMetrics {
     velocity_buckets: [],
     comments_per_hour: 0,
     commenter_shares: [],
-    positive_pct: 0,
-    neutral_pct: 100,
-    negative_pct: 0,
     constructiveness_buckets: [],
     avg_comment_length: 0,
     reply_ratio: 0,
     alternating_pairs: 0,
     risk_components: EMPTY_RISK_COMPONENTS,
     risk_score: 0,
-    sentiment_flips: 0,
     is_first_post: false,
     help_keywords: 0,
     ...overrides,
@@ -60,12 +60,28 @@ describe("null-safety", () => {
     expect(getParticipationData(null)).toEqual([]);
   });
 
-  it("getSentimentData returns 100% neutral for null", () => {
-    expect(getSentimentData(null)).toEqual({
-      positive: 0,
-      neutral: 100,
-      negative: 0,
+  it("getSignalSpreadData returns 0/0/0 for null (empty state)", () => {
+    expect(getSignalSpreadData(null)).toEqual({
+      strong: 0,
+      moderate: 0,
+      faint: 0,
     });
+  });
+
+  it("getInteractionSignal returns 0 for null", () => {
+    expect(getInteractionSignal(null)).toBe(0);
+  });
+
+  it("getInteractionMethod returns 'unknown' for null", () => {
+    expect(getInteractionMethod(null)).toBe("unknown");
+  });
+
+  it("getTopicTags returns empty array for null", () => {
+    expect(getTopicTags(null)).toEqual([]);
+  });
+
+  it("getInteractionVolatility returns 0 for null", () => {
+    expect(getInteractionVolatility(null)).toBe(0);
   });
 
   it("getConstructivenessData returns empty array for null", () => {
@@ -86,6 +102,30 @@ describe("null-safety", () => {
     const markers = getRiskMarkers({} as ArticleMetrics);
     expect(markers).toHaveLength(5);
     expect(markers.every((m) => !m.active)).toBe(true);
+  });
+
+  it("getSignalSpreadData handles empty object (DB default '{}')", () => {
+    expect(getSignalSpreadData({} as ArticleMetrics)).toEqual({
+      strong: 0,
+      moderate: 0,
+      faint: 0,
+    });
+  });
+
+  it("getInteractionSignal handles empty object (DB default '{}')", () => {
+    expect(getInteractionSignal({} as ArticleMetrics)).toBe(0);
+  });
+
+  it("getInteractionMethod handles empty object (DB default '{}')", () => {
+    expect(getInteractionMethod({} as ArticleMetrics)).toBe("unknown");
+  });
+
+  it("getTopicTags handles empty object (DB default '{}')", () => {
+    expect(getTopicTags({} as ArticleMetrics)).toEqual([]);
+  });
+
+  it("getInteractionVolatility handles empty object (DB default '{}')", () => {
+    expect(getInteractionVolatility({} as ArticleMetrics)).toBe(0);
   });
 });
 
@@ -167,28 +207,192 @@ describe("getParticipationData", () => {
 });
 
 // ---------------------------------------------------------------------------
-// getSentimentData
+// getSignalSpreadData
 // ---------------------------------------------------------------------------
 
-describe("getSentimentData", () => {
-  it("extracts sentiment percentages", () => {
+describe("getSignalSpreadData", () => {
+  it("extracts signal spread percentages", () => {
     const m = makeMetrics({
-      positive_pct: 40,
-      neutral_pct: 30,
-      negative_pct: 30,
+      signal_strong_pct: 50,
+      signal_moderate_pct: 30,
+      signal_faint_pct: 20,
     });
-    expect(getSentimentData(m)).toEqual({
-      positive: 40,
-      neutral: 30,
-      negative: 30,
+    expect(getSignalSpreadData(m)).toEqual({
+      strong: 50,
+      moderate: 30,
+      faint: 20,
     });
   });
 
-  it("returns zero percentages for default metrics", () => {
-    const result = getSentimentData(makeMetrics());
-    expect(result.positive).toBe(0);
-    expect(result.neutral).toBe(100);
-    expect(result.negative).toBe(0);
+  it("returns zeros when signal fields are absent (empty state)", () => {
+    const result = getSignalSpreadData(makeMetrics());
+    expect(result.strong).toBe(0);
+    expect(result.moderate).toBe(0);
+    expect(result.faint).toBe(0);
+  });
+
+  it("handles partial signal data (only strong set)", () => {
+    const m = makeMetrics({ signal_strong_pct: 80 });
+    const result = getSignalSpreadData(m);
+    expect(result.strong).toBe(80);
+    expect(result.moderate).toBe(0);
+    expect(result.faint).toBe(0);
+  });
+
+  it("handles zero values explicitly set", () => {
+    const m = makeMetrics({
+      signal_strong_pct: 0,
+      signal_moderate_pct: 0,
+      signal_faint_pct: 0,
+    });
+    expect(getSignalSpreadData(m)).toEqual({
+      strong: 0,
+      moderate: 0,
+      faint: 0,
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// getInteractionSignal
+// ---------------------------------------------------------------------------
+
+describe("getInteractionSignal", () => {
+  it("returns 0 for null metrics", () => {
+    expect(getInteractionSignal(null)).toBe(0);
+  });
+
+  it("returns 0 for undefined metrics", () => {
+    expect(getInteractionSignal(undefined)).toBe(0);
+  });
+
+  it("returns the stored interaction signal value", () => {
+    expect(
+      getInteractionSignal(makeMetrics({ interaction_signal: 0.85 })),
+    ).toBe(0.85);
+  });
+
+  it("returns 0 when interaction_signal is absent", () => {
+    expect(getInteractionSignal(makeMetrics())).toBe(0);
+  });
+
+  it("handles boundary value 0.0", () => {
+    expect(getInteractionSignal(makeMetrics({ interaction_signal: 0 }))).toBe(
+      0,
+    );
+  });
+
+  it("handles boundary value 1.0", () => {
+    expect(getInteractionSignal(makeMetrics({ interaction_signal: 1.0 }))).toBe(
+      1.0,
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// getInteractionMethod
+// ---------------------------------------------------------------------------
+
+describe("getInteractionMethod", () => {
+  it("returns 'unknown' for null metrics", () => {
+    expect(getInteractionMethod(null)).toBe("unknown");
+  });
+
+  it("returns 'unknown' for undefined metrics", () => {
+    expect(getInteractionMethod(undefined)).toBe("unknown");
+  });
+
+  it("returns 'unknown' for empty object (DB default '{}')", () => {
+    expect(getInteractionMethod({} as ArticleMetrics)).toBe("unknown");
+  });
+
+  it("returns 'llm' when interaction_method is 'llm'", () => {
+    expect(
+      getInteractionMethod(makeMetrics({ interaction_method: "llm" })),
+    ).toBe("llm");
+  });
+
+  it("returns 'heuristic' when interaction_method is 'heuristic'", () => {
+    expect(
+      getInteractionMethod(makeMetrics({ interaction_method: "heuristic" })),
+    ).toBe("heuristic");
+  });
+
+  it("returns 'unknown' when interaction_method is absent", () => {
+    expect(getInteractionMethod(makeMetrics())).toBe("unknown");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// getTopicTags
+// ---------------------------------------------------------------------------
+
+describe("getTopicTags", () => {
+  it("returns empty array for null metrics", () => {
+    expect(getTopicTags(null)).toEqual([]);
+  });
+
+  it("returns empty array for undefined metrics", () => {
+    expect(getTopicTags(undefined)).toEqual([]);
+  });
+
+  it("returns empty array for empty object (DB default '{}')", () => {
+    expect(getTopicTags({} as ArticleMetrics)).toEqual([]);
+  });
+
+  it("returns the stored topic tags", () => {
+    const tags = ["react", "performance", "testing"];
+    expect(getTopicTags(makeMetrics({ topic_tags: tags }))).toEqual(tags);
+  });
+
+  it("returns empty array when topic_tags is absent", () => {
+    expect(getTopicTags(makeMetrics())).toEqual([]);
+  });
+
+  it("handles single topic tag", () => {
+    expect(getTopicTags(makeMetrics({ topic_tags: ["typescript"] }))).toEqual([
+      "typescript",
+    ]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// getInteractionVolatility
+// ---------------------------------------------------------------------------
+
+describe("getInteractionVolatility", () => {
+  it("returns 0 for null metrics", () => {
+    expect(getInteractionVolatility(null)).toBe(0);
+  });
+
+  it("returns 0 for undefined metrics", () => {
+    expect(getInteractionVolatility(undefined)).toBe(0);
+  });
+
+  it("returns 0 for empty object (DB default '{}')", () => {
+    expect(getInteractionVolatility({} as ArticleMetrics)).toBe(0);
+  });
+
+  it("returns the stored volatility value", () => {
+    expect(
+      getInteractionVolatility(makeMetrics({ interaction_volatility: 0.75 })),
+    ).toBe(0.75);
+  });
+
+  it("returns 0 when interaction_volatility is absent", () => {
+    expect(getInteractionVolatility(makeMetrics())).toBe(0);
+  });
+
+  it("handles boundary value 0.0", () => {
+    expect(
+      getInteractionVolatility(makeMetrics({ interaction_volatility: 0 })),
+    ).toBe(0);
+  });
+
+  it("handles boundary value 1.0", () => {
+    expect(
+      getInteractionVolatility(makeMetrics({ interaction_volatility: 1.0 })),
+    ).toBe(1.0);
   });
 });
 

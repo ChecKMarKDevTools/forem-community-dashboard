@@ -31,6 +31,7 @@ vi.mock("@/lib/supabase", () => ({
   supabase: {
     from: vi.fn(),
   },
+  isConfigured: vi.fn(() => true),
 }));
 
 // Performance tests are permanently enabled as per user requirement
@@ -123,9 +124,6 @@ function buildSupabaseDetailMock(id: number) {
               velocity_buckets: [{ hour: 0, count: 2 }],
               comments_per_hour: 1,
               commenter_shares: [{ username: "user1", share: 0.5 }],
-              positive_pct: 30,
-              neutral_pct: 50,
-              negative_pct: 20,
               constructiveness_buckets: [{ hour: 0, depth_index: 0.5 }],
               avg_comment_length: 20,
               reply_ratio: 0.3,
@@ -139,9 +137,13 @@ function buildSupabaseDetailMock(id: number) {
                 engagement_credit: 0,
               },
               risk_score: 0,
-              sentiment_flips: 0,
               is_first_post: false,
               help_keywords: 0,
+              interaction_signal: 0.5,
+              interaction_method: "heuristic" as const,
+              signal_strong_pct: 30,
+              signal_moderate_pct: 50,
+              signal_faint_pct: 20,
             },
           },
           error: null,

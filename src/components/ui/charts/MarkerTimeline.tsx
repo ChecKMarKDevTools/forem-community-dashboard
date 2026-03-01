@@ -32,7 +32,7 @@ export function MarkerTimeline({ markers, className }: MarkerTimelineProps) {
           className={cn("w-full", className)}
           aria-labelledby={titleId}
         >
-          <title id={titleId}>No risk signals detected</title>
+          <title id={titleId}>Not enough data yet</title>
           <line
             x1={PADDING.left}
             x2={WIDTH - PADDING.right}
@@ -62,7 +62,9 @@ export function MarkerTimeline({ markers, className }: MarkerTimelineProps) {
         aria-labelledby={titleId}
       >
         <title id={titleId}>
-          {noneActive ? "No risk signals detected" : "Risk signal timeline"}
+          {noneActive
+            ? "No behavioral signals detected"
+            : "Behavioral signal timeline"}
         </title>
         {/* Track line — dashed when no signals are active */}
         <line

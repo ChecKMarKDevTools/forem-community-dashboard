@@ -17,7 +17,7 @@ import { GET as getPosts } from "../posts/route";
 import { GET as getPostById } from "../posts/[id]/route";
 import { POST as postCron } from "../cron/route";
 import { syncArticles } from "@/lib/sync";
-import { supabase } from "@/lib/supabase";
+import { supabase, isConfigured } from "@/lib/supabase";
 import { vi, type Mock } from "vitest";
 
 // Mock the heavy sync module at the boundary — the real pipeline is covered
@@ -31,6 +31,9 @@ vi.mock("@/lib/supabase", () => ({
   supabase: {
     from: vi.fn(),
   },
+  // Default: credentials are present so the normal code paths run.
+  // Individual tests override this to verify unconfigured behaviour.
+  isConfigured: vi.fn(() => true),
 }));
 
 // ---------------------------------------------------------------------------
@@ -79,9 +82,6 @@ const DB_ARTICLE_DETAIL = {
     velocity_buckets: [{ hour: 0, count: 3 }],
     comments_per_hour: 1.5,
     commenter_shares: [{ username: "user1", share: 0.6 }],
-    positive_pct: 20,
-    neutral_pct: 60,
-    negative_pct: 20,
     constructiveness_buckets: [{ hour: 0, depth_index: 1.0 }],
     avg_comment_length: 25,
     reply_ratio: 0.4,
@@ -95,9 +95,13 @@ const DB_ARTICLE_DETAIL = {
       engagement_credit: 0,
     },
     risk_score: 8,
-    sentiment_flips: 1,
     is_first_post: false,
     help_keywords: 0,
+    interaction_signal: 0.35,
+    interaction_method: "heuristic" as const,
+    signal_strong_pct: 20,
+    signal_moderate_pct: 60,
+    signal_faint_pct: 20,
   },
 };
 
@@ -203,6 +207,22 @@ describe("Integration: GET /api/posts", () => {
     expect(res.status).toBe(500);
     expect(json).toHaveProperty("error");
     expect(typeof json.error).toBe("string");
+  });
+
+  it("returns 200 + [] when Supabase credentials are not configured", async () => {
+    // Simulates Lighthouse CI / local dev without .env.local — the API must
+    // return a graceful empty list so no HTTP 500 is issued and the browser
+    // never logs a network console error (which would fail the Lighthouse
+    // errors-in-console audit).
+    (isConfigured as Mock).mockReturnValueOnce(false);
+
+    const res = await getPosts();
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json).toEqual([]);
+    // Supabase must NOT be called when credentials are absent
+    expect(supabase.from).not.toHaveBeenCalled();
   });
 });
 
@@ -331,6 +351,23 @@ describe("Integration: GET /api/posts/[id]", () => {
     });
 
     expect(res.status).toBe(500);
+  });
+
+  it("returns 404 when Supabase credentials are not configured", async () => {
+    // When not configured, any specific post ID is treated as not found.
+    // No Supabase call is made, and the response is a clean 404 (not a 500),
+    // so no browser network console error is logged during Lighthouse CI.
+    (isConfigured as Mock).mockReturnValueOnce(false);
+
+    const req = new NextRequest("http://localhost:3000/api/posts/1");
+    const res = await getPostById(req, {
+      params: Promise.resolve({ id: "1" }),
+    });
+    const json = await res.json();
+
+    expect(res.status).toBe(404);
+    expect(json).toHaveProperty("error");
+    expect(supabase.from).not.toHaveBeenCalled();
   });
 });
 

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabase, isConfigured } from "@/lib/supabase";
 
 /**
  * GET /api/posts
@@ -19,6 +19,13 @@ import { supabase } from "@/lib/supabase";
  * the intended retention horizon.
  */
 export async function GET() {
+  // Return an empty list when credentials are absent (Lighthouse CI, local dev
+  // without .env.local). This prevents a 500 → browser network console error
+  // that would fail the Lighthouse errors-in-console audit.
+  if (!isConfigured()) {
+    return NextResponse.json([]);
+  }
+
   try {
     const windowStart = new Date(
       Date.now() - 168 * 60 * 60 * 1000,

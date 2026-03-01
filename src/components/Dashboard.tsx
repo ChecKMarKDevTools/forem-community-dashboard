@@ -2,12 +2,7 @@
 
 import * as React from "react";
 import { motion } from "framer-motion";
-import {
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-} from "@/components/ui/Card";
+import { CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Spinner } from "@/components/ui/Spinner";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -24,6 +19,7 @@ import {
   MessageSquare,
   X,
 } from "lucide-react";
+import { Footer } from "@/components/ui/Footer";
 import { cn } from "@/lib/utils";
 import {
   getAttentionVariant,
@@ -49,18 +45,21 @@ import {
   ChartContainer,
   LineChart,
   HorizontalBarChart,
-  DivergingBar,
+  SignalBar,
   MarkerTimeline,
 } from "@/components/ui/charts";
 import {
   getVelocityChartData,
   getVelocityBaseline,
   getParticipationData,
-  getSentimentData,
+  getSignalSpreadData,
+  getInteractionSignal,
+  getInteractionMethod,
+  getInteractionVolatility,
+  getTopicTags,
   getConstructivenessData,
   getRiskMarkers,
 } from "@/lib/metrics-helpers";
-import { POSITIVE_WORDS, NEGATIVE_WORDS } from "@/lib/sentiment-keywords";
 
 type DetailPanelProps = Readonly<{
   selectedPostId: number | null;
@@ -151,22 +150,46 @@ function DetailPanel({
           </Badge>
         </div>
 
-        <p className="text-text-muted border-surface-border mb-8 border-y py-4 text-sm">
-          {postDetails.reactions} reactions &middot; {postDetails.comments}{" "}
-          comments &middot; {extractWordCount(postDetails.explanations)} words
-          &middot; {computeAgeHours(postDetails.published_at)}h old
-        </p>
+        <div
+          className="border-surface-border mb-8 flex flex-wrap items-baseline gap-x-6 gap-y-2 border-y py-4"
+          aria-label="Post engagement metrics"
+        >
+          <span className="text-text-muted text-sm">
+            <span className="font-heading text-text-primary text-lg font-bold">
+              {postDetails.reactions}
+            </span>{" "}
+            reactions
+          </span>
+          <span className="text-text-muted text-sm">
+            <span className="font-heading text-text-primary text-lg font-bold">
+              {postDetails.comments}
+            </span>{" "}
+            comments
+          </span>
+          <span className="text-text-muted text-sm">
+            <span className="font-heading text-text-primary text-lg font-bold">
+              {extractWordCount(postDetails.explanations)}
+            </span>{" "}
+            words
+          </span>
+          <span className="text-text-muted text-sm">
+            <span className="font-heading text-text-primary text-lg font-bold">
+              {computeAgeHours(postDetails.published_at)}h
+            </span>{" "}
+            old
+          </span>
+        </div>
 
         <div className="grid gap-6 md:grid-cols-2">
           {/* Conversation Signals — LEFT/first */}
           <SectionCard>
             <CardHeader className="pb-3">
-              <CardTitle className="font-heading text-text-secondary text-lg">
+              <CardTitle
+                className="font-heading text-text-secondary text-lg"
+                title="Observable data points extracted from the conversation thread. Hover over any signal for an explanation."
+              >
                 Conversation Signals
               </CardTitle>
-              <CardDescription>
-                Signals computed from the conversation
-              </CardDescription>
             </CardHeader>
             <CardContent>
               {postDetails.explanations &&
@@ -198,12 +221,12 @@ function DetailPanel({
           {/* Discussion State — RIGHT/second */}
           <SectionCard variant="muted">
             <CardHeader className="pb-3">
-              <CardTitle className="font-heading text-text-secondary text-lg">
+              <CardTitle
+                className="font-heading text-text-secondary text-lg"
+                title="Composite indicators derived from conversation signals. Each bar shows intensity relative to community baselines."
+              >
                 Discussion State
               </CardTitle>
-              <CardDescription>
-                Observed patterns in the current window
-              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {Object.entries(
@@ -225,18 +248,15 @@ function DetailPanel({
         </div>
 
         {/* Thread Momentum — full-width card below the grid */}
-        <SectionCard variant="muted" className="mt-6">
-          <CardHeader className="pb-3">
-            <CardTitle className="font-heading text-text-secondary text-lg">
-              Thread Momentum
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-text-secondary text-sm leading-relaxed">
-              {getWhatsHappening(postDetails.explanations)}
-            </p>
-          </CardContent>
-        </SectionCard>
+        <ChartContainer
+          title="Thread Momentum"
+          tooltip="A plain-language read of how the conversation is evolving right now."
+          className="mt-6"
+        >
+          <p className="text-text-secondary text-sm leading-relaxed">
+            {getWhatsHappening(postDetails.explanations)}
+          </p>
+        </ChartContainer>
 
         {/* Post Analytics — always shown for every post */}
         <motion.div
@@ -253,7 +273,7 @@ function DetailPanel({
             {/* Reply Velocity */}
             <ChartContainer
               title="Reply Velocity"
-              tooltip="How quickly comments arrive after the post is published. Each bar represents one hour. A dashed baseline shows the average rate."
+              tooltip="When comments arrived after publication, hour by hour. Spikes may indicate a sudden surge of interest; gaps may mean the conversation stalled."
             >
               <LineChart
                 data={getVelocityChartData(postDetails.metrics)}
@@ -266,7 +286,7 @@ function DetailPanel({
             {/* Participation Distribution */}
             <ChartContainer
               title="Participation Distribution"
-              tooltip="Shows the top commenters ranked by their share of total comments. A healthy discussion has multiple participants rather than one dominant voice."
+              tooltip="Who is talking and how much. Multiple participants suggest broad interest; a single dominant voice may mean the thread needs fresh perspectives."
             >
               <HorizontalBarChart
                 data={getParticipationData(postDetails.metrics)}
@@ -274,18 +294,73 @@ function DetailPanel({
             </ChartContainer>
           </div>
 
-          {/* Sentiment Spread */}
+          {/* Interaction Signal */}
           <ChartContainer
-            title="Sentiment Spread"
-            tooltip={`Keyword-based tone detection. Positive keywords: ${Array.from(POSITIVE_WORDS).join(", ")}. Negative keywords: ${Array.from(NEGATIVE_WORDS).join(", ")}.`}
+            title="Interaction Signal"
+            tooltip="Depth and substance of comments so far. Guides how you can contribute most constructively to the conversation."
           >
-            <DivergingBar {...getSentimentData(postDetails.metrics)} />
+            {(() => {
+              const spread = getSignalSpreadData(postDetails.metrics);
+              const nonZeroTiers = [
+                spread.strong,
+                spread.moderate,
+                spread.faint,
+              ].filter((v) => v > 0).length;
+              // Need at least 2 non-zero tiers for the bar to be meaningful
+              return (
+                getInteractionMethod(postDetails.metrics) !== "unknown" &&
+                nonZeroTiers >= 2 && <SignalBar {...spread} />
+              );
+            })()}
+            {getInteractionMethod(postDetails.metrics) !== "unknown" && (
+              <div className="text-text-muted mt-3 flex flex-wrap items-center gap-4 text-xs">
+                <span title="Composite interaction quality score (0–1). Higher means more substantive discussion.">
+                  Signal:{" "}
+                  <span className="text-text-secondary font-medium">
+                    {getInteractionSignal(postDetails.metrics).toFixed(2)}
+                  </span>
+                </span>
+                <span title="How interaction scores were produced: LLM uses OpenAI structured output; Heuristic uses rule-based keyword scoring.">
+                  Method:{" "}
+                  <span className="text-text-secondary font-medium capitalize">
+                    {getInteractionMethod(postDetails.metrics)}
+                  </span>
+                </span>
+                {getInteractionMethod(postDetails.metrics) === "llm" && (
+                  <span title="How much scores vary across comments. High volatility means mixed quality; low means consistent depth.">
+                    Volatility:{" "}
+                    <span className="text-text-secondary font-medium">
+                      {Math.round(
+                        getInteractionVolatility(postDetails.metrics) * 100,
+                      )}
+                      %
+                    </span>
+                  </span>
+                )}
+              </div>
+            )}
+            {getTopicTags(postDetails.metrics).length > 0 && (
+              <div
+                className="mt-2 flex flex-wrap gap-1"
+                aria-label="Topic tags"
+              >
+                {getTopicTags(postDetails.metrics).map((tag) => (
+                  <span
+                    key={tag}
+                    className="bg-surface-raised text-text-secondary rounded px-1.5 py-0.5 text-xs"
+                    title="LLM-extracted topic tag from post content"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
           </ChartContainer>
 
           {/* Constructiveness Trend */}
           <ChartContainer
             title="Constructiveness Trend"
-            tooltip="Average reply depth over time. Deeper threads indicate more back-and-forth discussion rather than standalone top-level comments."
+            tooltip="How reply depth changes over time. Rising depth means people are building on each other's ideas; flat or falling depth may mean the conversation is losing momentum."
           >
             <LineChart
               data={getConstructivenessData(postDetails.metrics)}
@@ -298,7 +373,7 @@ function DetailPanel({
           {/* Contributing Signals */}
           <ChartContainer
             title="Contributing Signals"
-            tooltip="The specific risk factors that were detected for this post. Each marker identifies a signal that contributed to the risk score."
+            tooltip="Specific behavioral signals detected in this conversation. Highlighted markers indicate patterns that diverge from typical community discussion."
           >
             <MarkerTimeline markers={getRiskMarkers(postDetails.metrics)} />
           </ChartContainer>
@@ -416,7 +491,7 @@ export function Dashboard() {
       <aside
         aria-label="Post queue"
         className={cn(
-          "border-surface-border glass-panel bg-paper-clue flex w-full flex-col border-r transition-all duration-300",
+          "border-surface-border glass-panel bg-paper-clue flex w-full flex-col border-r transition-[width] duration-300",
           selectedPostId ? "hidden md:flex md:w-1/2 lg:w-4/12" : "w-full",
         )}
       >
@@ -426,9 +501,10 @@ export function Dashboard() {
               <h1 className="font-heading text-text-primary text-2xl font-bold tracking-tight">
                 DEV Community Dashboard
               </h1>
-              <p className="text-text-muted mt-1 text-sm">
-                Identify meaningful discussions on DEV.to by measuring
-                interaction patterns, not popularity.
+              <p className="text-text-muted mt-2 text-sm tracking-wide md:text-base">
+                Surface meaningful conversations on DEV.to. Posts are ranked by
+                interaction quality, not popularity — click any card to explore
+                the full analysis.
               </p>
             </div>
             <nav aria-label="Site actions" className="flex items-center gap-2">
@@ -445,34 +521,52 @@ export function Dashboard() {
             </nav>
           </div>
         </header>
-        <div className="flex-1 space-y-4 overflow-y-auto p-4">
-          {posts.map((post) => (
-            <QueueCard
-              key={post.id}
-              selected={selectedPostId === post.id}
-              onClick={() => setSelectedPostId(post.id)}
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div className="min-w-0 flex-1">
-                  <h2 className="font-heading text-text-primary truncate text-base font-semibold">
-                    {post.title}
-                  </h2>
-                  <PostMeta
-                    author={post.author}
-                    date={post.published_at}
-                    className="mt-2"
-                  />
-                </div>
-                <Badge
-                  variant={getAttentionVariant(post.attention_level)}
-                  className="shrink-0"
-                  title={getCategoryTooltip(post.attention_level)}
+        <div className="scroll-fade flex-1 space-y-4 overflow-y-auto p-4">
+          <motion.div
+            className="space-y-4"
+            initial="hidden"
+            animate="visible"
+            variants={{
+              hidden: {},
+              visible: { transition: { staggerChildren: 0.04 } },
+            }}
+          >
+            {posts.map((post) => (
+              <motion.div
+                key={post.id}
+                variants={{
+                  hidden: { opacity: 0, y: 6 },
+                  visible: { opacity: 1, y: 0 },
+                }}
+                transition={{ duration: 0.2 }}
+              >
+                <QueueCard
+                  selected={selectedPostId === post.id}
+                  onClick={() => setSelectedPostId(post.id)}
                 >
-                  {getCategoryLabel(post.attention_level)}
-                </Badge>
-              </div>
-            </QueueCard>
-          ))}
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0 flex-1">
+                      <h2 className="font-heading text-text-primary truncate text-base font-semibold">
+                        {post.title}
+                      </h2>
+                      <PostMeta
+                        author={post.author}
+                        date={post.published_at}
+                        className="mt-2"
+                      />
+                    </div>
+                    <Badge
+                      variant={getAttentionVariant(post.attention_level)}
+                      className="shrink-0"
+                      title={getCategoryTooltip(post.attention_level)}
+                    >
+                      {getCategoryLabel(post.attention_level)}
+                    </Badge>
+                  </div>
+                </QueueCard>
+              </motion.div>
+            ))}
+          </motion.div>
           {posts.length === 0 && (
             <EmptyState
               icon={AlertCircle}
@@ -480,6 +574,7 @@ export function Dashboard() {
             />
           )}
         </div>
+        <Footer />
       </aside>
 
       {/* Right panel: Post Details — only rendered when a post is selected */}

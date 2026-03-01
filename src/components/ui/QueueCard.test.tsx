@@ -31,6 +31,8 @@ describe("QueueCard", () => {
     );
     const card = screen.getByRole("button");
     expect(card.className).toContain("card-active");
+    expect(card.className).toContain("border-l-[3px]");
+    expect(card.className).toContain("border-l-accent-primary");
   });
 
   it("applies unselected styles when selected is false", () => {

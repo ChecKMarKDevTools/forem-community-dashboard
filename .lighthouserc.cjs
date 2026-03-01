@@ -19,18 +19,16 @@ module.exports = {
           { minScore: process.env.LHCI_MOBILE ? 0.75 : 0.9 },
         ],
         "categories:accessibility": ["error", { minScore: 1.0 }],
-        // CI has no real Supabase URL; /api/posts returns HTTP 500, which
-        // browsers log as a network error (errors-in-console). This only
-        // occurs in CI -- production with valid credentials is not affected.
         "categories:best-practices": ["error", { minScore: 0.95 }],
         "categories:seo": ["error", { minScore: 1.0 }],
         // Use bare audit IDs (no "audits:" namespace prefix -- that prefix
         // causes LHCI to look up a non-existent "audits" audit rather than
         // the intended audit, silently ignoring the assertion).
         //
-        // Downgraded to warn: CI Supabase 500 errors show up as console
-        // errors. Not a bug in production.
-        "errors-in-console": ["warn"],
+        // /api/posts returns 200+[] when Supabase env vars are absent
+        // (Lighthouse CI, local dev without .env.local), so no HTTP 500 is
+        // issued and no network console error is logged.
+        "errors-in-console": ["error", { minScore: 1 }],
       },
     },
     upload: {

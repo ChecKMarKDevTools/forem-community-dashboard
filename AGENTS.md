@@ -20,7 +20,7 @@
 
 ## Database Schema Notes
 
-- **`articles.metrics`**: JSONB column (`DEFAULT '{}'`) storing per-article analytics computed during sync. Contains velocity buckets, commenter shares, sentiment percentages, constructiveness buckets, and risk component breakdown. See `src/types/metrics.ts` for the `ArticleMetrics` interface.
+- **`articles.metrics`**: JSONB column (`DEFAULT '{}'`) storing per-article analytics computed during sync. Contains velocity buckets, commenter shares, interaction signal spread (substantive/mixed/surface-level), per-comment interaction scores (tone, relevance, depth, constructiveness), topic tags, and risk component breakdown. See `src/types/metrics.ts` for the `ArticleMetrics` interface.
 - **`commenters.username`**: Nullable (`TEXT`). Forem returns `null` usernames for deleted accounts. The sync pipeline skips identity-dependent tracking (unique commenter set, commenter counts) for null usernames but still processes the comment's text and timestamps.
 
 ## Chart Component Patterns
