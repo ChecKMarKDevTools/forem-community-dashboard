@@ -370,8 +370,7 @@ export function Dashboard() {
         setPosts(sortByAttentionPriority(data));
         setLoading(false);
       })
-      .catch((err) => {
-        console.error(err);
+      .catch(() => {
         setLoading(false);
       });
   }, []);
@@ -482,7 +481,10 @@ export function Dashboard() {
 
       {/* Right panel: Post Details — only rendered when a post is selected */}
       {selectedPostId !== null && (
-        <main className="bg-surface-primary/50 relative flex-1 overflow-y-auto p-6 md:p-8">
+        <section
+          aria-label="Post details"
+          className="bg-surface-primary/50 relative flex-1 overflow-y-auto p-6 md:p-8"
+        >
           <DetailPanel
             selectedPostId={selectedPostId}
             detailsLoading={detailsLoading}
@@ -490,7 +492,7 @@ export function Dashboard() {
             onBack={() => setSelectedPostId(null)}
             onClose={() => setSelectedPostId(null)}
           />
-        </main>
+        </section>
       )}
     </div>
   );
