@@ -10,9 +10,9 @@ type MarkerTimelineProps = Readonly<{
   className?: string;
 }>;
 
-const WIDTH = 400;
-const HEIGHT = 48;
-const PADDING = { left: 16, right: 16 };
+const WIDTH = 600;
+const HEIGHT = 56;
+const PADDING = { left: 50, right: 50 };
 const CIRCLE_R = 8;
 const ACTIVE_R = 10;
 
@@ -57,7 +57,7 @@ export function MarkerTimeline({ markers, className }: MarkerTimelineProps) {
               r={r}
               className={
                 marker.active
-                  ? "fill-state-negative stroke-state-negative"
+                  ? "fill-state-warning stroke-state-warning"
                   : "fill-chart-grid stroke-chart-axis"
               }
               strokeWidth={1.5}
@@ -69,7 +69,7 @@ export function MarkerTimeline({ markers, className }: MarkerTimelineProps) {
                 cy={cy}
                 r={r + 3}
                 fill="none"
-                className="stroke-state-negative"
+                className="stroke-state-warning"
                 strokeWidth={1}
                 opacity={0.3}
               />
@@ -81,7 +81,7 @@ export function MarkerTimeline({ markers, className }: MarkerTimelineProps) {
               className={cn(
                 "text-[8px]",
                 marker.active
-                  ? "fill-state-negative font-medium"
+                  ? "fill-state-warning font-medium"
                   : "fill-text-muted",
               )}
             >

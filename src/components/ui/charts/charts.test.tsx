@@ -39,6 +39,26 @@ describe("ChartContainer", () => {
     // CardDescription element should not exist
     expect(container.querySelectorAll("p").length).toBe(0);
   });
+
+  it("renders tooltip with HelpCircle when provided", () => {
+    render(
+      <ChartContainer title="Chart" tooltip="Helpful explanation">
+        <div />
+      </ChartContainer>,
+    );
+    expect(screen.getByRole("tooltip")).toHaveTextContent(
+      "Helpful explanation",
+    );
+  });
+
+  it("omits tooltip when not provided", () => {
+    render(
+      <ChartContainer title="Chart">
+        <div />
+      </ChartContainer>,
+    );
+    expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -222,14 +242,14 @@ describe("DivergingBar", () => {
 describe("MarkerTimeline", () => {
   it("renders markers with labels", () => {
     const markers = [
-      { label: "Freq", active: true },
-      { label: "Short", active: false },
-      { label: "Promo", active: true },
+      { label: "Frequency Penalty", active: true },
+      { label: "Short Content", active: false },
+      { label: "Promotional Keywords", active: true },
     ];
     render(<MarkerTimeline markers={markers} />);
-    expect(screen.getByText("Freq")).toBeInTheDocument();
-    expect(screen.getByText("Short")).toBeInTheDocument();
-    expect(screen.getByText("Promo")).toBeInTheDocument();
+    expect(screen.getByText("Frequency Penalty")).toBeInTheDocument();
+    expect(screen.getByText("Short Content")).toBeInTheDocument();
+    expect(screen.getByText("Promotional Keywords")).toBeInTheDocument();
   });
 
   it("returns null for empty markers", () => {

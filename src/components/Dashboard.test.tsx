@@ -922,16 +922,15 @@ describe("Dashboard Component", () => {
       expect(screen.getByText("Post Analytics")).toBeInTheDocument();
     });
 
-    // Chart sections should be visible
+    // All chart sections should be visible (always shown)
     expect(screen.getByText("Reply Velocity")).toBeInTheDocument();
     expect(screen.getByText("Participation Distribution")).toBeInTheDocument();
     expect(screen.getByText("Sentiment Spread")).toBeInTheDocument();
     expect(screen.getByText("Constructiveness Trend")).toBeInTheDocument();
-    // Risk score is 0 so Risk Signal Timeline should NOT be shown
-    expect(screen.queryByText("Risk Signal Timeline")).not.toBeInTheDocument();
+    expect(screen.getByText("Risk Signal Timeline")).toBeInTheDocument();
   });
 
-  it("hides Post Analytics section when metrics is null", async () => {
+  it("shows Post Analytics with empty states when metrics is null", async () => {
     const detailNoMetrics = {
       ...mockPosts[0],
       dev_url: "https://dev.to/testauthor/post-1",
@@ -963,10 +962,13 @@ describe("Dashboard Component", () => {
       expect(screen.getByText("Discussion State")).toBeInTheDocument();
     });
 
-    expect(screen.queryByText("Post Analytics")).not.toBeInTheDocument();
+    // Post Analytics always shown, even without data
+    expect(screen.getByText("Post Analytics")).toBeInTheDocument();
+    expect(screen.getByText("Reply Velocity")).toBeInTheDocument();
+    expect(screen.getByText("Risk Signal Timeline")).toBeInTheDocument();
   });
 
-  it("shows Risk Signal Timeline when risk_score > 0", async () => {
+  it("renders risk markers with full labels", async () => {
     const detailWithRisk = {
       ...mockPosts[0],
       dev_url: "https://dev.to/testauthor/post-1",
@@ -1021,9 +1023,9 @@ describe("Dashboard Component", () => {
       expect(screen.getByText("Risk Signal Timeline")).toBeInTheDocument();
     });
 
-    // Risk markers should show
-    expect(screen.getByText("Freq")).toBeInTheDocument();
-    expect(screen.getByText("Short")).toBeInTheDocument();
-    expect(screen.getByText("Promo")).toBeInTheDocument();
+    // Risk markers use full labels (not shorthand)
+    expect(screen.getByText("Frequency Penalty")).toBeInTheDocument();
+    expect(screen.getByText("Short Content")).toBeInTheDocument();
+    expect(screen.getByText("Promotional Keywords")).toBeInTheDocument();
   });
 });
