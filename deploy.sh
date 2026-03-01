@@ -28,6 +28,7 @@ fi
 SECRET_SUPABASE_KEY="supabase-secret-key-${ENVIRONMENT}"
 SECRET_CRON="cron-secret-${ENVIRONMENT}"
 SECRET_DEV_API_KEY="dev-api-key-${ENVIRONMENT}"
+SECRET_OPENAI_KEY="openai-api-key-${ENVIRONMENT}"
 # The canonical custom domain for this service.  Used as a static CORS origin
 # and for optional Cloud Run domain mapping.  Set CUSTOM_DOMAIN="" to skip.
 CUSTOM_DOMAIN="${CUSTOM_DOMAIN:-}"
@@ -146,6 +147,9 @@ upsert_secret "$SECRET_CRON" "$CRON_SECRET"
 if [[ -n "${DEV_API_KEY:-}" ]]; then
   upsert_secret "$SECRET_DEV_API_KEY" "$DEV_API_KEY"
 fi
+if [[ -n "${OPENAI_API_KEY:-}" ]]; then
+  upsert_secret "$SECRET_OPENAI_KEY" "$OPENAI_API_KEY"
+fi
 
 # ── Artifact Registry ─────────────────────────────────────────────────────────
 if ! gcloud artifacts repositories describe "$SERVICE_NAME" \
@@ -209,12 +213,18 @@ grant_secret_access "$SECRET_CRON" "$SA_MEMBER"
 if [[ -n "${DEV_API_KEY:-}" ]]; then
   grant_secret_access "$SECRET_DEV_API_KEY" "$SA_MEMBER"
 fi
+if [[ -n "${OPENAI_API_KEY:-}" ]]; then
+  grant_secret_access "$SECRET_OPENAI_KEY" "$SA_MEMBER"
+fi
 
 # ── Deploy to Cloud Run ───────────────────────────────────────────────────────
 # Build secret mount refs; include DEV_API_KEY only when the value is present.
 SECRET_REFS="SUPABASE_SECRET_KEY=$SECRET_SUPABASE_KEY:latest,CRON_SECRET=$SECRET_CRON:latest"
 if [[ -n "${DEV_API_KEY:-}" ]]; then
   SECRET_REFS="$SECRET_REFS,DEV_API_KEY=$SECRET_DEV_API_KEY:latest"
+fi
+if [[ -n "${OPENAI_API_KEY:-}" ]]; then
+  SECRET_REFS="$SECRET_REFS,OPENAI_API_KEY=$SECRET_OPENAI_KEY:latest"
 fi
 
 echo ""
