@@ -2,21 +2,31 @@
 
 ![DEV Community Dashboard Banner](public/dev-weekend-challenge-banner-community-dashboard.png)
 
-<div align="center">
-
-<!-- Community -->
+<table>
+<tr>
+<td><b>Community</b></td>
+<td>
 
 [![GitHub Stars](https://img.shields.io/github/stars/ChecKMarKDevTools/dev-community-dashboard?style=flat&logo=github&logoColor=white)](https://github.com/ChecKMarKDevTools/dev-community-dashboard/stargazers)
 [![License](https://img.shields.io/badge/License-PolyForm_Shield_1.0.0-blue?style=flat)](./LICENSE)
+[![DEV.to](https://img.shields.io/badge/DEV.to-anchildress1-0A0A0A?style=flat&logo=devdotto&logoColor=white)](https://dev.to/anchildress1)
 
-<!-- Build & Quality -->
+</td>
+</tr>
+<tr>
+<td><b>Pipeline</b></td>
+<td>
 
 [![CI](https://img.shields.io/github/actions/workflow/status/ChecKMarKDevTools/dev-community-dashboard/ci.yml?branch=main&style=flat&logo=githubactions&logoColor=white&label=CI)](https://github.com/ChecKMarKDevTools/dev-community-dashboard/actions/workflows/ci.yml)
 [![Cron Sync](https://img.shields.io/github/actions/workflow/status/ChecKMarKDevTools/dev-community-dashboard/cron.yml?branch=main&style=flat&logo=githubactions&logoColor=white&label=Cron%20Sync)](https://github.com/ChecKMarKDevTools/dev-community-dashboard/actions/workflows/cron.yml)
 [![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=ChecKMarKDevTools_forem-community-dashboard&metric=alert_status)](https://sonarcloud.io/summary/overall?id=ChecKMarKDevTools_forem-community-dashboard)
 [![SonarCloud Coverage](https://sonarcloud.io/api/project_badges/measure?project=ChecKMarKDevTools_forem-community-dashboard&metric=coverage)](https://sonarcloud.io/summary/overall?id=ChecKMarKDevTools_forem-community-dashboard)
 
-<!-- Scans -->
+</td>
+</tr>
+<tr>
+<td><b>Scans</b></td>
+<td>
 
 [![TruffleHog](https://img.shields.io/badge/TruffleHog-Secret_Scan-000000?style=flat&logo=trufflehog&logoColor=white)](https://trufflesecurity.com/trufflehog)
 [![Semgrep](https://img.shields.io/badge/Semgrep-SAST-4B11A8?style=flat&logo=semgrep&logoColor=white)](https://semgrep.dev)
@@ -25,7 +35,11 @@
 [![Stylelint](https://img.shields.io/badge/Stylelint-CSS_Lint-263238?style=flat&logo=stylelint&logoColor=white)](https://stylelint.io)
 [![Lighthouse](https://img.shields.io/badge/Lighthouse-A11y_≥90-F44B21?style=flat&logo=lighthouse&logoColor=white)](https://developer.chrome.com/docs/lighthouse)
 
-<!-- Tooling -->
+</td>
+</tr>
+<tr>
+<td><b>Stack</b></td>
+<td>
 
 [![Next.js](https://img.shields.io/badge/Next.js-16-000000?style=flat&logo=nextdotjs&logoColor=white)](https://nextjs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
@@ -34,26 +48,43 @@
 [![Vitest](https://img.shields.io/badge/Vitest-Testing-6E9F18?style=flat&logo=vitest&logoColor=white)](https://vitest.dev)
 [![pnpm](https://img.shields.io/badge/pnpm-Package_Manager-F69220?style=flat&logo=pnpm&logoColor=white)](https://pnpm.io)
 [![Docker](https://img.shields.io/badge/Docker-Container-2496ED?style=flat&logo=docker&logoColor=white)](https://www.docker.com)
-[![ESLint](https://img.shields.io/badge/ESLint-Linting-4B32C3?style=flat&logo=eslint&logoColor=white)](https://eslint.org)
-[![Conventional Commits](https://img.shields.io/badge/Conventional_Commits-1.0.0-FE5196?style=flat&logo=conventionalcommits&logoColor=white)](https://www.conventionalcommits.org)
-[![Prettier](https://img.shields.io/badge/Prettier-Formatting-F7B93E?style=flat&logo=prettier&logoColor=black)](https://prettier.io)
-[![Lefthook](https://img.shields.io/badge/Lefthook-Git_Hooks-FF1E1E?style=flat&logo=git&logoColor=white)](https://github.com/evilmartians/lefthook)
-[![Makefile](https://img.shields.io/badge/Makefile-Build-427819?style=flat&logo=gnu&logoColor=white)](https://www.gnu.org/software/make/)
 [![Google Cloud Run](https://img.shields.io/badge/Cloud_Run-Deployment-4285F4?style=flat&logo=googlecloud&logoColor=white)](https://cloud.google.com/run)
 
-<!-- AI Tooling -->
+</td>
+</tr>
+<tr>
+<td><b>Code Quality</b></td>
+<td>
+
+[![ESLint](https://img.shields.io/badge/ESLint-Linting-4B32C3?style=flat&logo=eslint&logoColor=white)](https://eslint.org)
+[![Prettier](https://img.shields.io/badge/Prettier-Formatting-F7B93E?style=flat&logo=prettier&logoColor=black)](https://prettier.io)
+[![Conventional Commits](https://img.shields.io/badge/Conventional_Commits-1.0.0-FE5196?style=flat&logo=conventionalcommits&logoColor=white)](https://www.conventionalcommits.org)
+[![Lefthook](https://img.shields.io/badge/Lefthook-Git_Hooks-FF1E1E?style=flat&logo=git&logoColor=white)](https://github.com/evilmartians/lefthook)
+[![Makefile](https://img.shields.io/badge/Makefile-Build-427819?style=flat&logo=gnu&logoColor=white)](https://www.gnu.org/software/make/)
+
+</td>
+</tr>
+<tr>
+<td><b>AI</b></td>
+<td>
 
 [![Claude](https://img.shields.io/badge/Claude-Anthropic-D97757?style=flat&logo=anthropic&logoColor=white)](https://claude.ai)
 [![ChatGPT](https://img.shields.io/badge/ChatGPT-OpenAI-74AA9C?style=flat&logo=openai&logoColor=white)](https://chat.openai.com)
 [![Google Gemini](https://img.shields.io/badge/Gemini-Google-8E75B2?style=flat&logo=googlegemini&logoColor=white)](https://gemini.google.com)
-[![Leonardo.ai](https://img.shields.io/badge/Leonardo.ai-Image_Gen-7C3AED?style=flat&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiPjxjaXJjbGUgY3g9IjEyIiBjeT0iMTIiIHI9IjEwIi8+PC9zdmc+&logoColor=white)](https://leonardo.ai)
+[![Leonardo.ai](https://img.shields.io/badge/Leonardo.ai-Seedream_4.5-7C3AED?style=flat&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiPjxjaXJjbGUgY3g9IjEyIiBjeT0iMTIiIHI9IjEwIi8+PC9zdmc+&logoColor=white)](https://leonardo.ai)
 
-<!-- Support -->
+</td>
+</tr>
+<tr>
+<td><b>Support</b></td>
+<td>
 
 [![Sponsor](https://img.shields.io/badge/Sponsor-GitHub_Sponsors-EA4AAA?style=flat&logo=githubsponsors&logoColor=white)](https://github.com/sponsors/anchildress1)
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy_Me_a_Coffee-Support-FFDD00?style=flat&logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/anchildress1)
 
-</div>
+</td>
+</tr>
+</table>
 
 A signal-surfacing tool for [Forem](https://forem.com/) communities (dev.to and self-hosted instances). It ingests the latest posts via the public Forem API, classifies each one into attention categories (Awaiting Collaboration, Anomalous Signal, Trending Signal, Rapid Discussion, Steady Signal), and persists the results in Supabase so community helpers can see where conversations need a human eye.
 
