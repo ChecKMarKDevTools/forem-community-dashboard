@@ -56,6 +56,7 @@ import {
   getInteractionSignal,
   getInteractionMethod,
   getInteractionVolatility,
+  getTopicTags,
   getConstructivenessData,
   getRiskMarkers,
 } from "@/lib/metrics-helpers";
@@ -318,11 +319,17 @@ function DetailPanel({
               );
             })()}
             {getInteractionMethod(postDetails.metrics) !== "unknown" && (
-              <div className="text-text-muted mt-3 flex items-center gap-4 text-xs">
+              <div className="text-text-muted mt-3 flex flex-wrap items-center gap-4 text-xs">
                 <span title="Composite interaction quality score (0–1). Higher means more substantive discussion.">
                   Signal:{" "}
                   <span className="text-text-secondary font-medium">
                     {getInteractionSignal(postDetails.metrics).toFixed(2)}
+                  </span>
+                </span>
+                <span title="How interaction scores were produced: LLM uses OpenAI structured output; Heuristic uses rule-based keyword scoring.">
+                  Method:{" "}
+                  <span className="text-text-secondary font-medium capitalize">
+                    {getInteractionMethod(postDetails.metrics)}
                   </span>
                 </span>
                 {getInteractionMethod(postDetails.metrics) === "llm" && (
@@ -336,6 +343,22 @@ function DetailPanel({
                     </span>
                   </span>
                 )}
+              </div>
+            )}
+            {getTopicTags(postDetails.metrics).length > 0 && (
+              <div
+                className="mt-2 flex flex-wrap gap-1"
+                aria-label="Topic tags"
+              >
+                {getTopicTags(postDetails.metrics).map((tag) => (
+                  <span
+                    key={tag}
+                    className="bg-surface-raised text-text-secondary rounded px-1.5 py-0.5 text-xs"
+                    title="LLM-extracted topic tag from post content"
+                  >
+                    {tag}
+                  </span>
+                ))}
               </div>
             )}
           </ChartContainer>

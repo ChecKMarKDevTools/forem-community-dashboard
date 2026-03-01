@@ -1172,12 +1172,16 @@ describe("Dashboard Component", () => {
     expect(volSpan).toBeInTheDocument();
     expect(volSpan.textContent).toContain("60%");
 
-    // Topic tags should NOT be rendered (internal LLM context only)
-    expect(screen.queryByText("typescript")).not.toBeInTheDocument();
-    expect(screen.queryByText("testing")).not.toBeInTheDocument();
+    // Topic tags ARE rendered (metric transparency — all computed values must be visible)
+    expect(screen.getByText("typescript")).toBeInTheDocument();
+    expect(screen.getByText("testing")).toBeInTheDocument();
 
-    // Method label should NOT be rendered
-    expect(screen.queryByText("LLM")).not.toBeInTheDocument();
+    // Method label IS rendered (users can see how scores were produced)
+    const methodSpan = screen.getByTitle(
+      /How interaction scores were produced/,
+    );
+    expect(methodSpan).toBeInTheDocument();
+    expect(methodSpan.textContent).toContain("llm");
   });
 
   it("shows signal score without volatility when interaction_method is 'heuristic'", async () => {
