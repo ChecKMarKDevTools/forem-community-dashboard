@@ -155,6 +155,44 @@ function setupBasicMocks(
 // Tests
 // ---------------------------------------------------------------------------
 
+describe("isPublishedArticle predicate and getAgeHours(null)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("skips articles with null published_at — they are excluded from validArticles", async () => {
+    // An article with published_at: null should be treated as a draft/unlisted
+    // and never reach deepScoreAndPersist.
+    const published = makeArticle({ id: 100, published_at: THREE_HOURS_AGO });
+    const nullPublished = makeArticle({ id: 101, published_at: null });
+
+    setupBasicMocks([published, nullPublished]);
+
+    const result = await syncArticles(10);
+
+    // Only the published article is synced
+    expect(result.synced).toBe(1);
+    expect(result.failed).toBe(0);
+  });
+
+  it("treats null published_at as Infinity age — excluded from window and author-frequency counts", async () => {
+    // An article with null published_at has getAgeHours → Infinity, which
+    // exceeds SYNC_WINDOW_HOURS and causes it to be filtered out of validArticles.
+    // It also does not contribute to the 24h author-frequency map.
+    const articles = [
+      makeArticle({ id: 200, published_at: THREE_HOURS_AGO }),
+      makeArticle({ id: 201, published_at: null }),
+    ];
+
+    setupBasicMocks(articles);
+
+    const result = await syncArticles(10);
+
+    // Article 201 is skipped; only 200 is synced
+    expect(result.synced).toBe(1);
+  });
+});
+
 describe("syncArticles scoring pipeline", () => {
   beforeEach(() => {
     vi.clearAllMocks();
