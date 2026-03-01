@@ -134,26 +134,25 @@ Each article is classified at sync time (not at read time) into one of four atte
 | `exposure`           | `max(1, reactions + comments)`                                         | Shows overall visibility; higher exposure means more attention from the community                       |
 | `attention_delta`    | `effort – log2(exposure + 1)`                                          | Measures balance between effort and exposure; positive values suggest undervalued posts needing a boost |
 
-
 ### Categories
 
-| Category                 | Dashboard Label        | Key Conditions                                                                                                                  |
-| ------------------------ | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| **NEEDS_RESPONSE**       | Awaiting Collaboration | `time_since_post >= 30 min` AND `support_score >= 3` (first post, no reactions, no comments, help words)                        |
-| **SIGNAL_AT_RISK** | Anomalous Signal       | `risk_score >= 4` (high post freq, short body, no engagement, author promo keywords, repeated links, minus engagement credit)   |
-| **NEEDS_REVIEW**         | Rapid Discussion       | `comments >= 6` AND `heat_score >= 5` AND `reactions / comments < 1.2`                                                          |
-| **BOOST_VISIBILITY**     | Trending Signal        | `word_count >= 600` AND `unique_commenters >= 2` AND `avg_comment_length >= 18` AND `reactions <= 5` AND `attention_delta >= 3` |
-| **NORMAL**               | Steady Signal          | Default when no category thresholds are met; also forced for `devteam` org posts (weekly threads, challenges)                   |
+| Category             | Dashboard Label        | Key Conditions                                                                                                                  |
+| -------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| **NEEDS_RESPONSE**   | Awaiting Collaboration | `time_since_post >= 30 min` AND `support_score >= 3` (first post, no reactions, no comments, help words)                        |
+| **SIGNAL_AT_RISK**   | Anomalous Signal       | `risk_score >= 4` (high post freq, short body, no engagement, author promo keywords, repeated links, minus engagement credit)   |
+| **NEEDS_REVIEW**     | Rapid Discussion       | `comments >= 6` AND `heat_score >= 5` AND `reactions / comments < 1.2`                                                          |
+| **BOOST_VISIBILITY** | Trending Signal        | `word_count >= 600` AND `unique_commenters >= 2` AND `avg_comment_length >= 18` AND `reactions <= 5` AND `attention_delta >= 3` |
+| **NORMAL**           | Steady Signal          | Default when no category thresholds are met; also forced for `devteam` org posts (weekly threads, challenges)                   |
 
 ### Sub-Scores
 
-| Sub-Score       | Components                                                                                                                                 |
-| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `heat_score`    | `comments_per_hour + reply_ratio * 3 + alternating_pairs + sentiment_flips`                                                                |
-| `risk_score`    | `max(0, freq_penalty + (word_count < 120 ? 2 : 0) + (no engagement ? 2 : 0) + author_promo_keywords + repeated_links - engagement_credit)` |
-| `freq_penalty`  | `max(0, author_post_freq - 2) * 2` (only penalizes > 2 posts/day)                                                                          |
-| `engage_credit` | `(reactions >= 10 ? 2 : 0) + (unique_commenters >= 5 ? 1 : 0)` (offsets risk for high-traction posts)                                      |
-| `support_score` | `(first_post ? 2 : 0) + (no reactions ? 1 : 0) + (no comments ? 2 : 0) + help_keywords`                                                    |
+| Sub‑score       | Formula / components                                                                                                                       | Importance/Explanation                                                                         |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------- |
+| `heat_score`    | `comments_per_hour + reply_ratio * 3 + alternating_pairs + sentiment_flips`                                                                | Gauges thread activity and engagement; higher scores flag lively discussions                   |
+| `risk_score`    | `max(0, freq_penalty + (word_count < 120 ? 2 : 0) + (no engagement ? 2 : 0) + author_promo_keywords + repeated_links - engagement_credit)` | Identifies potential quality issues; higher risk means the post may need moderation            |
+| `freq_penalty`  | `max(0, author_post_freq – 2) * 2` (only penalizes > 2 posts/day)                                                                          | Discourages spamming by reducing the score of frequent posters                                 |
+| `engage_credit` | `(reactions >= 10 ? 2 : 0) + (unique_commenters >= 5 ? 1 : 0)`                                                                             | Rewards well-engaged posts by offsetting risk, so lively discussions aren’t penalized          |
+| `support_score` | `(first_post ? 2 : 0) + (no reactions ? 1 : 0) + (no comments ? 2 : 0) + help_keywords`                                                    | Highlights posts needing community support; higher scores mark threads where newbies need help |
 
 ### Dashboard Signal Display
 
@@ -202,9 +201,9 @@ Create a `.env` file in the project root with the following:
 
 | Variable                   | Required | Description                                        |
 | -------------------------- | -------- | -------------------------------------------------- |
-| `NEXT_PUBLIC_SUPABASE_URL` | Yes      | Supabase project URL                               |
-| `SUPABASE_SECRET_KEY`      | Yes      | Server-only key; bypasses RLS for sync writes      |
-| `CRON_SECRET`              | Yes      | Bearer token for `/api/cron` and `/api/admin/seed` |
+| `NEXT_PUBLIC_SUPABASE_URL` | ✅ Yes   | Supabase project URL                               |
+| `SUPABASE_SECRET_KEY`      | ✅ Yes   | Server-only key; bypasses RLS for sync writes      |
+| `CRON_SECRET`              | ✅ Yes   | Bearer token for `/api/cron` and `/api/admin/seed` |
 | `DEV_API_KEY`              | No       | Optional; raises Forem API rate limits             |
 
 > `SUPABASE_SECRET_KEY` is intentionally **not** prefixed with `NEXT_PUBLIC_` — it is never sent to the browser.
