@@ -154,11 +154,11 @@ function getHeatNarrative(value: number): string {
 
 function getRiskNarrative(value: number): string {
   if (value >= 6)
-    return "Multiple risk signals detected: possible spam or self-promotion.";
+    return "Significant divergence from typical community patterns; human review recommended.";
   if (value >= 4)
-    return "Some risk flags raised — short content or promotional language.";
-  if (value >= 1) return "Minor flags present but likely not concerning.";
-  return "No rule-risk patterns detected.";
+    return "Noticeable deviation from normal discussion behavior.";
+  if (value >= 1) return "Minor divergence from baseline patterns.";
+  return "No meaningful divergence detected.";
 }
 
 function getSupportNarrative(value: number): string {

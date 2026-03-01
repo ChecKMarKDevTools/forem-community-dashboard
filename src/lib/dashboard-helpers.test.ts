@@ -268,25 +268,25 @@ describe("getScoreNarrative", () => {
   describe("risk narratives", () => {
     it("returns high narrative for risk >= 6", () => {
       expect(getScoreNarrative("risk", 6)).toBe(
-        "Multiple risk signals detected: possible spam or self-promotion.",
+        "Significant divergence from typical community patterns; human review recommended.",
       );
     });
 
     it("returns moderate narrative for risk >= 4", () => {
       expect(getScoreNarrative("risk", 4)).toBe(
-        "Some risk flags raised — short content or promotional language.",
+        "Noticeable deviation from normal discussion behavior.",
       );
     });
 
     it("returns minor narrative for risk >= 1", () => {
       expect(getScoreNarrative("risk", 1)).toBe(
-        "Minor flags present but likely not concerning.",
+        "Minor divergence from baseline patterns.",
       );
     });
 
     it("returns clean narrative for risk 0", () => {
       expect(getScoreNarrative("risk", 0)).toBe(
-        "No rule-risk patterns detected.",
+        "No meaningful divergence detected.",
       );
     });
   });

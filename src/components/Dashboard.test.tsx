@@ -379,7 +379,7 @@ describe("Dashboard Component", () => {
     ).toBeInTheDocument();
     // Risk 2 >= 1 triggers minor flags narrative
     expect(
-      screen.getByText("Minor flags present but likely not concerning."),
+      screen.getByText("Minor divergence from baseline patterns."),
     ).toBeInTheDocument();
     // Support 0 triggers established narrative
     expect(
@@ -434,9 +434,7 @@ describe("Dashboard Component", () => {
     ).toBeInTheDocument();
     // High risk narrative
     expect(
-      screen.getByText(
-        "Some risk flags raised — short content or promotional language.",
-      ),
+      screen.getByText("Noticeable deviation from normal discussion behavior."),
     ).toBeInTheDocument();
     // High support narrative
     expect(
