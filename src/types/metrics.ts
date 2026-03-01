@@ -40,7 +40,14 @@ export interface ArticleMetrics {
   /** Absolute difference between positive and negative comment counts (sentiment imbalance). */
   sentiment_flips: number;
   /** Per-comment sentiment float scores from LLM analysis (-1.0 to 1.0). */
-  sentiment_scores?: ReadonlyArray<{ index: number; score: number }>;
+  sentiment_scores?: ReadonlyArray<{
+    readonly index: number;
+    readonly score: number;
+    /** Forem comment id_code for incremental LLM cache keying across syncs. */
+    readonly id_code?: string;
+    /** djb2 hash of stripped comment body for edit detection. */
+    readonly body_hash?: string;
+  }>;
   /** LLM-computed volatility across all comments (0.0 = uniform tone, 1.0 = extreme variation). */
   sentiment_volatility?: number;
   /** Which analysis method produced the sentiment data. */
