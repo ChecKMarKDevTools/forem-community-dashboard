@@ -1,6 +1,6 @@
 # DEV Community Dashboard
 
-![DEV Community Dashboard Banner](public/dev-weekend-challenge-banner-community-dashboard.png)
+![DEV Community Dashboard Banner](https://raw.githubusercontent.com/ChecKMarKDevTools/forem-community-dashboard/main/public/dev-weekend-challenge-banner-community-dashboard.png)
 
 <table>
 <tr>
