@@ -978,10 +978,9 @@ export async function syncArticles(maxToProcess?: number): Promise<SyncResult> {
     const postsByAuthor24h = buildAuthorFrequencies(allArticles);
     const shortlist = lightScoreAndRank(validArticles, postsByAuthor24h);
 
-    // In production maxToProcess is undefined → process all valid articles.
+    // In production maxToProcess is undefined → slice(0, undefined) returns all.
     // In tests it is set to a small number to keep suites fast.
-    const toProcess =
-      maxToProcess === undefined ? shortlist : shortlist.slice(0, maxToProcess);
+    const toProcess = shortlist.slice(0, maxToProcess);
 
     // Step 3: deep-score and persist.
     for (const candidate of toProcess) {
