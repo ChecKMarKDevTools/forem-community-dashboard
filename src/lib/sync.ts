@@ -709,6 +709,10 @@ async function fetchAndFilterArticles(): Promise<{
   }
 
   const validArticles = allArticles.filter((a) => {
+    // Guard: when DEV_API_KEY is a personal token, Forem may include draft or
+    // scheduled articles whose published_at is null/empty. Skip them to avoid
+    // ingesting private content into the dashboard.
+    if (!a.published_at) return false;
     const ageHours = getAgeHours(a.published_at);
     // Lower bound: skip articles published in the last 2 hours — they're too
     // fresh for meaningful scoring (low comment/reaction signal).
