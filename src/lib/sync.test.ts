@@ -2623,6 +2623,207 @@ describe("incremental LLM scoring", () => {
     expect(result.synced).toBe(1);
     expect(result.failed).toBe(0);
   });
+
+  it("falls back to heuristic mode when LLM fails with unscored new comments", async () => {
+    const cachedBodyHtml = "<p>cached comment</p>";
+    const newBodyHtml = "<p>new comment</p>";
+    const cachedComment = makeComment({
+      id_code: "inc5_cached",
+      body_html: cachedBodyHtml,
+    });
+    const newComment = makeComment({
+      id_code: "inc5_new",
+      body_html: newBodyHtml,
+    });
+    const article = makeArticle({ id: 804 });
+
+    const upsertCalls: Record<string, unknown>[] = [];
+    const selectChain = {
+      eq: vi.fn().mockReturnThis(),
+      gte: vi.fn().mockResolvedValue({ data: [], error: null }),
+      maybeSingle: vi.fn().mockResolvedValue({
+        data: {
+          metrics: {
+            interaction_scores: [
+              {
+                tone: 0.4,
+                relevance: 0.5,
+                depth: 0.3,
+                constructiveness: 0.4,
+                id_code: "inc5_cached",
+                body_hash: bodyHash(cachedBodyHtml),
+              },
+            ],
+          },
+        },
+        error: null,
+      }),
+    };
+    const deleteChain = {
+      lt: vi.fn().mockReturnValue({
+        select: vi.fn().mockResolvedValue({ data: [], error: null }),
+      }),
+    };
+    vi.mocked(ForemClient.getLatestArticles).mockImplementation(
+      async (page) => {
+        if (page === 1) return [article] as never;
+        return [];
+      },
+    );
+    vi.mocked(ForemClient.getArticle).mockResolvedValue(article as never);
+    vi.mocked(ForemClient.getUserByUsername).mockResolvedValue(mockUser);
+    vi.mocked(ForemClient.getComments).mockResolvedValue([
+      cachedComment,
+      newComment,
+    ]);
+    vi.mocked(analyzeConversation).mockResolvedValue(null); // LLM fails
+
+    vi.mocked(supabase.from).mockReturnValue({
+      upsert: vi.fn().mockImplementation((data: Record<string, unknown>) => {
+        upsertCalls.push(data);
+        return Promise.resolve({ error: null });
+      }),
+      select: vi.fn().mockReturnValue(selectChain),
+      delete: vi.fn().mockReturnValue(deleteChain),
+    } as never);
+
+    const result = await syncArticles(1);
+
+    expect(result.synced).toBe(1);
+    expect(result.failed).toBe(0);
+    // LLM failed for the new comment → heuristic mode, no placeholder scores cached
+    const articleUpsert = upsertCalls.find((d) => "metrics" in d) as
+      | Record<string, unknown>
+      | undefined;
+    expect(articleUpsert).toBeDefined();
+    const metrics = articleUpsert?.metrics as Record<string, unknown>;
+    expect(metrics.interaction_method).toBe("heuristic");
+    expect(metrics.interaction_scores).toBeUndefined();
+  });
+
+  it("runs keyword safety net when LLM fails and article has support signals", async () => {
+    // Article body contains two distinct support-signal phrases
+    const article = makeArticle({
+      id: 805,
+      body_markdown: "I am dealing with burnout and mental health issues.",
+    });
+    const comment = makeComment({
+      id_code: "inc6_new",
+      body_html: "<p>comment</p>",
+    });
+
+    const upsertCalls: Record<string, unknown>[] = [];
+    const selectChain = {
+      eq: vi.fn().mockReturnThis(),
+      gte: vi.fn().mockResolvedValue({ data: [], error: null }),
+      maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+    };
+    const deleteChain = {
+      lt: vi.fn().mockReturnValue({
+        select: vi.fn().mockResolvedValue({ data: [], error: null }),
+      }),
+    };
+    vi.mocked(ForemClient.getLatestArticles).mockImplementation(
+      async (page) => {
+        if (page === 1) return [article] as never;
+        return [];
+      },
+    );
+    vi.mocked(ForemClient.getArticle).mockResolvedValue(article as never);
+    vi.mocked(ForemClient.getUserByUsername).mockResolvedValue(mockUser);
+    vi.mocked(ForemClient.getComments).mockResolvedValue([comment]);
+    vi.mocked(analyzeConversation).mockResolvedValue(null); // LLM unavailable
+
+    vi.mocked(supabase.from).mockReturnValue({
+      upsert: vi.fn().mockImplementation((data: Record<string, unknown>) => {
+        upsertCalls.push(data);
+        return Promise.resolve({ error: null });
+      }),
+      select: vi.fn().mockReturnValue(selectChain),
+      delete: vi.fn().mockReturnValue(deleteChain),
+    } as never);
+
+    const result = await syncArticles(1);
+
+    expect(result.synced).toBe(1);
+    // Keyword safety net: >= 2 support phrases in body → needs_support: true
+    const articleUpsert = upsertCalls.find((d) => "metrics" in d) as
+      | Record<string, unknown>
+      | undefined;
+    expect(articleUpsert).toBeDefined();
+    const metrics = articleUpsert?.metrics as Record<string, unknown>;
+    expect(metrics.needs_support).toBe(true);
+  });
+
+  it("preserves stored needs_support when all comments are cache hits and LLM not called", async () => {
+    const cachedBodyHtml = "<p>all cached</p>";
+    const comment = makeComment({
+      id_code: "inc7_cached",
+      body_html: cachedBodyHtml,
+    });
+    const article = makeArticle({ id: 806 });
+
+    const upsertCalls: Record<string, unknown>[] = [];
+    const selectChain = {
+      eq: vi.fn().mockReturnThis(),
+      gte: vi.fn().mockResolvedValue({ data: [], error: null }),
+      maybeSingle: vi.fn().mockResolvedValue({
+        data: {
+          metrics: {
+            needs_support: true, // stored from a prior LLM run
+            interaction_scores: [
+              {
+                tone: 0.6,
+                relevance: 0.7,
+                depth: 0.5,
+                constructiveness: 0.6,
+                id_code: "inc7_cached",
+                body_hash: bodyHash(cachedBodyHtml),
+              },
+            ],
+          },
+        },
+        error: null,
+      }),
+    };
+    const deleteChain = {
+      lt: vi.fn().mockReturnValue({
+        select: vi.fn().mockResolvedValue({ data: [], error: null }),
+      }),
+    };
+    vi.mocked(ForemClient.getLatestArticles).mockImplementation(
+      async (page) => {
+        if (page === 1) return [article] as never;
+        return [];
+      },
+    );
+    vi.mocked(ForemClient.getArticle).mockResolvedValue(article as never);
+    vi.mocked(ForemClient.getUserByUsername).mockResolvedValue(mockUser);
+    vi.mocked(ForemClient.getComments).mockResolvedValue([comment]);
+    // analyzeConversation not called — all cache hits
+
+    vi.mocked(supabase.from).mockReturnValue({
+      upsert: vi.fn().mockImplementation((data: Record<string, unknown>) => {
+        upsertCalls.push(data);
+        return Promise.resolve({ error: null });
+      }),
+      select: vi.fn().mockReturnValue(selectChain),
+      delete: vi.fn().mockReturnValue(deleteChain),
+    } as never);
+
+    const result = await syncArticles(1);
+
+    expect(result.synced).toBe(1);
+    expect(analyzeConversation).not.toHaveBeenCalled(); // all cache hits
+    const articleUpsert = upsertCalls.find((d) => "metrics" in d) as
+      | Record<string, unknown>
+      | undefined;
+    expect(articleUpsert).toBeDefined();
+    const metrics = articleUpsert?.metrics as Record<string, unknown>;
+    // Stored needs_support preserved — keyword scan does not run when LLM cached
+    expect(metrics.needs_support).toBe(true);
+    expect(metrics.interaction_method).toBe("llm"); // all cache hits = llm mode
+  });
 });
 
 // ---------------------------------------------------------------------------

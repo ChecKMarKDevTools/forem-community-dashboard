@@ -804,6 +804,36 @@ interface DeepScoreInput {
   readonly postsByAuthor24h: Map<string, number>;
 }
 
+/**
+ * Returns true when the LLM result for this sync cycle should be treated as
+ * authoritative: either the LLM ran successfully this sync, or every comment
+ * was already cached so no new scoring was needed and prior LLM data is valid.
+ * Returns false when the LLM was attempted but failed while new comments exist,
+ * indicating placeholder values are present and heuristic mode should be used.
+ */
+function isLlmActiveForSync(
+  rawLlmResult: LLMConversationResponse | null,
+  unscoredCount: number,
+): boolean {
+  return rawLlmResult !== null || unscoredCount === 0;
+}
+
+/**
+ * Resolve `needs_support` with a three-tier priority so the keyword safety net
+ * only fires when no real LLM result is available (current sync or cached):
+ *  1. rawLlmResult.needs_support  — LLM scored comments this sync (authoritative)
+ *  2. storedNeedsSupport          — LLM ran in a prior sync; preserve the result
+ *  3. keyword scan                — heuristic last resort when LLM has never run
+ */
+function resolveNeedsSupport(
+  rawLlmResult: LLMConversationResponse | null,
+  storedNeedsSupport: boolean | undefined,
+  articleBodyText: string,
+): boolean {
+  if (rawLlmResult) return rawLlmResult.needs_support;
+  return storedNeedsSupport ?? countSupportPhrases(articleBodyText) >= 2;
+}
+
 /** Deep-score a single article: fetch comments, compute metrics, classify, persist */
 async function deepScoreAndPersist(
   input: Readonly<DeepScoreInput>,
@@ -884,10 +914,16 @@ async function deepScoreAndPersist(
     enrichedScores.map((s) => s.tone),
   );
 
-  // Reconstruct effectiveLlmResult: non-null iff we have any scored comments
-  // (from cache or LLM). Null triggers heuristic fallback in buildArticleMetrics.
+  // llmActive is true when the LLM genuinely ran this sync OR every comment was
+  // already cached. False when the LLM failed for new unscored comments —
+  // mergeCommentScores filled those slots with placeholder values that must NOT
+  // be cached or labelled as real LLM output.
+  const llmActive = isLlmActiveForSync(rawLlmResult, toScore.length);
+
+  // Reconstruct effectiveLlmResult: non-null iff we have scored comments AND
+  // llmActive is true. Null triggers heuristic fallback in buildArticleMetrics.
   const effectiveLlmResult =
-    enrichedScores.length > 0
+    enrichedScores.length > 0 && llmActive
       ? {
           comments: enrichedScores.map(
             ({ index, tone, relevance, depth, constructiveness }) => ({
@@ -945,13 +981,14 @@ async function deepScoreAndPersist(
     (comment_count === 0 ? 2 : 0) +
     metrics.help_keywords;
 
-  // Determine needs_support: LLM is primary detector, keyword safety net
-  // is the heuristic fallback when both LLM tiers fail.
-  const supportPhraseCount = effectiveLlmResult
-    ? 0 // LLM already handled detection — skip keyword scan
-    : countSupportPhrases(articleBodyText);
-  const needs_support =
-    effectiveLlmResult?.needs_support ?? supportPhraseCount >= 2;
+  const storedNeedsSupport = existingMetrics?.needs_support as
+    | boolean
+    | undefined;
+  const needs_support = resolveNeedsSupport(
+    rawLlmResult,
+    storedNeedsSupport,
+    articleBodyText,
+  );
 
   const category = classifyArticle({
     article,
@@ -993,7 +1030,8 @@ async function deepScoreAndPersist(
     repeatedLinks: repeated_links,
     isFirstPost: is_first_post,
     llmResult: effectiveLlmResult,
-    enrichedScores: enrichedScores.length > 0 ? enrichedScores : undefined,
+    enrichedScores:
+      llmActive && enrichedScores.length > 0 ? enrichedScores : undefined,
     needsSupport: needs_support,
   });
 
