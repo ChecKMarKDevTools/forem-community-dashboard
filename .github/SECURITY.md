@@ -34,9 +34,9 @@ I don't run a bug bounty program. If you report something meaningful and want cr
 
 ## Response Timeline
 
-I'll acknowledge the report within **72 hours**. If you don't hear back, send a follow-up — inboxes get busy.
+This project is maintained by one person — me — with a full-time job and ADHD. I will get to it. I promise. It just might not be on a timeline that looks like a corporate SLA.
 
-For high-severity issues, I aim to have a fix in `main` within **14 days**, depending on complexity. I'll keep you updated on progress.
+Send the report. If you don't hear back within a week or two, send a follow-up. I'm not ignoring you — I'm probably in the middle of a hyperfocus on something completely unrelated and haven't surfaced yet. A nudge is genuinely helpful.
 
 ---
 
