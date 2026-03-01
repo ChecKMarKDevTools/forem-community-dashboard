@@ -71,7 +71,6 @@ function makeArticle(id: number = 1): ForemArticle {
     created_at: "2024-01-01T00:00:00Z",
     edited_at: null,
     crossposted_at: null,
-    published: true,
     published_at: "2024-01-01T10:00:00Z",
     last_comment_at: "2024-01-01T11:00:00Z",
     reading_time_minutes: 3,

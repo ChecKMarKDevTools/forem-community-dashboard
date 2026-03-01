@@ -67,7 +67,6 @@ function makeArticle(overrides: Record<string, unknown>) {
     description: "desc",
     body_markdown: "word ".repeat(50),
     url: "https://dev.to/test1",
-    published: true,
     published_at: THREE_HOURS_AGO,
     public_reactions_count: 10,
     comments_count: 2,

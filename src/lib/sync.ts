@@ -719,16 +719,11 @@ async function fetchAndFilterArticles(): Promise<{
   function isPublishedArticle(
     a: ForemArticle,
   ): a is ForemArticle & { published_at: string } {
-    // Guard: when DEV_API_KEY is a personal token, Forem may include draft or
-    // scheduled articles via GET /api/articles/me.
-    //
-    // Use !== false (not === true) because GET /api/articles (the public feed)
-    // does NOT include the `published` field at all — it is only present on
-    // the /me endpoint. Checking === true would drop every article from the
-    // public feed (undefined === true → false). Checking !== false passes
-    // articles where the field is absent (public feed) while blocking any
-    // article explicitly marked published=false (drafts from /me).
-    return a.published !== false && !!a.published_at;
+    // GET /api/articles (the only endpoint we call) only returns published
+    // articles and does not include a `published` boolean field — that field
+    // is exclusive to GET /api/articles/me. published_at being non-null is
+    // the reliable signal: draft/scheduled articles have a null published_at.
+    return !!a.published_at;
   }
 
   const validArticles = allArticles.filter(isPublishedArticle).filter((a) => {
