@@ -309,6 +309,11 @@ function classifyArticle(
   ) {
     return "BOOST_VISIBILITY";
   }
+  // Post is getting noticed (reactions) but nobody is talking (≤1 comment).
+  // Surfaces content worth nudging the community to engage with.
+  if (input.reaction_count >= 5 && input.comment_count <= 1) {
+    return "SILENT_SIGNAL";
+  }
   return "NORMAL";
 }
 

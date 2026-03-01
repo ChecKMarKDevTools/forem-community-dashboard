@@ -4,6 +4,7 @@ export type AttentionCategory =
   | "SIGNAL_AT_RISK"
   | "NEEDS_REVIEW"
   | "BOOST_VISIBILITY"
+  | "SILENT_SIGNAL"
   | "NORMAL";
 
 import type { ArticleMetrics } from "@/types/metrics";

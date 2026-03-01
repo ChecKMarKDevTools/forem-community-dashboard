@@ -3,12 +3,20 @@ import type { Post } from "@/types/dashboard";
 /** Attention-level metadata: badge variant and human-readable label.
  *  No traffic-light grading — each category has a distinct semantic color.
  *  neutral = slate (routine), info = steel-blue (active), teal = teal (waiting),
- *  attention = indigo/blue (high activity), critical = slate/gray (policy risk).
+ *  attention = indigo/blue (high activity), critical = slate/gray (policy risk),
+ *  violet = violet (noticed but quiet — reactions without conversation).
  */
 export const ATTENTION_META: Record<
   string,
   {
-    variant: "neutral" | "info" | "teal" | "attention" | "critical" | "outline";
+    variant:
+      | "neutral"
+      | "info"
+      | "teal"
+      | "attention"
+      | "critical"
+      | "violet"
+      | "outline";
     label: string;
   }
 > = {
@@ -17,6 +25,7 @@ export const ATTENTION_META: Record<
   NEEDS_RESPONSE: { variant: "teal", label: "Awaiting Collaboration" },
   NEEDS_REVIEW: { variant: "attention", label: "Rapid Discussion" },
   SIGNAL_AT_RISK: { variant: "critical", label: "Anomalous Signal" },
+  SILENT_SIGNAL: { variant: "violet", label: "Silent Signal" },
 };
 
 const DEFAULT_ATTENTION = {
@@ -26,7 +35,7 @@ const DEFAULT_ATTENTION = {
 
 export function getAttentionVariant(
   level: string,
-): "neutral" | "info" | "teal" | "attention" | "critical" {
+): "neutral" | "info" | "teal" | "attention" | "critical" | "violet" {
   const v = (ATTENTION_META[level] ?? DEFAULT_ATTENTION).variant;
   // "outline" only applies in the recent-posts context; main badges fall back to neutral
   return v === "outline" ? "neutral" : v;
@@ -38,7 +47,14 @@ export function getCategoryLabel(level: string): string {
 
 export function getRecentPostBadgeVariant(
   level: string,
-): "neutral" | "info" | "teal" | "attention" | "critical" | "outline" {
+):
+  | "neutral"
+  | "info"
+  | "teal"
+  | "attention"
+  | "critical"
+  | "violet"
+  | "outline" {
   const v = (ATTENTION_META[level] ?? DEFAULT_ATTENTION).variant;
   // neutral (routine) maps to outline for recent-posts context
   return v === "neutral" ? "outline" : v;
@@ -241,21 +257,22 @@ export function computeAgeHours(published_at: string): number {
 }
 
 /** Priority order for attention levels in the queue list.
- *  Awaiting Collaboration > Anomalous Signal > Trending Signal > Rapid Discussion > Steady Signal */
+ *  Awaiting Collaboration > Anomalous Signal > Trending Signal > Rapid Discussion > Silent Signal > Steady Signal */
 export const ATTENTION_PRIORITY: Record<string, number> = {
   NEEDS_RESPONSE: 0,
   SIGNAL_AT_RISK: 1,
   BOOST_VISIBILITY: 2,
   NEEDS_REVIEW: 3,
-  NORMAL: 4,
+  SILENT_SIGNAL: 4,
+  NORMAL: 5,
 };
 
 /** Sort posts by attention level priority, then by score descending within each group */
 export function sortByAttentionPriority(posts: Post[]): Post[] {
   return posts.toSorted((a, b) => {
     const priorityDiff =
-      (ATTENTION_PRIORITY[a.attention_level] ?? 4) -
-      (ATTENTION_PRIORITY[b.attention_level] ?? 4);
+      (ATTENTION_PRIORITY[a.attention_level] ?? 5) -
+      (ATTENTION_PRIORITY[b.attention_level] ?? 5);
     if (priorityDiff !== 0) return priorityDiff;
     return b.score - a.score;
   });

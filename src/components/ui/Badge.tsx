@@ -10,7 +10,8 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLDivElement> {
     | "info"
     | "teal"
     | "attention"
-    | "critical";
+    | "critical"
+    | "violet";
 }
 
 export function Badge({
@@ -38,6 +39,8 @@ export function Badge({
             variant === "attention",
           "bg-critical-100 text-critical-700 hover:bg-critical-200 border-transparent":
             variant === "critical",
+          "border-transparent bg-violet-100 text-violet-700 hover:bg-violet-200":
+            variant === "violet",
         },
         className,
       )}
