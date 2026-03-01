@@ -6,6 +6,14 @@ Read this fully before opening a PR. Not because I'm trying to discourage you, b
 
 ---
 
+## On AI-Generated Code
+
+This project uses AI tooling to generate code — and that is exactly why the guardrails are as strict as they are. AI writes plausible-looking code that is sometimes subtly wrong. The pre-commit hooks, Sonar analysis, coverage requirements, and CI gates all exist to catch what AI misses.
+
+If you're using AI to contribute: good. So am I. Use it with the safety net on, not as a substitute for it.
+
+---
+
 ## Who Can Contribute
 
 This project is licensed under [Polyform Shield 1.0.0](./LICENSE). You can fork it, adapt it, use it for your own workflows, inside your company, for client projects, demos, or education — as long as you're not selling it, charging for it, or making money from the project itself.

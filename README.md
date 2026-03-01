@@ -355,6 +355,14 @@ Lighthouse runs as the last step in `ci.yml` (`pnpm lhci:desktop`). Results are 
 
 ---
 
+## AI & Guardrails
+
+This project uses AI tooling to generate code — and that is precisely why the guardrails are as strict as they are. AI writes plausible-looking code that is sometimes subtly wrong. The CI pipeline, Sonar analysis, test coverage requirements, and pre-commit hooks all exist to catch what AI misses.
+
+AI use is encouraged here, not discouraged. But it is not a standalone solution. Use it with the safety net on.
+
+---
+
 ## Contributing
 
 This project is built for community helpers — people who want to know where to look, not what to do. The dashboard surfaces conversations that may need a human eye; it does not assign blame, issue warnings, or score individuals.
