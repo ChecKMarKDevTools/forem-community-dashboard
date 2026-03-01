@@ -20,20 +20,24 @@ All migrations live in `supabase/migrations/` and are applied in order via `supa
 Per-article analytics computed during sync. The full interface is defined in
 [`src/types/metrics.ts`](../src/types/metrics.ts). Key fields:
 
-| Field                                           | Type                                          | Description                                                                                                   |
-| ----------------------------------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `velocity_buckets`                              | `Array<{hour, count}>`                        | Hourly comment arrivals (capped at 48 entries)                                                                |
-| `commenter_shares`                              | `Array<{username, share}>`                    | Top 5 commenters by share of total comments                                                                   |
-| `positive_pct` / `neutral_pct` / `negative_pct` | `number`                                      | Sentiment distribution (sums to 100)                                                                          |
-| `constructiveness_buckets`                      | `Array<{hour, depth_index}>`                  | Average reply depth per hour                                                                                  |
-| `risk_components`                               | `object`                                      | Breakdown of the six risk signal components                                                                   |
-| `risk_score`                                    | `number`                                      | Computed risk score (0 = no risk)                                                                             |
-| `sentiment_scores`                              | `Array<{index, score, id_code?, body_hash?}>` | Per-comment LLM float scores (−1.0 to 1.0); `id_code` and `body_hash` enable incremental scoring across syncs |
-| `sentiment_volatility`                          | `number`                                      | Std dev of per-comment scores clamped to [0, 1]                                                               |
-| `sentiment_method`                              | `"llm" \| "keyword"`                          | Which analysis method produced the sentiment data                                                             |
-| `sentiment_mean`                                | `number`                                      | Mean score across all comments (LLM mode only)                                                                |
-| `is_first_post`                                 | `boolean`                                     | Author joined < 30 days ago and published 1 post in the last 24 h                                             |
-| `help_keywords`                                 | `number`                                      | Count of help-seeking keyword matches in comments                                                             |
+| Field                      | Type                                                                             | Description                                                                              |
+| -------------------------- | -------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `velocity_buckets`         | `Array<{hour, count}>`                                                           | Hourly comment arrivals (capped at 48 entries)                                           |
+| `commenter_shares`         | `Array<{username, share}>`                                                       | Top 5 commenters by share of total comments                                              |
+| `constructiveness_buckets` | `Array<{hour, depth_index}>`                                                     | Average reply depth per hour                                                             |
+| `risk_components`          | `object`                                                                         | Breakdown of the six risk signal components                                              |
+| `risk_score`               | `number`                                                                         | Computed risk score (0 = no risk)                                                        |
+| `interaction_signal`       | `number`                                                                         | Composite interaction signal strength: 0.0 (surface-level) to 1.0 (deeply engaged)       |
+| `interaction_method`       | `"llm" \| "heuristic"`                                                           | Which analysis method produced the interaction data                                      |
+| `interaction_scores`       | `Array<{index, tone, relevance, depth, constructiveness, id_code?, body_hash?}>` | Per-comment scores; `id_code` and `body_hash` enable incremental re-scoring across syncs |
+| `interaction_volatility`   | `number`                                                                         | LLM-computed tone volatility (0.0 = uniform tone, 1.0 = extreme variation)               |
+| `signal_strong_pct`        | `number`                                                                         | Percentage of comments with strong signal (composite > 0.6)                              |
+| `signal_moderate_pct`      | `number`                                                                         | Percentage of comments with moderate signal (composite 0.3–0.6)                          |
+| `signal_faint_pct`         | `number`                                                                         | Percentage of comments with faint signal (composite < 0.3)                               |
+| `topic_tags`               | `string[]`                                                                       | 1–3 topic keywords extracted from the post body by LLM                                   |
+| `needs_support`            | `boolean`                                                                        | True when the post body contains signals of emotional distress, burnout, or help-seeking |
+| `is_first_post`            | `boolean`                                                                        | Author joined < 30 days ago and published 1 post in the last 24 h                        |
+| `help_keywords`            | `number`                                                                         | Count of help-seeking keyword matches in comments                                        |
 
 ### `commenters.username` (nullable)
 

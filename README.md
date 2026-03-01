@@ -87,7 +87,7 @@ v1.0.0 was created for the [DEV Weekend Challenge](https://dev.to/devteam/happen
 
 ### Prerequisites
 
-- Node.js >= 20
+- Node.js >= 22 (matches Volta pin and CI/Docker toolchain)
 - pnpm
 - A [Supabase](https://supabase.com/) project with RLS migrations applied
 

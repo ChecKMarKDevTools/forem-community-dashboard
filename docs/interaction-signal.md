@@ -73,13 +73,17 @@ Each tier catches its own errors independently. The cascade does not retry withi
 
 ### Token Budget
 
-The input is truncated to stay within a predictable token budget:
+The input is truncated to stay within a predictable token budget. Budget
+values account for the `Comment N: ` prefix and `\n` separator overhead so
+the final prompt string stays within the stated limits:
 
-- Post body: 2,000 characters
+- Post body: 4,000 characters
 - Per-comment: 500 characters each
-- Total comments: 2,000 characters cumulative (comments beyond the budget are dropped)
+- Total comments: 12,000 characters cumulative (≈ 23 full-length comments)
 
-This keeps each request to approximately 1,000 tokens.
+gpt-5-nano supports a 400K-token context window (~1.6M chars); these limits
+are intentionally conservative to keep per-sync costs predictable while still
+covering a typical thread in full.
 
 ---
 
@@ -155,12 +159,15 @@ The incremental flow:
 4. `mergeCommentScores()` combines cached scores with fresh LLM scores into a single enriched array.
 5. Volatility is recomputed from the full merged tone scores (not just new LLM scores) via `computeVolatilityFromScores()`.
 
-The djb2 hash function is a deterministic, zero-dependency polynomial hash:
+The djb2 hash function is a deterministic, zero-dependency polynomial hash.
+It iterates Unicode code points (via `for...of`) rather than UTF-16 code
+units, so non-BMP characters (emoji, some CJK) are counted exactly once and
+produce stable hashes across all text inputs:
 
 ```
 hash = 0
-for each character c in text:
-    hash = ((hash << 5) - hash + codePoint(c)) >>> 0
+for each Unicode code point cp in text:   // for...of, not char-index loop
+    hash = ((hash << 5) - hash + cp) >>> 0
 return hex(hash)
 ```
 
