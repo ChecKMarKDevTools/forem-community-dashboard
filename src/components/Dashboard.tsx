@@ -248,21 +248,15 @@ function DetailPanel({
         </div>
 
         {/* Thread Momentum — full-width card below the grid */}
-        <SectionCard variant="muted" className="mt-6">
-          <CardHeader className="pb-3">
-            <CardTitle
-              className="font-heading text-text-secondary text-lg"
-              title="A plain-language read of how the conversation is evolving right now."
-            >
-              Thread Momentum
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-text-secondary text-sm leading-relaxed">
-              {getWhatsHappening(postDetails.explanations)}
-            </p>
-          </CardContent>
-        </SectionCard>
+        <ChartContainer
+          title="Thread Momentum"
+          tooltip="A plain-language read of how the conversation is evolving right now."
+          className="mt-6"
+        >
+          <p className="text-text-secondary text-sm leading-relaxed">
+            {getWhatsHappening(postDetails.explanations)}
+          </p>
+        </ChartContainer>
 
         {/* Post Analytics — always shown for every post */}
         <motion.div
