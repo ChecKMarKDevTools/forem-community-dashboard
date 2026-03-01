@@ -2042,6 +2042,7 @@ describe("buildArticleMetrics", () => {
       repeatedLinks: 0,
       isFirstPost: false,
       llmResult: null,
+      needsSupport: false,
     });
 
     expect(result.velocity_buckets).toHaveLength(2);
@@ -2064,6 +2065,7 @@ describe("buildArticleMetrics", () => {
     expect(result.signal_faint_pct).toBeDefined();
     expect(result.is_first_post).toBe(false);
     expect(result.help_keywords).toBe(1);
+    expect(result.needs_support).toBe(false);
   });
 
   it("handles zero comments gracefully", () => {
@@ -2095,6 +2097,7 @@ describe("buildArticleMetrics", () => {
       repeatedLinks: 0,
       isFirstPost: true,
       llmResult: null,
+      needsSupport: false,
     });
 
     expect(result.velocity_buckets).toEqual([]);
@@ -2144,6 +2147,7 @@ describe("buildArticleMetrics", () => {
       ],
       volatility: 0.7,
       topic_tags: ["javascript", "testing"],
+      needs_support: false,
     };
 
     const enrichedScores = [
@@ -2181,6 +2185,7 @@ describe("buildArticleMetrics", () => {
       isFirstPost: false,
       llmResult,
       enrichedScores,
+      needsSupport: false,
     });
 
     expect(result.interaction_method).toBe("llm");
@@ -2611,5 +2616,57 @@ describe("incremental LLM scoring", () => {
     // Sync succeeds: cached score for inc4_cached is preserved; inc4_new gets no score
     expect(result.synced).toBe(1);
     expect(result.failed).toBe(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// buildArticleMetrics — needs_support field
+// ---------------------------------------------------------------------------
+
+describe("buildArticleMetrics needs_support", () => {
+  const emptyMetrics = {
+    uniqueCommenters: new Set<string>(),
+    totalCommentWords: 0,
+    pos_comments: 0,
+    neg_comments: 0,
+    alternating_pairs: 0,
+    replies_with_parent: 0,
+    promo_keywords: 0,
+    help_keywords: 0,
+    externalDomainCounts: new Map<string, number>(),
+    comment_timestamps: [] as Date[],
+    commenter_comment_counts: new Map<string, number>(),
+    comment_depths: [] as Array<{ timestamp: Date; depth: number }>,
+  };
+
+  const baseInput = {
+    metrics: emptyMetrics,
+    publishedAt: "2024-01-01T10:00:00Z",
+    commentCount: 0,
+    ageHours: 3,
+    riskScore: 0,
+    frequencyPenalty: 0,
+    engagementCredit: 0,
+    wordCount: 500,
+    reactionCount: 0,
+    repeatedLinks: 0,
+    isFirstPost: false,
+    llmResult: null,
+  };
+
+  it("stores needs_support: true when needsSupport is true", () => {
+    const result = buildArticleMetrics({
+      ...baseInput,
+      needsSupport: true,
+    });
+    expect(result.needs_support).toBe(true);
+  });
+
+  it("stores needs_support: false when needsSupport is false", () => {
+    const result = buildArticleMetrics({
+      ...baseInput,
+      needsSupport: false,
+    });
+    expect(result.needs_support).toBe(false);
   });
 });

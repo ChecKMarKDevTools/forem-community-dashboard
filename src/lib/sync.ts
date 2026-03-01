@@ -9,6 +9,7 @@ import {
   POSITIVE_WORDS,
   NEGATIVE_WORDS,
   HELP_WORDS,
+  countSupportPhrases,
 } from "@/lib/sentiment-keywords";
 import {
   analyzeConversation,
@@ -309,6 +310,7 @@ interface ClassificationInput {
   readonly distinct_commenters: number;
   readonly avg_comment_length: number;
   readonly attention_delta: number;
+  readonly needs_support: boolean;
 }
 
 /** Classify an article into an attention category */
@@ -317,6 +319,8 @@ function classifyArticle(
 ): AttentionCategory {
   // Official devteam org posts (weekly threads, challenges) skip classification
   if (input.article.organization?.slug === "devteam") return "NORMAL";
+
+  if (input.needs_support) return "NEEDS_SUPPORT";
 
   if (input.time_since_post >= 30 && input.support_score >= 3)
     return "NEEDS_RESPONSE";
@@ -673,6 +677,8 @@ interface BuildMetricsInput {
   /** Merged per-comment scores (cached + new LLM). When present, persisted in
    * JSONB with id_code and body_hash for incremental scoring on future syncs. */
   readonly enrichedScores?: ReadonlyArray<EnrichedCommentScore>;
+  /** True when the post body contains signals of distress or help-seeking. */
+  readonly needsSupport: boolean;
 }
 
 export function buildArticleMetrics(
@@ -750,6 +756,7 @@ export function buildArticleMetrics(
     risk_score: input.riskScore,
     is_first_post: input.isFirstPost,
     help_keywords: metrics.help_keywords,
+    needs_support: input.needsSupport,
     interaction_signal: interactionSignal,
     ...signalSpread,
     ...llmFields,
@@ -888,6 +895,11 @@ async function deepScoreAndPersist(
             rawLlmResult?.topic_tags ??
             (existingMetrics?.topic_tags as string[] | undefined) ??
             [],
+          // Preserve needs_support from the prior sync when no LLM call was made.
+          needs_support:
+            rawLlmResult?.needs_support ??
+            (existingMetrics?.needs_support as boolean | undefined) ??
+            false,
         }
       : null;
 
@@ -923,6 +935,14 @@ async function deepScoreAndPersist(
     (comment_count === 0 ? 2 : 0) +
     metrics.help_keywords;
 
+  // Determine needs_support: LLM is primary detector, keyword safety net
+  // is the heuristic fallback when both LLM tiers fail.
+  const supportPhraseCount = effectiveLlmResult
+    ? 0 // LLM already handled detection — skip keyword scan
+    : countSupportPhrases(articleBodyText);
+  const needs_support =
+    effectiveLlmResult?.needs_support ?? supportPhraseCount >= 2;
+
   const category = classifyArticle({
     article,
     time_since_post,
@@ -935,6 +955,7 @@ async function deepScoreAndPersist(
     distinct_commenters: derived.distinct_commenters,
     avg_comment_length: derived.avg_comment_length,
     attention_delta: derived.attention_delta,
+    needs_support,
   });
 
   const final_score = Math.max(0, preliminary_score);
@@ -963,6 +984,7 @@ async function deepScoreAndPersist(
     isFirstPost: is_first_post,
     llmResult: effectiveLlmResult,
     enrichedScores: enrichedScores.length > 0 ? enrichedScores : undefined,
+    needsSupport: needs_support,
   });
 
   const { error: articleError } = await supabase.from("articles").upsert({

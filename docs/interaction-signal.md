@@ -250,6 +250,38 @@ All values are surfaceable to the user. No hidden metrics.
 
 ---
 
+## Needs Support Detection
+
+The `NEEDS_SUPPORT` attention level surfaces posts where the **author** is struggling -- emotional distress, burnout, isolation, or explicit help-seeking. It is the highest-priority attention level, appearing above all others in the queue.
+
+### Detection: Dual-Layer (LLM + Keyword Safety Net)
+
+**LLM layer (primary):** The LLM structured output schema includes a `needs_support: boolean` field. The system prompt instructs the model to set it to `true` when the post body contains genuine signals of distress -- not routine technical questions or casual frustration.
+
+**Keyword safety net (fallback):** When both LLM tiers fail and the pipeline falls back to heuristic mode, a `SUPPORT_SIGNAL_PHRASES` array in `sentiment-keywords.ts` scans the lowercased post body for phrase matches. If two or more phrases match, `needs_support` is set to `true`. This is a conservative threshold to reduce false positives.
+
+Detection targets the **post body**, not comments. The rationale: a community member expressing distress will do so in the post itself.
+
+### Phrases (keyword safety net)
+
+The current phrase list includes: "i'm struggling", "feeling overwhelmed", "burned out", "burnout", "mental health", "feeling alone", "i can't cope", "considering quitting", "imposter syndrome", "i'm lost", "don't know what to do", "need someone to talk to", "feeling isolated", "i'm failing", "can't keep up".
+
+These are **phrase** matches (not single words) to avoid false positives. They are exported for UI tooltip transparency.
+
+### Classification Priority
+
+`NEEDS_SUPPORT` is checked first in `classifyArticle()`, after the devteam org bypass. It takes precedence over all other categories. The queue sort order places it at priority 0 (ahead of `NEEDS_RESPONSE` at 1).
+
+### Badge
+
+The `NEEDS_SUPPORT` badge uses a rose variant -- warm and compassionate, distinct from the red used for risk signals. The rose color tokens are WCAG AA compliant in both light and dark modes.
+
+### Metrics Persistence
+
+The `needs_support` boolean is stored in the `ArticleMetrics` JSONB column. It is preserved across incremental syncs: when no LLM call is made (all comments cached), the pipeline carries forward the existing `needs_support` value from the prior sync.
+
+---
+
 ## Related Files
 
 | File                                     | Purpose                                                                                                                                |
@@ -261,3 +293,4 @@ All values are surfaceable to the user. No hidden metrics.
 | `src/lib/dashboard-helpers.ts`           | `getSignalSummary()` -- actionable framing thresholds                                                                                  |
 | `src/components/Dashboard.tsx`           | Detail panel rendering of interaction signal chart and metadata                                                                        |
 | `src/components/ui/charts/SignalBar.tsx` | Three-segment bar chart component                                                                                                      |
+| `src/lib/sentiment-keywords.ts`          | `SUPPORT_SIGNAL_PHRASES`, `countSupportPhrases()` -- keyword safety net for needs-support detection                                    |

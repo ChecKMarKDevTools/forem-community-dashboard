@@ -29,6 +29,8 @@ export interface LLMConversationResponse {
   readonly comments: ReadonlyArray<LLMCommentScore>;
   readonly volatility: number;
   readonly topic_tags: ReadonlyArray<string>;
+  /** True when the post body contains signals of emotional distress, burnout, or help-seeking. */
+  readonly needs_support: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -53,6 +55,7 @@ RULES:
   - depth: 0.0 (surface-level reaction like "great post!") to 1.0 (substantive technical or thoughtful content).
   - constructiveness: 0.0 (adds nothing to the conversation) to 1.0 (meaningfully advances the discussion).
 - Compute overall volatility: 0.0 (all comments have similar tone) to 1.0 (extreme variation in tone across comments).
+- Set needs_support to true if the post body contains signals of emotional distress, mental health struggle, burnout, isolation, or explicit help-seeking. Only flag genuine distress — not routine technical questions or casual frustration.
 - Never infer beyond available text. Score only what is present.
 - Do not explain. Output only valid JSON.`;
 
@@ -83,8 +86,9 @@ const RESPONSE_SCHEMA = {
         },
       },
       volatility: { type: "number" },
+      needs_support: { type: "boolean" },
     },
-    required: ["topic_tags", "comments", "volatility"],
+    required: ["topic_tags", "comments", "volatility", "needs_support"],
     additionalProperties: false,
   },
 };
@@ -147,6 +151,7 @@ function parseResponse(
     }>;
     volatility: number;
     topic_tags: string[];
+    needs_support: unknown;
   };
 
   if (
@@ -192,8 +197,10 @@ function parseResponse(
   const topic_tags = raw.topic_tags
     .filter((t): t is string => typeof t === "string")
     .slice(0, 3);
+  const needs_support =
+    typeof raw.needs_support === "boolean" ? raw.needs_support : false;
 
-  return { comments, volatility, topic_tags };
+  return { comments, volatility, topic_tags, needs_support };
 }
 
 /** Call the OpenAI Responses API with structured output. */

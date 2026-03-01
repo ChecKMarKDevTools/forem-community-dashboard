@@ -113,6 +113,7 @@ describe("analyzeConversation", () => {
       ],
       volatility: 0.6,
       topic_tags: ["testing", "vitest"],
+      needs_support: false,
     };
 
     fetchSpy.mockResolvedValueOnce(
@@ -139,6 +140,7 @@ describe("analyzeConversation", () => {
     expect(result!.comments[1].constructiveness).toBe(0.3);
     expect(result!.volatility).toBe(0.6);
     expect(result!.topic_tags).toEqual(["testing", "vitest"]);
+    expect(result!.needs_support).toBe(false);
 
     // Verify it called gpt-5-nano
     const callBody = JSON.parse(
@@ -160,6 +162,7 @@ describe("analyzeConversation", () => {
       ],
       volatility: 0.2,
       topic_tags: ["fallback"],
+      needs_support: false,
     };
 
     // First call (gpt-5-nano) fails
@@ -222,6 +225,7 @@ describe("analyzeConversation", () => {
       ],
       volatility: 1.3,
       topic_tags: ["clamping"],
+      needs_support: false,
     };
 
     fetchSpy.mockResolvedValueOnce(
@@ -290,6 +294,7 @@ describe("analyzeConversation", () => {
       ],
       volatility: 0.0,
       topic_tags: ["neutral"],
+      needs_support: false,
     };
 
     fetchSpy.mockResolvedValueOnce(
@@ -325,5 +330,66 @@ describe("analyzeConversation", () => {
 
     expect(result).toBeNull();
     expect(fetchSpy).toHaveBeenCalledTimes(2);
+  });
+
+  it("parses needs_support: true from LLM response", async () => {
+    const llmData: LLMConversationResponse = {
+      comments: [
+        {
+          index: 0,
+          tone: -0.5,
+          relevance: 0.8,
+          depth: 0.6,
+          constructiveness: 0.4,
+        },
+      ],
+      volatility: 0.3,
+      topic_tags: ["burnout"],
+      needs_support: true,
+    };
+
+    fetchSpy.mockResolvedValueOnce(
+      new Response(JSON.stringify(makeOpenAIResponse(llmData)), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+
+    const result = await analyzeConversation("I'm struggling with burnout", [
+      "hang in there",
+    ]);
+
+    expect(result).not.toBeNull();
+    expect(result!.needs_support).toBe(true);
+  });
+
+  it("defaults needs_support to false when LLM returns non-boolean", async () => {
+    // Simulate LLM returning a non-boolean needs_support value
+    const rawData = {
+      comments: [
+        {
+          index: 0,
+          tone: 0.5,
+          relevance: 0.7,
+          depth: 0.6,
+          constructiveness: 0.8,
+        },
+      ],
+      volatility: 0.2,
+      topic_tags: ["test"],
+      needs_support: "maybe", // string instead of boolean
+    };
+
+    fetchSpy.mockResolvedValueOnce(
+      new Response(JSON.stringify(makeOpenAIResponse(rawData)), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+
+    const result = await analyzeConversation("post body", ["comment"]);
+
+    expect(result).not.toBeNull();
+    expect(result!.needs_support).toBe(false);
   });
 });

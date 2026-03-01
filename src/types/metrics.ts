@@ -35,6 +35,8 @@ export interface ArticleMetrics {
   is_first_post: boolean;
   /** Count of help-seeking keywords detected in comments. */
   help_keywords: number;
+  /** True when the post body contains signals of emotional distress, burnout, or help-seeking. */
+  needs_support?: boolean;
 
   // ── Interaction Signal (headline metric) ───────────────────────────────
 
