@@ -10,7 +10,7 @@ High-level architecture of the DEV Community Dashboard. For interaction signal s
 graph TB
     subgraph External
         FOREM["Forem API<br/>(dev.to)"]
-        GHA["GitHub Actions<br/>cron.yml (every 2h)"]
+        GHA["GitHub Actions<br/>cron.yml (hourly)"]
         OAI["OpenAI API<br/>gpt-5-nano / gpt-5-mini"]
     end
 
@@ -60,7 +60,7 @@ The pipeline has three distinct phases: sync, scoring, and rendering.
 
 ```mermaid
 flowchart LR
-    subgraph Sync["Sync Phase (every 2h)"]
+    subgraph Sync["Sync Phase (hourly)"]
         A["Forem API"] -->|"Fetch articles<br/>+ comments"| B["sync.ts"]
         B -->|"New/edited comments"| C["openai.ts<br/>(LLM scoring)"]
         C -->|"Per-comment scores"| B
@@ -90,7 +90,7 @@ flowchart LR
 
 ### Sync Phase
 
-1. GitHub Actions triggers `POST /api/cron` every 2 hours.
+1. GitHub Actions triggers `POST /api/cron` hourly.
 2. The sync pipeline purges articles older than 10 days, then fetches articles within the 5-day window from the Forem API.
 3. For each article: fetch full body, fetch comment tree, compute structural metrics.
 4. Incremental LLM scoring: only new or edited comments are sent to OpenAI. Cached scores are preserved. See [Interaction Signal -- Incremental Scoring](./interaction-signal.md#incremental-scoring).

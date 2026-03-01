@@ -149,11 +149,11 @@ Set `APP_URL` as a **GitHub repository variable** and `CRON_SECRET` as a **GitHu
 
 All CI checks run in `ci.yml`; do not create additional workflow files for individual checks.
 
-| Workflow           | File                 | Trigger                          | What It Does                                                             |
-| ------------------ | -------------------- | -------------------------------- | ------------------------------------------------------------------------ |
-| **CI**             | `ci.yml`             | Push to `main`, Pull Request     | Format, lint, Vitest + coverage, SonarCloud scan, Lighthouse CI          |
-| **2-Hour Sync**    | `cron.yml`           | Schedule (`0 */2 * * *`), manual | POSTs to `/api/cron`; skips if `APP_URL` or `CRON_SECRET` is unset       |
-| **Release Please** | `release-please.yml` | Push to `main`                   | Automated release PRs (Conventional Commits -> CHANGELOG + version bump) |
+| Workflow           | File                 | Trigger                        | What It Does                                                             |
+| ------------------ | -------------------- | ------------------------------ | ------------------------------------------------------------------------ |
+| **CI**             | `ci.yml`             | Push to `main`, Pull Request   | Format, lint, Vitest + coverage, SonarCloud scan, Lighthouse CI          |
+| **Hourly Sync**    | `cron.yml`           | Schedule (`0 * * * *`), manual | POSTs to `/api/cron`; skips if `APP_URL` or `CRON_SECRET` is unset       |
+| **Release Please** | `release-please.yml` | Push to `main`                 | Automated release PRs (Conventional Commits -> CHANGELOG + version bump) |
 
 ### Required Repository Configuration
 

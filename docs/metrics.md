@@ -92,6 +92,7 @@ Each article is classified into exactly one category at sync time. Categories ar
 
 | Dashboard Label            | Category         | Key Conditions                                                                                                                  |
 | -------------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| **Needs Support**          | NEEDS_SUPPORT    | LLM `needs_support: true` OR `countSupportPhrases(body) >= 2` (heuristic fallback). Checked first in `classifyArticle()`.       |
 | **Awaiting Collaboration** | NEEDS_RESPONSE   | `time_since_post >= 30 min` AND `support_score >= 3`                                                                            |
 | **Anomalous Signal**       | SIGNAL_AT_RISK   | `risk_score >= 4`                                                                                                               |
 | **Rapid Discussion**       | NEEDS_REVIEW     | `comments >= 6` AND `heat_score >= 5` AND `reactions / comments < 1.2`                                                          |
@@ -99,7 +100,7 @@ Each article is classified into exactly one category at sync time. Categories ar
 | **Silent Signal**          | SILENT_SIGNAL    | `reactions >= 5` AND `comments <= 1`                                                                                            |
 | **Steady Signal**          | NORMAL           | Default; also forced for `devteam` org posts                                                                                    |
 
-Priority order in the queue list: Awaiting Collaboration > Anomalous Signal > Trending Signal > Rapid Discussion > Silent Signal > Steady Signal.
+Priority order in the queue list: Needs Support > Awaiting Collaboration > Anomalous Signal > Trending Signal > Rapid Discussion > Silent Signal > Steady Signal.
 
 ---
 

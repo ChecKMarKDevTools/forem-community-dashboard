@@ -247,11 +247,9 @@ sequenceDiagram
 
 The interaction signal is displayed in the detail panel under "Post Analytics" as an "Interaction Signal" chart. The UI shows:
 
-1. **SignalBar** -- three-segment bar (substantive / mixed / surface-level percentages)
-2. **Signal summary** -- plain-English guidance from `getSignalSummary()`
-3. **Metadata line** -- numeric signal value, method (LLM or Heuristic), and volatility percentage (LLM only)
-4. **Topic tags** -- small labels when LLM-extracted tags are available
-5. **Per-comment breakdown** -- expandable `<details>` element showing each comment's tone, relevance, depth, and constructiveness scores (metric transparency)
+1. **SignalBar** -- three-segment bar (substantive / mixed / surface-level percentages), rendered when at least 2 tiers are non-zero
+2. **Metadata line** -- composite signal value (0–1, via tooltip), method label (LLM or Heuristic), and volatility percentage (LLM-scored posts only)
+3. **Topic tags** -- small badge labels when LLM-extracted tags are available
 
 All values are surfaceable to the user. No hidden metrics.
 
