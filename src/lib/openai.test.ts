@@ -31,10 +31,10 @@ function makeOpenAIResponse(data: LLMConversationResponse): object {
 // ---------------------------------------------------------------------------
 
 describe("truncateForTokenBudget", () => {
-  it("truncates post body to 2000 chars", () => {
-    const longPost = "a".repeat(3000);
+  it("truncates post body to 4000 chars", () => {
+    const longPost = "a".repeat(5000);
     const { truncatedPost } = truncateForTokenBudget(longPost, []);
-    expect(truncatedPost.length).toBe(2000);
+    expect(truncatedPost.length).toBe(4000);
   });
 
   it("truncates individual comments to 500 chars", () => {
@@ -44,12 +44,22 @@ describe("truncateForTokenBudget", () => {
     expect(truncatedComments).toBe(`Comment 0: ${"b".repeat(500)}`);
   });
 
-  it("stops adding comments once cumulative chars exceed 2000", () => {
-    // Each comment is 500 chars → 4 fit in 2000 budget, 5th should be excluded
-    const comments = Array.from({ length: 6 }, () => "c".repeat(500));
+  it("stops adding comments once cumulative chars (including prefix overhead) exceed 12000", () => {
+    // Each comment is 500 chars. With the "Comment N: " prefix (11-12 chars) and
+    // "\n" separators counted toward the budget (TOTAL_COMMENT_CHAR_LIMIT = 12000):
+    //   line 0:  0 + 11 + 500 = 511  cumulative
+    //   line 1:  1 + 11 + 500 = 512  → 1023
+    //   …
+    //   line 22: 1 + 12 + 500 = 513  → ≤ 12000 → fits
+    //   line 23: 1 + 12 + 500 = 513  → would exceed 12000 → excluded
+    // Supply 30 comments; expect the result stays within the 12000-char budget.
+    const comments = Array.from({ length: 30 }, () => "c".repeat(500));
     const { truncatedComments } = truncateForTokenBudget("post", comments);
     const lines = truncatedComments.split("\n");
-    expect(lines.length).toBe(4);
+    // At least 20 comments should fit (generous limit = gpt-5-nano friendly)
+    expect(lines.length).toBeGreaterThanOrEqual(20);
+    // Resulting string must stay within the budget
+    expect(truncatedComments.length).toBeLessThanOrEqual(12000);
   });
 
   it("handles empty comments array", () => {

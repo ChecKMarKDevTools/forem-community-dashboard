@@ -37,9 +37,12 @@ export interface LLMConversationResponse {
 // Constants
 // ---------------------------------------------------------------------------
 
-const POST_CHAR_LIMIT = 2000;
+// gpt-5-nano supports a 400K token context window (~1.6M chars).
+// These limits are intentionally conservative to keep per-sync costs predictable
+// while still covering a full typical thread (≈ 20–25 comments at 500 chars each).
+const POST_CHAR_LIMIT = 4000;
 const COMMENT_CHAR_LIMIT = 500;
-const TOTAL_COMMENT_CHAR_LIMIT = 2000;
+const TOTAL_COMMENT_CHAR_LIMIT = 12000;
 
 const PRIMARY_MODEL = "gpt-5-nano";
 const FALLBACK_MODEL = "gpt-5-mini";
@@ -97,7 +100,9 @@ const RESPONSE_SCHEMA = {
 // Internal helpers
 // ---------------------------------------------------------------------------
 
-/** Truncate post body and format comments within the token budget. */
+/** Truncate post body and format comments within the token budget.
+ * The budget accounts for the `Comment N: ` prefix and `\n` separators so
+ * that the final joined string stays within TOTAL_COMMENT_CHAR_LIMIT. */
 export function truncateForTokenBudget(
   postBody: string,
   commentTexts: ReadonlyArray<string>,
@@ -108,9 +113,12 @@ export function truncateForTokenBudget(
   const lines: string[] = [];
   for (let i = 0; i < commentTexts.length; i++) {
     const text = commentTexts[i].slice(0, COMMENT_CHAR_LIMIT);
-    if (cumulative + text.length > TOTAL_COMMENT_CHAR_LIMIT) break;
-    cumulative += text.length;
-    lines.push(`Comment ${i}: ${text}`);
+    const prefix = `Comment ${i}: `;
+    // +1 for the "\n" separator between lines (not added before the first line)
+    const overhead = prefix.length + (lines.length > 0 ? 1 : 0);
+    if (cumulative + overhead + text.length > TOTAL_COMMENT_CHAR_LIMIT) break;
+    cumulative += overhead + text.length;
+    lines.push(`${prefix}${text}`);
   }
 
   return { truncatedPost, truncatedComments: lines.join("\n") };
@@ -162,36 +170,45 @@ function parseResponse(
     return null;
   }
 
-  const comments = raw.comments
-    .filter(
-      (
-        c,
-      ): c is {
-        index: number;
-        tone: number;
-        relevance: number;
-        depth: number;
-        constructiveness: number;
-      } =>
-        typeof c.index === "number" &&
-        typeof c.tone === "number" &&
-        typeof c.relevance === "number" &&
-        typeof c.depth === "number" &&
-        typeof c.constructiveness === "number",
-    )
-    .slice(0, expectedCount)
-    .map((c) => ({
-      index: c.index,
-      tone: clamp(c.tone, -1, 1, `comment[${c.index}].tone`),
-      relevance: clamp(c.relevance, 0, 1, `comment[${c.index}].relevance`),
-      depth: clamp(c.depth, 0, 1, `comment[${c.index}].depth`),
-      constructiveness: clamp(
-        c.constructiveness,
-        0,
-        1,
-        `comment[${c.index}].constructiveness`,
-      ),
-    }));
+  // Build a Map keyed by index to guarantee a stable index→comment mapping:
+  // duplicate indices are rejected (first occurrence wins) and out-of-range
+  // indices are dropped, so downstream code can rely on index === array position.
+  const byIndex = new Map<
+    number,
+    { tone: number; relevance: number; depth: number; constructiveness: number }
+  >();
+  for (const c of raw.comments) {
+    if (
+      typeof c.index === "number" &&
+      Number.isInteger(c.index) &&
+      c.index >= 0 &&
+      c.index < expectedCount &&
+      !byIndex.has(c.index) &&
+      typeof c.tone === "number" &&
+      typeof c.relevance === "number" &&
+      typeof c.depth === "number" &&
+      typeof c.constructiveness === "number"
+    ) {
+      byIndex.set(c.index, {
+        tone: clamp(c.tone, -1, 1, `comment[${c.index}].tone`),
+        relevance: clamp(c.relevance, 0, 1, `comment[${c.index}].relevance`),
+        depth: clamp(c.depth, 0, 1, `comment[${c.index}].depth`),
+        constructiveness: clamp(
+          c.constructiveness,
+          0,
+          1,
+          `comment[${c.index}].constructiveness`,
+        ),
+      });
+    }
+  }
+  const comments: LLMCommentScore[] = [];
+  for (let idx = 0; idx < expectedCount; idx++) {
+    const scored = byIndex.get(idx);
+    if (scored) {
+      comments.push({ index: idx, ...scored });
+    }
+  }
 
   const volatility = clamp(raw.volatility, 0, 1, "volatility");
   const topic_tags = raw.topic_tags
