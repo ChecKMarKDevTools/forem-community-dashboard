@@ -182,9 +182,9 @@ describe("syncArticles scoring pipeline", () => {
     expect(result.failed).toBe(0);
   });
 
-  // ── Category: POSSIBLY_LOW_QUALITY ─────────────────────────────────────
+  // ── Category: SIGNAL_AT_RISK ─────────────────────────────────────
 
-  it("classifies POSSIBLY_LOW_QUALITY when risk_score >= 4", async () => {
+  it("classifies SIGNAL_AT_RISK when risk_score >= 4", async () => {
     // freq penalty: 1 post (<=2 threshold) = 0, word_count=100 < 120 (+2),
     // no engagement (+2), author promo keywords "buy"+"subscribe" (+2) → risk = 6 - 0 engage = 6
     const article = makeArticle({
@@ -341,7 +341,7 @@ describe("syncArticles scoring pipeline", () => {
         reading_time_minutes: 1,
         user: { username: "newuser", name: "New User" },
       }),
-      // POSSIBLY_LOW_QUALITY: short, no engagement
+      // SIGNAL_AT_RISK: short, no engagement
       makeArticle({
         id: 20,
         public_reactions_count: 0,
@@ -994,7 +994,7 @@ describe("syncArticles scoring pipeline", () => {
 
     const result = await syncArticles(1);
 
-    // Should NOT be POSSIBLY_LOW_QUALITY because promo words are from a commenter, not the author
+    // Should NOT be SIGNAL_AT_RISK because promo words are from a commenter, not the author
     expect(result.synced).toBe(1);
     expect(result.failed).toBe(0);
   });

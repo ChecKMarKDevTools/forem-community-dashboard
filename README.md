@@ -2,11 +2,72 @@
 
 ![DEV Community Dashboard Banner](public/dev-weekend-challenge-banner-community-dashboard.png)
 
+<table>
+<tr>
+<td><b>Community</b></td>
+<td>
+
+[![GitHub Stars](https://img.shields.io/github/stars/ChecKMarKDevTools/dev-community-dashboard?style=flat&logo=github&logoColor=white)](https://github.com/ChecKMarKDevTools/dev-community-dashboard/stargazers) [![License](https://img.shields.io/badge/License-PolyForm_Shield_1.0.0-blue?style=flat)](./LICENSE) [![DEV.to](https://img.shields.io/badge/DEV.to-anchildress1-0A0A0A?style=flat&logo=devdotto&logoColor=white)](https://dev.to/anchildress1)
+
+</td>
+</tr>
+<tr>
+<td><b>Pipeline</b></td>
+<td>
+
+[![CI Build & Test](https://img.shields.io/github/actions/workflow/status/ChecKMarKDevTools/dev-community-dashboard/ci.yml?branch=main&style=flat&logo=githubactions&logoColor=white&label=CI)](https://github.com/ChecKMarKDevTools/dev-community-dashboard/actions/workflows/ci.yml) [![DEV Post Sync](https://img.shields.io/github/actions/workflow/status/ChecKMarKDevTools/dev-community-dashboard/cron.yml?branch=main&style=flat&logo=githubactions&logoColor=white&label=Cron%20Sync)](https://github.com/ChecKMarKDevTools/dev-community-dashboard/actions/workflows/cron.yml) [![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=ChecKMarKDevTools_forem-community-dashboard&metric=alert_status)](https://sonarcloud.io/summary/overall?id=ChecKMarKDevTools_forem-community-dashboard) [![SonarCloud Coverage](https://sonarcloud.io/api/project_badges/measure?project=ChecKMarKDevTools_forem-community-dashboard&metric=coverage)](https://sonarcloud.io/summary/overall?id=ChecKMarKDevTools_forem-community-dashboard)
+
+</td>
+</tr>
+<tr>
+<td><b>Scans</b></td>
+<td>
+
+[![TruffleHog](https://img.shields.io/badge/TruffleHog-Secret_Scan-000000?style=flat&logo=trufflehog&logoColor=white)](https://trufflesecurity.com/trufflehog) [![Semgrep](https://img.shields.io/badge/Semgrep-SAST-4B11A8?style=flat&logo=semgrep&logoColor=white)](https://semgrep.dev) [![Hadolint](https://img.shields.io/badge/Hadolint-Dockerfile_Lint-2496ED?style=flat&logo=docker&logoColor=white)](https://github.com/hadolint/hadolint) [![actionlint](https://img.shields.io/badge/actionlint-GHA_Lint-2088FF?style=flat&logo=githubactions&logoColor=white)](https://github.com/rhysd/actionlint) [![Stylelint](https://img.shields.io/badge/Stylelint-CSS_Lint-263238?style=flat&logo=stylelint&logoColor=white)](https://stylelint.io) [![Lighthouse](https://img.shields.io/badge/Lighthouse-A11y_100%25-F44B21?style=flat&logo=lighthouse&logoColor=white)](https://developer.chrome.com/docs/lighthouse)
+
+</td>
+</tr>
+<tr>
+<td><b>Stack</b></td>
+<td>
+
+[![Next.js](https://img.shields.io/badge/Next.js-16-000000?style=flat&logo=nextdotjs&logoColor=white)](https://nextjs.org) [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org) [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?style=flat&logo=tailwindcss&logoColor=white)](https://tailwindcss.com) [![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3FCF8E?style=flat&logo=supabase&logoColor=white)](https://supabase.com) [![Vitest](https://img.shields.io/badge/Vitest-Testing-6E9F18?style=flat&logo=vitest&logoColor=white)](https://vitest.dev) [![pnpm](https://img.shields.io/badge/pnpm-Package_Manager-F69220?style=flat&logo=pnpm&logoColor=white)](https://pnpm.io) [![Docker](https://img.shields.io/badge/Docker-Container-2496ED?style=flat&logo=docker&logoColor=white)](https://www.docker.com) [![Google Cloud Run](https://img.shields.io/badge/Cloud_Run-Deployment-4285F4?style=flat&logo=googlecloud&logoColor=white)](https://cloud.google.com/run)
+
+</td>
+</tr>
+<tr>
+<td><b>Code Quality</b></td>
+<td>
+
+[![ESLint](https://img.shields.io/badge/ESLint-Linting-4B32C3?style=flat&logo=eslint&logoColor=white)](https://eslint.org) [![Prettier](https://img.shields.io/badge/Prettier-Formatting-F7B93E?style=flat&logo=prettier&logoColor=black)](https://prettier.io) [![Conventional Commits](https://img.shields.io/badge/Conventional_Commits-1.0.0-FE5196?style=flat&logo=conventionalcommits&logoColor=white)](https://www.conventionalcommits.org) [![Lefthook](https://img.shields.io/badge/Lefthook-Git_Hooks-FF1E1E?style=flat&logo=git&logoColor=white)](https://github.com/evilmartians/lefthook) [![Makefile](https://img.shields.io/badge/Makefile-Build-427819?style=flat&logo=gnu&logoColor=white)](https://www.gnu.org/software/make/)
+
+</td>
+</tr>
+<tr>
+<td><b>AI</b></td>
+<td>
+
+[![Claude](https://img.shields.io/badge/Claude-Anthropic-D97757?style=flat&logo=anthropic&logoColor=white)](https://claude.ai) [![ChatGPT](https://img.shields.io/badge/ChatGPT-OpenAI-74AA9C?style=flat&logo=openai&logoColor=white)](https://chat.openai.com) [![Google Gemini](https://img.shields.io/badge/Gemini-Google-8E75B2?style=flat&logo=googlegemini&logoColor=white)](https://gemini.google.com) [![Leonardo.ai](https://img.shields.io/badge/Leonardo.ai-Seedream_4.5-7C3AED?style=flat&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiPjxjaXJjbGUgY3g9IjEyIiBjeT0iMTIiIHI9IjEwIi8+PC9zdmc+&logoColor=white)](https://leonardo.ai)
+
+</td>
+</tr>
+<tr>
+<td><b>Support</b></td>
+<td>
+
+[![Sponsor](https://img.shields.io/badge/Sponsor-GitHub_Sponsors-EA4AAA?style=flat&logo=githubsponsors&logoColor=white)](https://github.com/sponsors/anchildress1) [![Buy Me a Coffee](https://img.shields.io/badge/Buy_Me_a_Coffee-Support-FFDD00?style=flat&logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/anchildress1)
+
+</td>
+</tr>
+</table>
+
 A signal-surfacing tool for [Forem](https://forem.com/) communities (dev.to and self-hosted instances). It ingests the latest posts via the public Forem API, classifies each one into attention categories (Awaiting Collaboration, Anomalous Signal, Trending Signal, Rapid Discussion, Steady Signal), and persists the results in Supabase so community helpers can see where conversations need a human eye.
 
 This is **not** a moderation tool or a scorecard. It is designed to help helpers know where to look.
 
 **Production:** [https://dev-signal.checkmarkdevtools.dev](https://dev-signal.checkmarkdevtools.dev) _(Cloud Run — deployed post-initial-release)_
+
+v1.0.0 was created for the [DEV Weekend Challenge](https://dev.to/devteam/happening-now-dev-weekend-challenge-submissions-due-march-2-at-759am-utc-5fg8).
 
 ---
 
@@ -123,36 +184,36 @@ Each article is classified at sync time (not at read time) into one of four atte
 
 ### Common Metrics
 
-| Metric               | Formula                                                                |
-| -------------------- | ---------------------------------------------------------------------- |
-| `word_count`         | Exact word count of the article body                                   |
-| `comments_per_hour`  | `comment_count / max(1, time_since_post / 60)`                         |
-| `avg_comment_length` | `total_comment_words / max(1, comment_count)`                          |
-| `reply_ratio`        | `replies_with_parent / max(1, comment_count)`                          |
-| `author_post_freq`   | Posts by the same author in the last 24 h                              |
-| `effort`             | `log2(word_count + 1) + unique_commenters + (avg_comment_length / 40)` |
-| `exposure`           | `max(1, reactions + comments)`                                         |
-| `attention_delta`    | `effort - log2(exposure + 1)`                                          |
+| Metric               | Formula                                                                | Importance/Explanation                                                                                  |
+| -------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `word_count`         | count of words in the article body                                     | Indicates content length; longer posts may need summarizing or more attention                           |
+| `comments_per_hour`  | `comment_count / max(1, time_since_post / 60)`                         | Measures the pace of discussion; higher rates show active conversations                                 |
+| `avg_comment_length` | `total_comment_words / max(1, comment_count)`                          | Reflects depth of responses; longer comments often mean more thoughtful engagement                      |
+| `reply_ratio`        | `replies_with_parent / max(1, comment_count)`                          | Shows how conversational the thread is, highlighting back-and-forth replies                             |
+| `author_post_freq`   | number of posts by the same author in the last 24 h                    | Helps spot potential spam or overly frequent posts by the same user                                     |
+| `effort`             | `log2(word_count + 1) + unique_commenters + (avg_comment_length / 40)` | Captures combined effort by author and commenters; higher effort signals more invested discussions      |
+| `exposure`           | `max(1, reactions + comments)`                                         | Shows overall visibility; higher exposure means more attention from the community                       |
+| `attention_delta`    | `effort – log2(exposure + 1)`                                          | Measures balance between effort and exposure; positive values suggest undervalued posts needing a boost |
 
 ### Categories
 
-| Category                 | Dashboard Label        | Key Conditions                                                                                                                  |
-| ------------------------ | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| **NEEDS_RESPONSE**       | Awaiting Collaboration | `time_since_post >= 30 min` AND `support_score >= 3` (first post, no reactions, no comments, help words)                        |
-| **POSSIBLY_LOW_QUALITY** | Anomalous Signal       | `risk_score >= 4` (high post freq, short body, no engagement, author promo keywords, repeated links, minus engagement credit)   |
-| **NEEDS_REVIEW**         | Rapid Discussion       | `comments >= 6` AND `heat_score >= 5` AND `reactions / comments < 1.2`                                                          |
-| **BOOST_VISIBILITY**     | Trending Signal        | `word_count >= 600` AND `unique_commenters >= 2` AND `avg_comment_length >= 18` AND `reactions <= 5` AND `attention_delta >= 3` |
-| **NORMAL**               | Steady Signal          | Default when no category thresholds are met; also forced for `devteam` org posts (weekly threads, challenges)                   |
+| Dashboard Label            | Category         | Key Conditions                                                                                                                  | Interpretation                                                                                                                     |
+| -------------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| **Awaiting Collaboration** | NEEDS_RESPONSE   | `time_since_post >= 30 min` AND `support_score >= 3` (first post, no reactions, no comments, help words)                        | The post hasn’t received meaningful replies yet. It likely needs someone to step in and start the conversation.                    |
+| **Anomalous Signal**       | SIGNAL_AT_RISK   | `risk_score >= 4` (high post freq, short body, no engagement, author promo keywords, repeated links, minus engagement credit)   | Something looks off compared to normal behavior. It may be harmless, but a human should double-check.                              |
+| **Rapid Discussion**       | NEEDS_REVIEW     | `comments >= 6` AND `heat_score >= 5` AND `reactions / comments < 1.2`                                                          | The thread is active but unclear. People are talking, just not necessarily about the same thing yet.                               |
+| **Trending Signal**        | BOOST_VISIBILITY | `word_count >= 600` AND `unique_commenters >= 2` AND `avg_comment_length >= 18` AND `reactions <= 5` AND `attention_delta >= 3` | The content is useful but under-seen. A little amplification could help the right people find it.                                  |
+| **Steady Signal**          | NORMAL           | Default when no category thresholds are met; also forced for `devteam` org posts (weekly threads, challenges)                   | Routine community activity. Nothing unusual happening, including regular community threads like weekly discussions and challenges. |
 
 ### Sub-Scores
 
-| Sub-Score       | Components                                                                                                                                 |
-| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `heat_score`    | `comments_per_hour + reply_ratio * 3 + alternating_pairs + sentiment_flips`                                                                |
-| `risk_score`    | `max(0, freq_penalty + (word_count < 120 ? 2 : 0) + (no engagement ? 2 : 0) + author_promo_keywords + repeated_links - engagement_credit)` |
-| `freq_penalty`  | `max(0, author_post_freq - 2) * 2` (only penalizes > 2 posts/day)                                                                          |
-| `engage_credit` | `(reactions >= 10 ? 2 : 0) + (unique_commenters >= 5 ? 1 : 0)` (offsets risk for high-traction posts)                                      |
-| `support_score` | `(first_post ? 2 : 0) + (no reactions ? 1 : 0) + (no comments ? 2 : 0) + help_keywords`                                                    |
+| Sub‑score       | Formula / components                                                                                                                       | Importance/Explanation                                                                         |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------- |
+| `heat_score`    | `comments_per_hour + reply_ratio * 3 + alternating_pairs + sentiment_flips`                                                                | Gauges thread activity and engagement; higher scores flag lively discussions                   |
+| `risk_score`    | `max(0, freq_penalty + (word_count < 120 ? 2 : 0) + (no engagement ? 2 : 0) + author_promo_keywords + repeated_links - engagement_credit)` | Identifies potential quality issues; higher risk means the post may need moderation            |
+| `freq_penalty`  | `max(0, author_post_freq – 2) * 2` (only penalizes > 2 posts/day)                                                                          | Discourages spamming by reducing the score of frequent posters                                 |
+| `engage_credit` | `(reactions >= 10 ? 2 : 0) + (unique_commenters >= 5 ? 1 : 0)`                                                                             | Rewards well-engaged posts by offsetting risk, so lively discussions aren’t penalized          |
+| `support_score` | `(first_post ? 2 : 0) + (no reactions ? 1 : 0) + (no comments ? 2 : 0) + help_keywords`                                                    | Highlights posts needing community support; higher scores mark threads where newbies need help |
 
 ### Dashboard Signal Display
 
@@ -179,6 +240,21 @@ The detail panel renders five chart types for each post. These show motion and t
 
 All charts are custom SVG components with zero external chart dependencies. They use the CSS custom property theme (`--chart-grid`, `--chart-axis`, `--chart-series-primary/secondary/tertiary`) for automatic light/dark mode support.
 
+### Contributing Signals
+
+The **Contributing Signals** timeline shows which of the six signals actually triggered for a given post. Each signal is either active (raised the risk score) or inactive (checked but not triggered). Hovering over a signal marker in the UI surfaces the matched value so you can understand _why_ a post received the score it did.
+
+| Signal                   | Field               | Active When                                                                                  | Score Contribution                                           |
+| ------------------------ | ------------------- | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| **Frequency Penalty**    | `frequency_penalty` | Author published > 2 posts in the last 24 h                                                  | `max(0, post_count − 2) × 2` added to risk score             |
+| **Short Content**        | `short_content`     | Article body is fewer than 120 words                                                         | +2 to risk score                                             |
+| **No Engagement**        | `no_engagement`     | Zero reactions _and_ zero comments at sync time                                              | +2 to risk score                                             |
+| **Promotional Keywords** | `promo_keywords`    | Article author's own comments contain words like "subscribe", "buy", "follow", "link in bio" | +1 per matched keyword added to risk score                   |
+| **Repeated Links**       | `repeated_links`    | Any external domain appears in comments more than twice                                      | +2 to risk score (capped; triggers once per post)            |
+| **Engagement Credit**    | `engagement_credit` | Post has ≥ 10 reactions _or_ ≥ 5 unique commenters                                           | −2 (reactions) or −1 (commenters) subtracted from risk score |
+
+A post reaches **Anomalous Signal** (`SIGNAL_AT_RISK`) when its total risk score is ≥ 4 after summing all active signals and subtracting any engagement credit. The `engagement_credit` signal works in reverse — it is the only signal that _lowers_ the score, preventing high-engagement posts from being flagged.
+
 ---
 
 ## Running Locally
@@ -201,9 +277,9 @@ Create a `.env` file in the project root with the following:
 
 | Variable                   | Required | Description                                        |
 | -------------------------- | -------- | -------------------------------------------------- |
-| `NEXT_PUBLIC_SUPABASE_URL` | Yes      | Supabase project URL                               |
-| `SUPABASE_SECRET_KEY`      | Yes      | Server-only key; bypasses RLS for sync writes      |
-| `CRON_SECRET`              | Yes      | Bearer token for `/api/cron` and `/api/admin/seed` |
+| `NEXT_PUBLIC_SUPABASE_URL` | ✅ Yes   | Supabase project URL                               |
+| `SUPABASE_SECRET_KEY`      | ✅ Yes   | Server-only key; bypasses RLS for sync writes      |
+| `CRON_SECRET`              | ✅ Yes   | Bearer token for `/api/cron` and `/api/admin/seed` |
 | `DEV_API_KEY`              | No       | Optional; raises Forem API rate limits             |
 
 > `SUPABASE_SECRET_KEY` is intentionally **not** prefixed with `NEXT_PUBLIC_` — it is never sent to the browser.
@@ -275,7 +351,7 @@ Three workflows live in `.github/workflows/`. All CI checks run in `ci.yml`; do 
 
 ### Lighthouse CI
 
-Lighthouse runs as the last step in `ci.yml` (`pnpm lhci:desktop`). Results are written to `.lighthouseci/` (filesystem target — no external upload service or status-check callback). Minimum thresholds: performance ≥ 0.90 (desktop), accessibility ≥ 0.90, best-practices ≥ 0.90, SEO ≥ 0.90. The `.lighthouseci/` directory is git-ignored.
+Lighthouse runs as the last step in `ci.yml` (`pnpm lhci:desktop`). Results are written to `.lighthouseci/` (filesystem target — no external upload service or status-check callback). Minimum thresholds: performance ≥ 0.90 (desktop), accessibility = 1.0 (100%), best-practices = 1.0 (100%), SEO ≥ 0.90. The `.lighthouseci/` directory is git-ignored.
 
 ---
 
@@ -297,6 +373,37 @@ If you are contributing, here is where things live:
 | Tests                                                   | Co-located `*.test.ts` / `*.test.tsx` files next to the source |
 | CI checks                                               | `.github/workflows/ci.yml` (single workflow for all checks)    |
 | Project conventions                                     | `AGENTS.md`                                                    |
+
+---
+
+## Database Migrations
+
+All migrations live in `supabase/migrations/` and are applied in order via `supabase db push`.
+
+| Migration           | File                                                               | Description                                                                                          |
+| ------------------- | ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| Initial schema      | `0000_initial_schema.sql`                                          | Creates `articles`, `users`, and `commenters` tables with indexes and enables RLS                    |
+| RLS policies        | `0001_rls_policies.sql`                                            | Adds anon SELECT-only policies on `articles` and `commenters`; `users` has no anon policy (deny-all) |
+| Add dev URL         | `20260228030900_add_dev_url_and_action.sql`                        | Adds `dev_url TEXT` column to `articles` and backfills from `canonical_url`                          |
+| Add metrics JSONB   | `20260228235416_add_metrics_jsonb_column_to_articles.sql`          | Adds `metrics JSONB DEFAULT '{}'` column to `articles` for per-post analytics                        |
+| Allow null username | `20260301004053_allow_null_commenter_username.sql`                 | Drops `NOT NULL` constraint on `commenters.username` to handle deleted Forem accounts                |
+| Rename category     | `20260301040126_rename_possibly_low_quality_to_signal_at_risk.sql` | Renames `POSSIBLY_LOW_QUALITY` category to `SIGNAL_AT_RISK` across all rows                          |
+
+---
+
+## Connect & Support
+
+<div align="center">
+
+[![DEV.to](https://img.shields.io/badge/DEV.to-anchildress1-0A0A0A?style=flat&logo=devdotto&logoColor=white)](https://dev.to/anchildress1)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-anchildress1-0A66C2?style=flat&logo=linkedin&logoColor=white)](https://linkedin.com/in/anchildress1)
+[![Medium](https://img.shields.io/badge/Medium-@anchildress1-000000?style=flat&logo=medium&logoColor=white)](https://medium.com/@anchildress1)
+[![Reddit](https://img.shields.io/badge/Reddit-anchildress1-FF4500?style=flat&logo=reddit&logoColor=white)](https://reddit.com/user/anchildress1)
+
+[![Sponsor on GitHub](https://img.shields.io/badge/Sponsor-GitHub_Sponsors-EA4AAA?style=flat&logo=githubsponsors&logoColor=white)](https://github.com/sponsors/anchildress1)
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy_Me_a_Coffee-Support-FFDD00?style=flat&logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/anchildress1)
+
+</div>
 
 ---
 

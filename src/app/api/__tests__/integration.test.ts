@@ -45,7 +45,7 @@ const DB_ARTICLES = [
     title: "Spam Post",
     author: "spammer",
     score: 90,
-    attention_level: "POSSIBLY_LOW_QUALITY",
+    attention_level: "SIGNAL_AT_RISK",
   },
   {
     id: 2,
@@ -68,7 +68,7 @@ const DB_ARTICLE_DETAIL = {
   title: "Spam Post",
   author: "spammer",
   score: 90,
-  attention_level: "POSSIBLY_LOW_QUALITY",
+  attention_level: "SIGNAL_AT_RISK",
   reactions: 100,
   comments: 5,
   tags: ["javascript"],
@@ -107,7 +107,7 @@ const DB_RECENT_POSTS = [
     title: "Earlier Spam",
     published_at: "2024-01-14T10:00:00Z",
     score: 80,
-    attention_level: "POSSIBLY_LOW_QUALITY",
+    attention_level: "SIGNAL_AT_RISK",
   },
 ];
 
@@ -162,7 +162,7 @@ describe("Integration: GET /api/posts", () => {
   });
 
   it("returns non-NORMAL articles first, then NORMAL, each group sorted by score desc", async () => {
-    // DB_ARTICLES: POSSIBLY_LOW_QUALITY (90), NORMAL (20), NEEDS_REVIEW (50)
+    // DB_ARTICLES: SIGNAL_AT_RISK (90), NORMAL (20), NEEDS_REVIEW (50)
     buildSupabaseListChain(DB_ARTICLES);
 
     const res = await getPosts();
@@ -170,7 +170,7 @@ describe("Integration: GET /api/posts", () => {
 
     expect(res.status).toBe(200);
     expect(json).toHaveLength(3);
-    // Non-NORMAL first: POSSIBLY_LOW_QUALITY (90) then NEEDS_REVIEW (50)
+    // Non-NORMAL first: SIGNAL_AT_RISK (90) then NEEDS_REVIEW (50)
     expect(json[0].attention_level).not.toBe("NORMAL");
     expect(json[1].attention_level).not.toBe("NORMAL");
     // NORMAL last
@@ -230,7 +230,7 @@ describe("Integration: GET /api/posts/[id]", () => {
     expect(json.title).toBe("Spam Post");
     expect(json.author).toBe("spammer");
     expect(json.score).toBe(90);
-    expect(json.attention_level).toBe("POSSIBLY_LOW_QUALITY");
+    expect(json.attention_level).toBe("SIGNAL_AT_RISK");
     // recent_posts
     expect(Array.isArray(json.recent_posts)).toBe(true);
     expect(json.recent_posts[0].id).toBe(4);

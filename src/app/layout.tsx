@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Marcellus, Source_Serif_4 } from "next/font/google";
 import "./globals.css";
 
@@ -15,10 +15,18 @@ const sourceSerif = Source_Serif_4({
   display: "swap",
 });
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+};
+
 export const metadata: Metadata = {
   title: "DEV Community Dashboard",
   description:
     "Monitor and support community conversations with behavioral scoring and moderation insights.",
+  icons: {
+    icon: { url: "/favicon.svg", type: "image/svg+xml" },
+  },
 };
 
 const themeScript = `

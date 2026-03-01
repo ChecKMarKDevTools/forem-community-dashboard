@@ -96,7 +96,7 @@ describe("GET /api/posts", () => {
         id: "1",
         title: "Spam",
         score: 90,
-        attention_level: "POSSIBLY_LOW_QUALITY",
+        attention_level: "SIGNAL_AT_RISK",
       },
       { id: "2", title: "Normal", score: 95, attention_level: "NORMAL" },
       { id: "3", title: "Hot", score: 70, attention_level: "NEEDS_REVIEW" },
@@ -126,7 +126,7 @@ describe("GET /api/posts", () => {
         id: "2",
         title: "High",
         score: 80,
-        attention_level: "POSSIBLY_LOW_QUALITY",
+        attention_level: "SIGNAL_AT_RISK",
       },
     ];
     buildChain({ data: mockData, error: null });

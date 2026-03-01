@@ -16,7 +16,7 @@ export const ATTENTION_META: Record<
   BOOST_VISIBILITY: { variant: "info", label: "Trending Signal" },
   NEEDS_RESPONSE: { variant: "teal", label: "Awaiting Collaboration" },
   NEEDS_REVIEW: { variant: "attention", label: "Rapid Discussion" },
-  POSSIBLY_LOW_QUALITY: { variant: "critical", label: "Anomalous Signal" },
+  SIGNAL_AT_RISK: { variant: "critical", label: "Anomalous Signal" },
 };
 
 const DEFAULT_ATTENTION = {
@@ -244,7 +244,7 @@ export function computeAgeHours(published_at: string): number {
  *  Awaiting Collaboration > Anomalous Signal > Trending Signal > Rapid Discussion > Steady Signal */
 export const ATTENTION_PRIORITY: Record<string, number> = {
   NEEDS_RESPONSE: 0,
-  POSSIBLY_LOW_QUALITY: 1,
+  SIGNAL_AT_RISK: 1,
   BOOST_VISIBILITY: 2,
   NEEDS_REVIEW: 3,
   NORMAL: 4,
