@@ -45,7 +45,7 @@
 <td><b>AI</b></td>
 <td>
 
-[![Claude](https://img.shields.io/badge/Claude-Anthropic-D97757?style=flat&logo=anthropic&logoColor=white)](https://claude.ai) [![ChatGPT](https://img.shields.io/badge/ChatGPT-OpenAI-74AA9C?style=flat&logo=openai&logoColor=white)](https://chat.openai.com) [![Google Gemini](https://img.shields.io/badge/Gemini-Google-8E75B2?style=flat&logo=googlegemini&logoColor=white)](https://gemini.google.com) [![Leonardo.ai](https://img.shields.io/badge/Leonardo.ai-Seedream_4.5-7C3AED?style=flat&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiPjxjaXJjbGUgY3g9IjEyIiBjeT0iMTIiIHI9IjEwIi8+PC9zdmc+&logoColor=white)](https://leonardo.ai)
+[![Claude](https://img.shields.io/badge/Claude-Anthropic-D97757?style=flat&logo=anthropic&logoColor=white)](https://claude.ai) [![ChatGPT](https://img.shields.io/badge/ChatGPT-OpenAI-74AA9C?style=flat&logo=openai&logoColor=white)](https://chat.openai.com) [![gpt-5-mini](https://img.shields.io/badge/gpt--5--mini-Sentiment-74AA9C?style=flat&logo=openai&logoColor=white)](https://platform.openai.com/docs/models) [![Google Gemini](https://img.shields.io/badge/Gemini-Google-8E75B2?style=flat&logo=googlegemini&logoColor=white)](https://gemini.google.com) [![Leonardo.ai](https://img.shields.io/badge/Leonardo.ai-Seedream_4.5-7C3AED?style=flat&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiPjxjaXJjbGUgY3g9IjEyIiBjeT0iMTIiIHI9IjEwIi8+PC9zdmc+&logoColor=white)](https://leonardo.ai)
 
 </td>
 </tr>
@@ -106,6 +106,7 @@ sequenceDiagram
   participant Cron as POST /api/cron
   participant Sync as syncArticles
   participant FC as ForemClient
+  participant OAI as OpenAI (gpt-5-mini)
   participant SB as Supabase
 
   GHA->>Cron: POST (Authorization: Bearer)
@@ -125,6 +126,8 @@ sequenceDiagram
     Sync->>FC: getComments(articleId)
     FC-->>Sync: ForemComment[]
     Note over Sync: Compute metrics → classify category
+    Sync->>OAI: analyzeSentimentBatch(post, new/edited comments only)
+    OAI-->>Sync: per-comment scores + volatility (null → keyword fallback)
     Sync->>SB: upsert users row (once per unique author)
     Sync->>SB: upsert articles row (score, category, metrics, explanations)
     Sync->>SB: upsert commenters rows
@@ -343,15 +346,18 @@ pnpm build            # type-check + Next.js production build
 
 ## Deployment (Cloud Run)
 
-The app is deployed to Google Cloud Run via `deploy.sh`. Set the environment variables listed above as Cloud Run secrets or environment variables:
+Run `./deploy.sh` from the repo root. The script handles all provisioning steps:
+Secret Manager secrets, Artifact Registry, Cloud Build, and Cloud Run deployment.
+
+**Required setup (one-time):**
 
 ```bash
-gcloud run deploy dev-community-dashboard \
-  --set-secrets SUPABASE_SECRET_KEY=...,CRON_SECRET=... \
-  --set-env-vars NEXT_PUBLIC_SUPABASE_URL=...,DEV_API_KEY=...
+gcloud auth login
+gcloud config set project checkmarkdevtools
 ```
 
-Once deployed, set `APP_URL` as a **GitHub repository variable** (not a secret — it is a public URL) and `CRON_SECRET` as a **GitHub secret** so the cron workflow (`.github/workflows/cron.yml`) can reach the live endpoint. By default, this workflow uses a `schedule` trigger to run every 2 hours; to change or disable this cadence, edit or remove the `schedule` block in that file.
+Set `APP_URL` as a **GitHub repository variable** and `CRON_SECRET` as a **GitHub secret** so
+the cron workflow can reach the deployed endpoint.
 
 ---
 
@@ -412,16 +418,7 @@ If you are contributing, here is where things live:
 
 ## Database Migrations
 
-All migrations live in `supabase/migrations/` and are applied in order via `supabase db push`.
-
-| Migration           | File                                                               | Description                                                                                          |
-| ------------------- | ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
-| Initial schema      | `0000_initial_schema.sql`                                          | Creates `articles`, `users`, and `commenters` tables with indexes and enables RLS                    |
-| RLS policies        | `0001_rls_policies.sql`                                            | Adds anon SELECT-only policies on `articles` and `commenters`; `users` has no anon policy (deny-all) |
-| Add dev URL         | `20260228030900_add_dev_url_and_action.sql`                        | Adds `dev_url TEXT` column to `articles` and backfills from `canonical_url`                          |
-| Add metrics JSONB   | `20260228235416_add_metrics_jsonb_column_to_articles.sql`          | Adds `metrics JSONB DEFAULT '{}'` column to `articles` for per-post analytics                        |
-| Allow null username | `20260301004053_allow_null_commenter_username.sql`                 | Drops `NOT NULL` constraint on `commenters.username` to handle deleted Forem accounts                |
-| Rename category     | `20260301040126_rename_possibly_low_quality_to_signal_at_risk.sql` | Renames `POSSIBLY_LOW_QUALITY` category to `SIGNAL_AT_RISK` across all rows                          |
+Migration history and schema notes live in [`supabase/README.md`](./supabase/README.md).
 
 ---
 
@@ -429,13 +426,9 @@ All migrations live in `supabase/migrations/` and are applied in order via `supa
 
 <div align="center">
 
-[![DEV.to](https://img.shields.io/badge/DEV.to-anchildress1-0A0A0A?style=flat&logo=devdotto&logoColor=white)](https://dev.to/anchildress1)
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-anchildress1-0A66C2?style=flat&logo=linkedin&logoColor=white)](https://linkedin.com/in/anchildress1)
-[![Medium](https://img.shields.io/badge/Medium-@anchildress1-000000?style=flat&logo=medium&logoColor=white)](https://medium.com/@anchildress1)
-[![Reddit](https://img.shields.io/badge/Reddit-anchildress1-FF4500?style=flat&logo=reddit&logoColor=white)](https://reddit.com/user/anchildress1)
+[![DEV.to](https://img.shields.io/badge/DEV.to-anchildress1-0A0A0A?style=flat&logo=devdotto&logoColor=white)](https://dev.to/anchildress1) [![LinkedIn](https://img.shields.io/badge/LinkedIn-anchildress1-0A66C2?style=flat&logo=linkedin&logoColor=white)](https://linkedin.com/in/anchildress1) [![Medium](https://img.shields.io/badge/Medium-@anchildress1-000000?style=flat&logo=medium&logoColor=white)](https://medium.com/@anchildress1) [![Reddit](https://img.shields.io/badge/Reddit-anchildress1-FF4500?style=flat&logo=reddit&logoColor=white)](https://reddit.com/user/anchildress1)
 
-[![Sponsor on GitHub](https://img.shields.io/badge/Sponsor-GitHub_Sponsors-EA4AAA?style=flat&logo=githubsponsors&logoColor=white)](https://github.com/sponsors/anchildress1)
-[![Buy Me a Coffee](https://img.shields.io/badge/Buy_Me_a_Coffee-Support-FFDD00?style=flat&logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/anchildress1)
+[![Sponsor on GitHub](https://img.shields.io/badge/Sponsor-GitHub_Sponsors-EA4AAA?style=flat&logo=githubsponsors&logoColor=white)](https://github.com/sponsors/anchildress1) [![Buy Me a Coffee](https://img.shields.io/badge/Buy_Me_a_Coffee-Support-FFDD00?style=flat&logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/anchildress1)
 
 </div>
 
