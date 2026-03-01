@@ -2,7 +2,12 @@
 
 ## Supported Versions
 
-The `main` branch is the supported version. Older releases are not patched retroactively — if you're running a tagged release, upgrade to main.
+| Version  | Supported |
+| -------- | --------- |
+| v1.0.0   | Yes       |
+| < v1.0.0 | No        |
+
+`main` tracks the latest release. Older releases are not patched retroactively.
 
 ---
 

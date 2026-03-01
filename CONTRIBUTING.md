@@ -1,6 +1,6 @@
 # Contributing to DEV Community Dashboard
 
-So you want to contribute. That's great — genuinely. This project started as a weekend challenge sprint and has grown into something I actually maintain, which means contributions need to meet a bar.
+So you want to contribute. That's great — genuinely. This project started as a weekend challenge sprint and has grown into something I'm maintaining based on real use patterns and cost impact. That means the bar for what gets merged is directly tied to what's actually being used — not what's theoretically useful.
 
 Read this fully before opening a PR. Not because I'm trying to discourage you, but because it will save us both a lot of time.
 
@@ -27,17 +27,17 @@ cp .env.example .env.local   # then fill it in — yes, all of it
 
 Environment variables you'll need:
 
-| Variable                               | What it is                                                    |
-| -------------------------------------- | ------------------------------------------------------------- |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | New-style publishable key — not the legacy anon key           |
-| `SUPABASE_SECRET_KEY`                  | New-style secret key — not service_role                       |
-| `DEV_API_KEY`                          | Your DEV.to API key (read-only is fine for the sync pipeline) |
-| `CRON_SECRET`                          | Any random string; authenticates the cron endpoint            |
+| Variable                               | What it is                                          |
+| -------------------------------------- | --------------------------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | New-style publishable key — not the legacy anon key |
+| `SUPABASE_SECRET_KEY`                  | New-style secret key — not service_role             |
+| `DEV_API_KEY`                          | Your DEV.to API key                                 |
+| `CRON_SECRET`                          | Any random string; authenticates the cron endpoint  |
 
 **Development server:**
 
 ```bash
-pnpm dev
+make dev
 ```
 
 When you need to stop it: kill the `next-server` process specifically.
@@ -68,10 +68,16 @@ The short version of what will get a PR closed immediately:
 Lefthook will catch most of this automatically on commit. Run it yourself first anyway so you're not surprised mid-commit:
 
 ```bash
-pnpm format:check
-pnpm lint
-pnpm test
-pnpm build
+make ai-checks
+```
+
+Or step by step:
+
+```bash
+make format
+make lint
+make test
+make security
 ```
 
 Before committing, also run SonarQube analysis on **all** source files — not just the files you changed. Fix everything it flags before you push. SonarCloud is a required CI gate.
