@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/ChecKMarKDevTools/dev-community-dashboard/compare/v1.0.0...v1.1.0) (2026-03-02)
+
+
+### Features
+
+* interaction signal scoring, NEEDS_SUPPORT detection, and UI polish ([#14](https://github.com/ChecKMarKDevTools/dev-community-dashboard/issues/14)) ([e587b75](https://github.com/ChecKMarKDevTools/dev-community-dashboard/commit/e587b75dc0efb788399b08c6e4076aaec9bc21f6))
+
 ## 1.0.0 (2026-03-01)
 
 
